@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 export default function Page() {
-  return <>Hello world</>;
-}
+   return('Hello World');
+};
