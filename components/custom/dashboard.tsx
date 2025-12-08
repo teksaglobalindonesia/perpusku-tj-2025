@@ -10,22 +10,23 @@ const Dashboard = () => {
   const bookRef = useRef<HTMLDivElement>(null);
   const activityRef = useRef<HTMLDivElement>(null);
 
-  const books = [
-    { id: 1, title: "Laskar Pelangi", stock: 5, status: "Tersedia" },
-    { id: 2, title: "Bumi Manusia", stock: 0, status: "Habis" },
-    { id: 3, title: "Negeri 5 Menara", stock: 3, status: "Tersedia" },
-    { id: 4, title: "Dilan 1990", stock: 0, status: "Habis" },
-  ];
+const books = [
+  { id: 1, title: "Dr. STONE", cover: "dr-stone.jpg", stock: 5, status: "Tersedia" },
+  { id: 2, title: "Death Note", cover: "death-note.jpg", stock: 0, status: "Habis" },
+  { id: 3, title: "How to Win at Chess", cover: "chess-guide.jpg", stock: 3, status: "Tersedia" },
+  { id: 4, title: "Harry Potter", cover: "harry-potter.jpg", stock: 10, status: "Tersedia" },
+];
+
 
   const borrowings = [
-    { id: 1, name: "Andi", book: "Laskar Pelangi", date: "08 Des 2025" },
-    { id: 2, name: "Siti", book: "Bumi Manusia", date: "08 Des 2025" },
-    { id: 3, name: "Budi", book: "Negeri 5 Menara", date: "08 Des 2025" },
+    { id: 1, name: "Andi", book: "Death Note", date: "08 Des 2025" },
+    { id: 2, name: "Siti", book: "Hunter X Hunter", date: "08 Des 2025" },
+    { id: 3, name: "Budi", book: "Dr. STONE", date: "08 Des 2025" },
   ];
 
   const returns = [
-    { id: 1, name: "Rina", book: "Dilan 1990", date: "08 Des 2025" },
-    { id: 2, name: "Tono", book: "Laskar Pelangi", date: "08 Des 2025" },
+    { id: 1, name: "Rina", book: "Harry Potter", date: "08 Des 2025" },
+    { id: 2, name: "Tono", book: "How to Win at Chess", date: "08 Des 2025" },
   ];
 
   useEffect(() => {
@@ -60,23 +61,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Navbar */}
-      <nav
-        ref={headerRef}
-        className="bg-white shadow-sm px-8 py-4 flex items-center justify-between sticky top-0 z-50"
-      >
-        <h1 className="text-2xl font-bold text-blue-600">PerpusKu 📚</h1>
-
-        <div className="flex gap-8 text-sm font-medium text-gray-700">
-          <Link href="/" className="hover:text-blue-600 border-b-2 border-blue-600 pb-1">
-            Dashboard
-          </Link>
-          <Link href="/buku" className="hover:text-blue-600">Buku</Link>
-          <Link href="/anggota" className="hover:text-blue-600">Anggota</Link>
-          <Link href="/peminjaman" className="hover:text-blue-600">Peminjaman</Link>
-          <Link href="/pengembalian" className="hover:text-blue-600">Pengembalian</Link>
-        </div>
-      </nav>
 
       <main className="max-w-7xl mx-auto px-8 py-8">
         {/* Statistik */}
@@ -117,29 +101,40 @@ const Dashboard = () => {
             </div>
 
             <div className="grid grid-cols-3 gap-4">
-              {books.map((book) => (
-                <div
-                  key={book.id}
-                  className="border rounded-xl p-4 hover:shadow transition"
-                >
-                  <h3 className="font-semibold text-gray-800 text-sm mb-2 line-clamp-2">
-                    {book.title}
-                  </h3>
+            {books.map((book) => (
+  <div
+    key={book.id}
+    className="border rounded-xl p-4 hover:shadow transition flex flex-col"
+  >
+    {/* Cover buku */}
+    <div className="w-full h-40 bg-gray-100 rounded-lg overflow-hidden mb-3">
+      <img
+        src={`/images/${book.cover}`}
+        alt={book.title}
+        className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
 
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-gray-500">Stok: {book.stock}</span>
-                    <span
-                      className={`px-2 py-1 rounded-full ${
-                        book.status === "Tersedia"
-                          ? "bg-green-100 text-green-600"
-                          : "bg-red-100 text-red-600"
-                      }`}
-                    >
-                      {book.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
+      />
+    </div>
+
+    <h3 className="font-semibold text-gray-800 text-sm mb-2 line-clamp-2">
+      {book.title}
+    </h3>
+
+    <div className="mt-auto flex justify-between items-center text-xs">
+      <span className="text-gray-500">Stok: {book.stock}</span>
+      <span
+        className={`px-2 py-1 rounded-full ${
+          book.status === "Tersedia"
+            ? "bg-green-100 text-green-600"
+            : "bg-red-100 text-red-600"
+        }`}
+      >
+        {book.status}
+      </span>
+    </div>
+  </div>
+))}
+
             </div>
           </div>
 
