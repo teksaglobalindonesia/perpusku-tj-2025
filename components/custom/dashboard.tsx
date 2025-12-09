@@ -70,7 +70,7 @@ return (
       >
         {[
           { title: "Total Buku", value: 120 },
-          { title: "Buku Tersedia", value: 95 },
+          { title: "Buku Tersedia", value: 90 },
           { title: "Dipinjam Hari Ini", value: 15 },
           { title: "Pengembalian Hari Ini", value: 10 },
         ].map((stat, i) => (
