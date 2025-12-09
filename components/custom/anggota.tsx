@@ -274,10 +274,10 @@ const AnggotaPage = () => {
           onClick={() => setShowAddModal(false)}
           className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm"
         >
-          Batal
+          Cancel
         </button>
         <button className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm">
-          Simpan
+          Save
         </button>
       </div>
     </div>
