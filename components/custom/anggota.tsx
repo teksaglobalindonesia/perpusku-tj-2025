@@ -8,34 +8,33 @@ const AnggotaPage = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState<any>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+
 
   // Dummy data anggota
   const members = [
     {
       id: 1,
       name: "Ahmad Rizki",
-      nis: "2023001",
-      class: "XII RPL 1",
-      phone: "081234567890",
-      gender: "Laki-laki",
+      no_member: "2023001",
+      address: "Kerobokan Kelod",
+      email: "ahmadfahrezi@yahoo.com",
       status: "Aktif",
     },
     {
       id: 2,
       name: "Siti Aisyah",
-      nis: "2023002",
-      class: "XI TKJ 2",
-      phone: "089876543210",
-      gender: "Perempuan",
+      no_member: "2023002",
+      address: "jl. taman sari 1",
+      email: "sitiaisyah@outlook.com",
       status: "Aktif",
     },
     {
       id: 3,
       name: "Budi Santoso",
-      nis: "2023003",
-      class: "X RPL 3",
-      phone: "082112223333",
-      gender: "Laki-laki",
+      no_member: "2023003",
+      address: "Kuta Utara",
+      email: "budisantoso@gmail.com",
       status: "Nonaktif",
     },
   ];
@@ -62,7 +61,8 @@ const AnggotaPage = () => {
           Data Anggota
         </h1>
 
-        <button className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow text-sm sm:text-base">
+        <button onClick={() => setShowAddModal(true)}
+          className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow text-sm sm:text-base">
           <FiPlus />
           <span>Tambah Anggota</span>
         </button>
@@ -94,15 +94,12 @@ const AnggotaPage = () => {
         </h2>
 
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] sm:text-xs text-gray-500">
-          <span>NIS: {member.nis}</span>
-          <span>Kelas: {member.class}</span>
-          <span>{member.phone}</span>
+          <span>Nomor Anggota: {member.no_member}</span>
+          <span>Alamat: {member.address}</span>
+          <span>{member.email}</span>
         </div>
 
         <div className="flex flex-wrap gap-2 mt-2">
-          <span className="px-2 py-0.5 text-[10px] sm:text-[11px] bg-blue-100 text-blue-700 rounded-full">
-            {member.gender}
-          </span>
 
           <span
             className={`px-2 py-0.5 text-[10px] sm:text-[11px] font-medium rounded-full ${
@@ -234,6 +231,59 @@ const AnggotaPage = () => {
           </div>
         </div>
       )}
+      {/* Modal Tambah */}
+{showAddModal && (
+  <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
+    <div className="bg-white w-full max-w-lg rounded-2xl p-6 animate-scale-in">
+      <h2 className="text-lg font-semibold mb-5">Tambah Anggota</h2>
+
+      <div className="space-y-3">
+        <input
+          type="text"
+          placeholder="Nama anggota"
+          className="w-full border rounded-lg px-4 py-2 text-sm"
+        />
+
+        <input
+          type="text"
+          placeholder="Nomor anggota"
+          className="w-full border rounded-lg px-4 py-2 text-sm"
+        />
+
+        <input
+          type="text"
+          placeholder="Alamat"
+          className="w-full border rounded-lg px-4 py-2 text-sm"
+        />
+
+        <input
+          type="email"
+          placeholder="Email"
+          className="w-full border rounded-lg px-4 py-2 text-sm"
+        />
+
+        <select className="w-full border rounded-lg px-4 py-2 text-sm">
+          <option value="">Pilih Status</option>
+          <option>Aktif</option>
+          <option>Nonaktif</option>
+        </select>
+      </div>
+
+      <div className="flex justify-end gap-3 mt-6">
+        <button
+          onClick={() => setShowAddModal(false)}
+          className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm"
+        >
+          Batal
+        </button>
+        <button className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm">
+          Simpan
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };
