@@ -15,48 +15,36 @@ const booksData = [
   { 
     id: 1, 
     title: "A Smart Bunny", 
-    author: "Jonathan Miles",
-    category: "Anak-anak",
     stock: 12,
     image: "/img/foto1.jpg" 
   },
   { 
     id: 2, 
     title: "The Clever Bee", 
-    author: "Laura White",
-    category: "Edukasi",
     stock: 8,
     image: "/img/foto2.jpg" 
   },
   { 
     id: 3, 
     title: "As Green as a Leaf", 
-    author: "Maria Evans",
-    category: "Alam",
     stock: 0,
     image: "/img/foto3.jpg" 
   },
   { 
     id: 4, 
     title: "Delicious Mushroom", 
-    author: "Kevin Woods",
-    category: "Fiksi",
     stock: 10,
     image: "/img/foto4.jpg" 
   },
   { 
     id: 5, 
     title: "Calm Clouds", 
-    author: "Emma Brooks",
-    category: "Puisi",
     stock: 7,
     image: "/img/foto5.jpg" 
   },
   { 
     id: 6, 
     title: "Useful Tree", 
-    author: "Oliver Dean",
-    category: "Ilmu Pengetahuan",
     stock: 4,
     image: "/img/foto6.jpg" 
   },
@@ -67,9 +55,7 @@ const Dashboard = () => {
   const [search, setSearch] = useState("");
 
   const filteredBooks = booksData.filter((book) =>
-    book.title.toLowerCase().includes(search.toLowerCase()) ||
-    book.author.toLowerCase().includes(search.toLowerCase()) ||
-    book.category.toLowerCase().includes(search.toLowerCase())
+    book.title.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -165,8 +151,6 @@ const Dashboard = () => {
 
                   <h3 className="font-semibold">{item.title}</h3>
 
-                  <p className="text-gray-600 text-sm">Penulis: {item.author}</p>
-                  <p className="text-gray-600 text-sm">Kategori: {item.category}</p>
                   <p className="text-gray-600 text-sm">Stok: {item.stock}</p>
 
                   <p
