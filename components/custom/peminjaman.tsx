@@ -45,15 +45,37 @@ const [newReturnDate, setNewReturnDate] = useState("");
   ];
 
   const books = [
-  { id: 1, title: "Dr. STONE" },
-  { id: 2, title: "Death Note" },
-  { id: 3, title: "Harry Potter" },
+    { id: 1, title: "Dr. STONE", author: "Riichiro Inagaki", publisher: "Shueisha", year: 2017, category: "Komik", stock: 5, cover: "images/dr-stone.jpg" },
+    { id: 2, title: "Death Note", author: "Tsugumi Ohba", publisher: "Shueisha", year: 2003, category: "Komik", stock: 0, cover: "images/death-note.jpg" },
+    { id: 3, title: "How to Win at Chess", author: "Levy Rozman", publisher: "Penguin", year: 2020, category: "Pendidikan", stock: 3, cover: "images/chess-guide.jpg" },
+    { id: 4, title: "Harry Potter", author: "J.K. Rowling", publisher: "Bloomsburry Publishing", year: 2001, category: "Magic", stock: 10, cover: "images/harry-potter.jpg" },
 ];
 
 const members = [
-  { id: 1, name: "Ahmad Rizki" },
-  { id: 2, name: "Siti Aisyah" },
-  { id: 3, name: "Budi Santoso" },
+{
+      id: 1,
+      name: "Ahmad Rizki",
+      no_member: "2023001",
+      address: "Kerobokan Kelod",
+      email: "ahmadfahrezi@yahoo.com",
+      status: "Aktif",
+    },
+    {
+      id: 2,
+      name: "Siti Aisyah",
+      no_member: "2023002",
+      address: "jl. taman sari 1",
+      email: "sitiaisyah@outlook.com",
+      status: "Aktif",
+    },
+    {
+      id: 3,
+      name: "Budi Santoso",
+      no_member: "2023003",
+      address: "Kuta Utara",
+      email: "budisantoso@gmail.com",
+      status: "Nonaktif",
+    },
 ];
 
 
@@ -266,10 +288,10 @@ const members = [
 {/* Modal Pilih Buku */}
 {showBookModal && (
   <div className="fixed inset-0 z-[10000] bg-black/50 flex items-center justify-center p-4">
-    <div className="bg-white w-full max-w-sm rounded-2xl p-5 animate-scale-in">
+    <div className="bg-white w-full max-w-lg rounded-2xl p-5 animate-scale-in">
       <h3 className="text-sm font-semibold mb-4">Pilih Buku</h3>
 
-      <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+      <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
         {books.map((book) => (
           <button
             key={book.id}
@@ -277,9 +299,46 @@ const members = [
               setSelectedBook(book);
               setShowBookModal(false);
             }}
-            className="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50 text-sm"
+            className="w-full text-left p-3 rounded-xl border hover:bg-blue-50 transition flex gap-4"
           >
-            {book.title}
+            {/* Cover */}
+            <div className="w-12 h-16 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+              <img
+                src={`/${book.cover}`}
+                alt={book.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            {/* Info */}
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-semibold text-gray-800">
+                {book.title}
+              </p>
+              <p className="text-[11px] text-gray-500">
+                Penulis: {book.author}
+              </p>
+              <p className="text-[11px] text-gray-500">
+                Penerbit: {book.publisher}
+              </p>
+              <p className="text-[11px] text-gray-500">
+                Tahun: {book.year}
+              </p>
+              <p className="text-[11px] text-gray-500">
+                Kategori: {book.category}
+              </p>
+
+              {/* Stok */}
+              <span
+                className={`mt-1 inline-block w-fit px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                  book.stock > 0
+                    ? "bg-green-100 text-green-600"
+                    : "bg-red-100 text-red-600"
+                }`}
+              >
+                {book.stock > 0 ? `Stok: ${book.stock}` : "Stok Habis"}
+              </span>
+            </div>
           </button>
         ))}
       </div>
@@ -295,13 +354,14 @@ const members = [
     </div>
   </div>
 )}
+
 {/* Modal Pilih Anggota */}
 {showMemberModal && (
   <div className="fixed inset-0 z-[10000] bg-black/50 flex items-center justify-center p-4">
-    <div className="bg-white w-full max-w-sm rounded-2xl p-5 animate-scale-in">
+    <div className="bg-white w-full max-w-lg rounded-2xl p-5 animate-scale-in">
       <h3 className="text-sm font-semibold mb-4">Pilih Anggota</h3>
 
-      <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+      <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
         {members.map((member) => (
           <button
             key={member.id}
@@ -309,9 +369,32 @@ const members = [
               setSelectedMember(member);
               setShowMemberModal(false);
             }}
-            className="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50 text-sm"
+            className="w-full text-left p-3 rounded-xl border hover:bg-blue-50 transition"
           >
-            {member.name}
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-semibold text-gray-800">
+                {member.name}
+              </p>
+              <p className="text-[11px] text-gray-500">
+                No Anggota: {member.no_member}
+              </p>
+              <p className="text-[11px] text-gray-500">
+                Alamat: {member.address}
+              </p>
+              <p className="text-[11px] text-gray-500">
+                Email: {member.email}
+              </p>
+
+              <span
+                className={`mt-1 inline-block w-fit px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                  member.status === "Aktif"
+                    ? "bg-green-100 text-green-600"
+                    : "bg-red-100 text-red-600"
+                }`}
+              >
+                {member.status}
+              </span>
+            </div>
           </button>
         ))}
       </div>
