@@ -9,6 +9,9 @@ const AnggotaPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showLoanModal, setShowLoanModal] = useState(false);
+  const [selectedLoans, setSelectedLoans] = useState<any[]>([]);
+
 
 
   // Dummy data anggota
@@ -38,6 +41,37 @@ const AnggotaPage = () => {
       status: "Nonaktif",
     },
   ];
+
+  const handleViewLoans = (member: any) => {
+  setSelectedMember(member);
+  setSelectedLoans(memberLoans[member.id] || []);
+  setShowLoanModal(true);
+};
+
+
+  const memberLoans: Record<number, any[]> = {
+  1: [
+    {
+      title: "Dr. STONE",
+      loanDate: "2025-12-01",
+      returnDate: "2025-12-05",
+    },
+    {
+      title: "Death Note",
+      loanDate: "2025-12-02",
+      returnDate: "2025-12-06",
+    },
+  ],
+  2: [
+    {
+      title: "Harry Potter",
+      loanDate: "2025-12-03",
+      returnDate: "2025-12-07",
+    },
+  ],
+  3: [],
+};
+
 
   const filteredMembers = members.filter((member) =>
     member.name.toLowerCase().includes(search.toLowerCase())
@@ -114,7 +148,14 @@ const AnggotaPage = () => {
       </div>
 
       {/* Bagian kanan - action */}
-      <div className="flex gap-2 justify-end sm:justify-start">
+      <div className="flex gap-2 justify-end sm:justify-start flex-wrap">
+  <button
+    onClick={() => handleViewLoans(member)}
+    className="text-[11px] sm:text-xs px-4 py-1.5 rounded-lg bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition"
+  >
+    Lihat Pinjaman
+  </button>
+
         <button
           onClick={() => handleEdit(member)}
           className="text-[11px] sm:text-xs px-4 py-1.5 rounded-lg bg-yellow-100 text-yellow-700 hover:bg-yellow-200 transition"
@@ -283,6 +324,53 @@ const AnggotaPage = () => {
     </div>
   </div>
 )}
+
+{/* Modal Lihat Pinjaman */}
+{showLoanModal && selectedMember && (
+  <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
+    <div className="bg-white w-full max-w-lg rounded-2xl p-6 animate-scale-in">
+      <h2 className="text-lg font-semibold mb-4">
+        Buku yang dipinjam oleh{" "}
+        <span className="text-blue-600">{selectedMember.name}</span>
+      </h2>
+
+      {selectedLoans.length === 0 ? (
+        <p className="text-sm text-gray-500 text-center py-6">
+          Tidak ada buku yang sedang dipinjam
+        </p>
+      ) : (
+        <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+          {selectedLoans.map((loan, index) => (
+            <div
+              key={index}
+              className="border rounded-lg p-3 flex flex-col gap-1 text-sm"
+            >
+              <span className="font-medium text-gray-800">
+                {loan.title}
+              </span>
+              <span className="text-xs text-gray-500">
+                Tanggal Pinjam: {loan.loanDate}
+              </span>
+              <span className="text-xs text-gray-500">
+                Tanggal Kembali: {loan.returnDate}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex justify-end mt-6">
+        <button
+          onClick={() => setShowLoanModal(false)}
+          className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm"
+        >
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
     </div>
   );
