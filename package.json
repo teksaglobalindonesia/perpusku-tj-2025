@@ -67,6 +67,7 @@
     "embla-carousel-react": "^8.5.2",
     "eslint": "8.48.0",
     "eslint-config-next": "^14.0.1",
+    "gsap": "^3.14.1",
     "lucide-react": "^0.447.0",
     "match-sorter": "^6.3.4",
     "next": "^14.2.33",

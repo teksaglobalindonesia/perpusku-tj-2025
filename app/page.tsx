@@ -1,5 +1,7 @@
 'use client';
 
+import Dashboard from "../components/custom/dashboard";
+
 export default function Page() {
-  return <>Hello natha</>;
+  return <Dashboard />;
 }      
