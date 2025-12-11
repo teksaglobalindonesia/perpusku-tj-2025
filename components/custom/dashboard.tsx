@@ -175,7 +175,7 @@ const Dashboard = () => {
               <h5 className="text-xl font-semibold mb-4">Data Peminjaman Buku</h5>
               <ul className="space-y-3">
                 <li className="p-3 border rounded-lg flex justify-between">
-                  <span>Prabanatha</span>
+                  <span>Sunghoon</span>
                   <span className="text-gray-500 text-sm">A Smart Bunny</span>
                 </li>
                 <li className="p-3 border rounded-lg flex justify-between">
