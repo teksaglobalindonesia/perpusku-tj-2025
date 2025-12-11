@@ -25,14 +25,14 @@ export default function DashboardContent() {
       kategori: 'Romance',
       penulis: 'Wulan Nur Amalia',
       stok: 5,
-      cover: '/images/Bandung After Rain.jpeg'
+      cover: '/images/bandung-after-rain.jpeg'
     },
     {
       judul: 'Sisi Tergelap Surga',
       kategori: 'Fiksi',
       penulis: 'saya',
       stok: 5,
-      cover: '/images/Sisi Tergelap Surga.jpeg'
+      cover: '/images/sisi-tergelap-surga.jpeg'
     }
   ];
 
@@ -66,11 +66,11 @@ export default function DashboardContent() {
       <div className="mb-10 grid grid-cols-1 gap-6 md:grid-cols-4">
         <div className="rounded bg-white p-5 text-center shadow">
           <p className="text-gray-600">Total Buku</p>
-          <p className="text-3xl font-bold">120</p>
+          <p className="text-3xl font-bold">100</p>
         </div>
         <div className="rounded bg-white p-5 text-center shadow">
           <p className="text-gray-600">Buku Tersedia</p>
-          <p className="text-3xl font-bold">90</p>
+          <p className="text-3xl font-bold">80</p>
         </div>
         <div className="rounded bg-white p-5 text-center shadow">
           <p className="text-gray-600">Dipinjam Hari Ini</p>
