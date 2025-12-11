@@ -66,23 +66,28 @@ const BukuPage = () => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const filteredBooks = books.filter((book) => 
+  const filteredBooks = books.filter((book) =>
     book.title.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div className="flex bg-gray-100 font-sans min-h-screen">  
+    <div className="flex bg-[#111] text-white font-sans min-h-screen">
+
       <aside
-        className={`fixed top-0 left-0 h-screen w-64 bg-[#B77466] text-white p-6 z-30 transform transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-64"} md:translate-x-0`}
+        className={`fixed top-0 left-0 h-screen w-64 bg-[#111] border-r border-[#D4AF37]/40 text-white p-6 z-30 
+        transform transition-transform duration-300 
+        ${open ? "translate-x-0" : "-translate-x-64"} md:translate-x-0`}
       >
-        <h2 className="text-3xl font-semibold mb-8">Librava</h2>
+        <h2 className="text-3xl font-bold mb-8 text-[#D4AF37] tracking-wide">
+          LIBRAVA
+        </h2>
 
         <nav className="flex flex-col space-y-4">
           {nav_items.map((item) => (
             <Link
               key={item.name}
               href={item.href}
-              className="p-3 rounded-lg text-left transition-all hover:bg-white/20 hover:translate-x-1"
+              className="p-3 rounded-lg hover:bg-[#D4AF37]/20 transition"
             >
               {item.name}
             </Link>
@@ -97,46 +102,65 @@ const BukuPage = () => {
         />
       )}
 
-      <main className="ml-0 md:ml-64 p-6 w-full transition-all">
+      <main className="ml-0 md:ml-64 p-6 w-full">
+
         <button
-          className="md:hidden mb-4 p-2 bg-[#FD7979] text-white rounded-lg"
+          className="md:hidden mb-4 p-2 bg-[#D4AF37] text-black rounded-lg font-semibold"
           onClick={() => setOpen(true)}
         >
           ☰ Menu
         </button>
 
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-2xl font-semibold">Data Buku</h3>
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-8 gap-4">
+          <h3 className="text-3xl font-bold tracking-wide text-[#D4AF37]">
+            Data Buku
+          </h3>
+
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border rounded-full p-3 w-72 shadow-sm"
+            className="bg-black border border-[#D4AF37]/40 text-white rounded-full p-3 w-full sm:w-80
+            focus:ring-2 focus:ring-[#D4AF37] outline-none transition"
             type="text"
-            placeholder="Search buku..."
+            placeholder="Cari buku..."
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredBooks.length === 0 && (
+          <p className="text-center text-gray-400 text-lg mt-10">
+            Maaf, buku tidak ditemukan.
+          </p>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredBooks.map((item) => (
-            <div key={item.id} className="bg-white p-4 rounded-xl shadow hover:shadow-lg transition">
+            <div
+              key={item.id}
+              className="bg-[#222] border border-[#D4AF37]/40 p-5 rounded-2xl shadow-lg hover:shadow-xl transition"
+            >
               <img
                 src={item.image}
                 alt={item.title}
-                className="w-full h-72 object-cover object-top rounded-lg mb-3"
+                className="w-full h-80 object-cover object-top rounded-xl mb-4 border border-[#D4AF37]/30"
               />
 
-              <h3 className="font-semibold text-lg">{item.title}</h3>
-              <p className="text-gray-600 text-sm">Penulis: {item.author}</p>
-              <p className="text-gray-600 text-sm">Kategori: {item.category}</p>
-              <p className="text-gray-600 text-sm">Stok: {item.stock}</p>
+              <h3 className="font-bold text-xl text-[#D4AF37]">{item.title}</h3>
+              <p className="text-gray-300 text-sm">Penulis: {item.author}</p>
+              <p className="text-gray-300 text-sm">Kategori: {item.category}</p>
+              <p className="text-gray-300 text-sm">Stok: {item.stock}</p>
 
-              <div className="flex justify-between mt-3">
-                <button className="px-3 py-1 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600">Edit</button>
-                <button className="px-3 py-1 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600">Hapus</button>
+              <div className="flex justify-between mt-4">
+                <button className="px-4 py-2 bg-[#D4AF37] text-black text-sm font-semibold rounded-lg hover:bg-[#b6912c] transition">
+                  Edit
+                </button>
+                <button className="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition">
+                  Hapus
+                </button>
               </div>
             </div>
           ))}
         </div>
+
       </main>
     </div>
   );
