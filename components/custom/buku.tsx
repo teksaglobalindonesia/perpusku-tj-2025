@@ -65,6 +65,7 @@ const books = [
 const BukuPage = () => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [showPopup, setShowPopup] = useState(false);
 
   const filteredBooks = books.filter((book) =>
     book.title.toLowerCase().includes(search.toLowerCase())
@@ -116,14 +117,23 @@ const BukuPage = () => {
             Data Buku
           </h3>
 
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="bg-black border border-[#D4AF37]/40 text-white rounded-full p-3 w-full sm:w-80
-            focus:ring-2 focus:ring-[#D4AF37] outline-none transition"
-            type="text"
-            placeholder="Cari buku..."
-          />
+          <div className="flex w-full sm:w-auto gap-3">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="bg-black border border-[#D4AF37]/40 text-white rounded-full p-3 w-full sm:w-80
+                focus:ring-2 focus:ring-[#D4AF37] outline-none transition"
+              type="text"
+              placeholder="Cari buku..."
+            />
+
+            <button
+              onClick={() => setShowPopup(true)}
+              className="px-5 py-3 bg-[#D4AF37] text-black rounded-full font-semibold hover:bg-[#b6912c] transition"
+            >
+              + Tambah
+            </button>
+          </div>
         </div>
 
         {filteredBooks.length === 0 && (
@@ -141,7 +151,7 @@ const BukuPage = () => {
               <img
                 src={item.image}
                 alt={item.title}
-                className="w-full h-80 object-cover object-top rounded-xl mb-4 border border-[#D4AF37]/30"
+                className="w-full h-64 object-cover object-center rounded-xl mb-4 border border-[#D4AF37]/30"
               />
 
               <h3 className="font-bold text-xl text-[#D4AF37]">{item.title}</h3>
@@ -160,8 +170,53 @@ const BukuPage = () => {
             </div>
           ))}
         </div>
-
       </main>
+
+      {showPopup && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-[#222] border border-[#D4AF37]/40 p-8 rounded-2xl w-96 shadow-xl">
+            <h2 className="text-2xl font-bold text-[#D4AF37] mb-5">
+              Tambah Buku
+            </h2>
+
+            <div className="flex flex-col space-y-4">
+              <input className="p-3 rounded-lg bg-black border border-[#D4AF37]/40 text-white" placeholder="Judul Buku" />
+              <input className="p-3 rounded-lg bg-black border border-[#D4AF37]/40 text-white" placeholder="Penulis" />
+              <input className="p-3 rounded-lg bg-black border border-[#D4AF37]/40 text-white" placeholder="Penerbit" />
+              <input className="p-3 rounded-lg bg-black border border-[#D4AF37]/40 text-white" placeholder="Tahun Terbit" />
+
+              <select className="p-3 rounded-lg bg-black border border-[#D4AF37]/40 text-white">
+                <option value="">Pilih Kategori</option>
+                <option>Anak-anak</option>
+                <option>Edukasi</option>
+                <option>Fiksi</option>
+                <option>Non-Fiksi</option>
+                <option>Ilmu Pengetahuan</option>
+                <option>Puisi</option>
+              </select>
+
+              <input
+                type="number"
+                className="p-3 rounded-lg bg-black border border-[#D4AF37]/40 text-white"
+                placeholder="Jumlah Stok"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setShowPopup(false)}
+                className="px-4 py-2 bg-gray-500 rounded-lg hover:bg-gray-600"
+              >
+                Batal
+              </button>
+              <button className="px-4 py-2 bg-[#D4AF37] text-black font-semibold rounded-lg hover:bg-[#b6912c]">
+                Simpan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
