@@ -66,12 +66,12 @@ const BukuPage = () => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const filteredBooks = books.filter((book) =>
+  const filteredBooks = books.filter((book) => 
     book.title.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div className="flex bg-gray-100 font-sans min-h-screen">
+    <div className="flex bg-gray-100 font-sans min-h-screen">  
       <aside
         className={`fixed top-0 left-0 h-screen w-64 bg-[#B77466] text-white p-6 z-30 transform transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-64"} md:translate-x-0`}
       >
