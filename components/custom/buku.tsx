@@ -178,16 +178,22 @@ export default function BukuPage() {
                 {b.judul}
               </h3>
 
-              <div className="mt-1 flex items-center gap-1 text-xs text-gray-500 md:text-sm">
-                <span>{b.penulis}</span>
-                <span>•</span>
-                <span>{b.penerbit}</span>
+              {/* PENULIS */}
+              <div className="mt-1 text-xs text-gray-600 md:text-sm">
+                <span className="font-medium text-gray-700">Penulis:</span>{' '}
+                {b.penulis}
               </div>
 
-              <div className="flex items-center gap-1 text-xs text-gray-500 md:text-sm">
-                <span>{b.kategori}</span>
+              {/* PENERBIT + TAHUN */}
+              <div className="mt-1 flex items-center gap-1 text-xs text-gray-500 md:text-sm">
+                <span>{b.penerbit}</span>
                 <span>•</span>
                 <span>{b.tahun}</span>
+              </div>
+
+              {/* KATEGORI */}
+              <div className="mt-1 text-xs text-gray-500 md:text-sm">
+                <span>Kategori:</span> {b.kategori}
               </div>
 
               <div className="mt-2">
