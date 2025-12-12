@@ -1,6 +1,6 @@
 'use client';
-import PerpusDashboard from '../components/custom/dashboard';
+import DashboardContent from '../components/custom/dashboard';
 
 export default function Page() {
-  return <PerpusDashboard />;
+  return <DashboardContent />;
 }
