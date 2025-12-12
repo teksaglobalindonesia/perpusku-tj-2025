@@ -82,6 +82,57 @@ export default function BukuPage() {
     b.judul.toLowerCase().includes(search.toLowerCase())
   );
 
+  // EDIT MODAL
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editData, setEditData] = useState<any>(null);
+  const [previewEditCover, setPreviewEditCover] = useState<string | null>(null);
+
+  const openEditModal = (book: any) => {
+    setEditData({ ...book });
+    setPreviewEditCover(book.cover);
+    setShowEditModal(true);
+  };
+
+  const closeEditModal = () => {
+    if (previewEditCover) URL.revokeObjectURL(previewEditCover);
+    setPreviewEditCover(null);
+    setShowEditModal(false);
+  };
+
+  const handleEditCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (previewEditCover) URL.revokeObjectURL(previewEditCover);
+
+    const url = URL.createObjectURL(file);
+    setPreviewEditCover(url);
+  };
+
+  // belum ada API → cuma close
+  const saveEdit = () => {
+    closeEditModal();
+  };
+
+  // DELETE MODAL
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+
+  const openDeleteModal = (book: any) => {
+    setDeleteTarget(book);
+    setShowDeleteModal(true);
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteTarget(null);
+    setShowDeleteModal(false);
+  };
+
+  // belum API → cuma close modal
+  const confirmDelete = () => {
+    closeDeleteModal();
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       {/* HEADER */}
@@ -154,10 +205,17 @@ export default function BukuPage() {
               </div>
 
               <div className="mt-3 flex justify-between">
-                <button className="rounded-full bg-green-100 px-3 py-2 text-xs text-green-700 transition hover:bg-green-200 md:text-sm">
+                <button
+                  onClick={() => openEditModal(b)}
+                  className="rounded-full bg-green-100 px-3 py-2 text-xs text-green-700 transition hover:bg-green-200 md:text-sm"
+                >
                   Edit
                 </button>
-                <button className="rounded-full bg-red-100 px-3 py-2 text-xs text-red-700 transition hover:bg-red-200 md:text-sm">
+
+                <button
+                  onClick={() => openDeleteModal(b)}
+                  className="rounded-full bg-red-100 px-3 py-2 text-xs text-red-700 transition hover:bg-red-200 md:text-sm"
+                >
                   Hapus
                 </button>
               </div>
@@ -256,6 +314,150 @@ export default function BukuPage() {
 
               <button className="rounded-lg bg-green-600 px-4 py-1.5 text-sm text-white">
                 Tambah
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* POPUP EDIT BUKU */}
+      {showEditModal && editData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="flex max-h-[85vh] w-full max-w-[430px] flex-col rounded-xl bg-white shadow-lg md:max-w-[500px]">
+            <div className="border-b px-5 py-3">
+              <h2 className="text-base font-semibold text-gray-800">
+                Edit Buku
+              </h2>
+            </div>
+
+            <div
+              className="overflow-y-auto px-5 py-4"
+              style={{ maxHeight: '65vh' }}
+            >
+              <div className="flex flex-col gap-3 text-sm">
+                <input
+                  type="text"
+                  value={editData.judul}
+                  onChange={(e) =>
+                    setEditData({ ...editData, judul: e.target.value })
+                  }
+                  className="rounded-lg border p-2"
+                />
+                <input
+                  type="text"
+                  value={editData.penulis}
+                  onChange={(e) =>
+                    setEditData({ ...editData, penulis: e.target.value })
+                  }
+                  className="rounded-lg border p-2"
+                />
+                <input
+                  type="text"
+                  value={editData.penerbit}
+                  onChange={(e) =>
+                    setEditData({ ...editData, penerbit: e.target.value })
+                  }
+                  className="rounded-lg border p-2"
+                />
+                <input
+                  type="text"
+                  value={editData.tahun}
+                  onChange={(e) =>
+                    setEditData({ ...editData, tahun: e.target.value })
+                  }
+                  className="rounded-lg border p-2"
+                />
+
+                <select
+                  value={editData.kategori}
+                  onChange={(e) =>
+                    setEditData({ ...editData, kategori: e.target.value })
+                  }
+                  className="rounded-lg border p-2 text-gray-700"
+                >
+                  <option>Family Fiction</option>
+                  <option>Romance</option>
+                  <option>Historical Fiction</option>
+                  <option>Fiksi</option>
+                  <option>Fantasy</option>
+                  <option>Thriller</option>
+                </select>
+
+                <input
+                  type="number"
+                  value={editData.stok}
+                  onChange={(e) =>
+                    setEditData({ ...editData, stok: Number(e.target.value) })
+                  }
+                  className="rounded-lg border p-2"
+                />
+
+                {/* GANTI COVER */}
+                <div>
+                  <label className="mb-1 block text-xs text-gray-600">
+                    Ganti Cover Buku
+                  </label>
+
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleEditCoverChange}
+                    className="w-full rounded-lg border p-2"
+                  />
+
+                  {previewEditCover && (
+                    <img
+                      src={previewEditCover}
+                      className="mt-3 h-40 w-full rounded-lg border object-contain md:h-48"
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 border-t px-5 py-3">
+              <button
+                onClick={closeEditModal}
+                className="rounded-lg bg-gray-200 px-4 py-1.5 text-sm"
+              >
+                Batal
+              </button>
+              <button
+                onClick={saveEdit}
+                className="rounded-lg bg-green-600 px-4 py-1.5 text-sm text-white"
+              >
+                Simpan Perubahan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* POPUP HAPUS */}
+      {showDeleteModal && deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-[380px] rounded-xl bg-white p-5 shadow-lg">
+            <h3 className="text-lg font-semibold text-gray-800">
+              Konfirmasi Hapus
+            </h3>
+
+            <p className="mt-2 text-sm text-gray-600">
+              Apakah Anda yakin ingin menghapus buku{' '}
+              <span className="font-semibold">{deleteTarget.judul}</span>?
+            </p>
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                onClick={closeDeleteModal}
+                className="rounded-lg bg-gray-200 px-4 py-1.5 text-sm"
+              >
+                Batal
+              </button>
+
+              <button
+                onClick={confirmDelete}
+                className="rounded-lg bg-red-600 px-4 py-1.5 text-sm text-white"
+              >
+                Hapus
               </button>
             </div>
           </div>
