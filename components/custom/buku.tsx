@@ -165,7 +165,7 @@ export default function BukuPage() {
         {filteredBooks.map((b, index) => (
           <div
             key={index}
-            className="rounded-xl border bg-white p-3 shadow-sm transition hover:shadow-md"
+            className="flex flex-col rounded-xl border bg-white p-3 shadow-sm transition hover:shadow-md"
           >
             <img
               src={b.cover}
@@ -173,27 +173,25 @@ export default function BukuPage() {
               className="h-40 w-full rounded-xl object-cover md:h-48"
             />
 
-            <div className="mt-3">
+            {/* CONTAINER INFO BUKU */}
+            <div className="mt-3 flex flex-col gap-1">
               <h3 className="text-sm font-semibold text-gray-800 md:text-base">
                 {b.judul}
               </h3>
 
-              {/* PENULIS */}
-              <div className="mt-1 text-xs text-gray-600 md:text-sm">
+              <div className="text-xs text-gray-600 md:text-sm">
                 <span className="font-medium text-gray-700">Penulis:</span>{' '}
                 {b.penulis}
               </div>
 
-              {/* PENERBIT + TAHUN */}
-              <div className="mt-1 flex items-center gap-1 text-xs text-gray-500 md:text-sm">
+              <div className="flex items-center gap-1 text-xs text-gray-500 md:text-sm">
                 <span>{b.penerbit}</span>
                 <span>•</span>
                 <span>{b.tahun}</span>
               </div>
 
-              {/* KATEGORI */}
-              <div className="mt-1 text-xs text-gray-500 md:text-sm">
-                <span>Kategori:</span> {b.kategori}
+              <div className="text-xs text-gray-500 md:text-sm">
+                Kategori: {b.kategori}
               </div>
 
               <div className="mt-2">
@@ -209,22 +207,23 @@ export default function BukuPage() {
                   {b.stok === 0 ? 'Stok Habis' : `Stok: ${b.stok}`}
                 </span>
               </div>
+            </div>
 
-              <div className="mt-3 flex justify-between">
-                <button
-                  onClick={() => openEditModal(b)}
-                  className="rounded-full bg-green-100 px-3 py-2 text-xs text-green-700 transition hover:bg-green-200 md:text-sm"
-                >
-                  Edit
-                </button>
+            {/* TOMBOL — SELALU DI BAWAH */}
+            <div className="mt-auto flex justify-between pt-3">
+              <button
+                onClick={() => openEditModal(b)}
+                className="rounded-full bg-green-100 px-3 py-2 text-xs text-green-700 transition hover:bg-green-200 md:text-sm"
+              >
+                Edit
+              </button>
 
-                <button
-                  onClick={() => openDeleteModal(b)}
-                  className="rounded-full bg-red-100 px-3 py-2 text-xs text-red-700 transition hover:bg-red-200 md:text-sm"
-                >
-                  Hapus
-                </button>
-              </div>
+              <button
+                onClick={() => openDeleteModal(b)}
+                className="rounded-full bg-red-100 px-3 py-2 text-xs text-red-700 transition hover:bg-red-200 md:text-sm"
+              >
+                Hapus
+              </button>
             </div>
           </div>
         ))}
