@@ -52,7 +52,7 @@ export default function DashboardContent() {
   const pengembalian = [
     {
       judul: 'Laut Bercerita',
-      peminjam: 'Widi',
+      peminjam: 'sean',
       peminjaman: '8 Des 2025',
       pengembalian: '10 Des 2025'
     }

@@ -7,6 +7,7 @@ export default function AnggotaPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [showPeminjaman, setShowPeminjaman] = useState(false);
 
   const [newAnggota, setNewAnggota] = useState({
     nama: '',
@@ -15,14 +16,7 @@ export default function AnggotaPage() {
     email: ''
   });
 
-  const [selectedAnggota, setSelectedAnggota] = useState<any>({
-    id: null,
-    nama: '',
-    nomor: '',
-    alamat: '',
-    email: ''
-  });
-
+  const [selectedAnggota, setSelectedAnggota] = useState<any>(null);
   const [anggotaToDelete, setAnggotaToDelete] = useState<any>(null);
 
   const anggotaData = [
@@ -46,6 +40,26 @@ export default function AnggotaPage() {
       nomor: 'AG003',
       alamat: 'Depok',
       email: 'siti@gmail.com'
+    }
+  ];
+  const peminjamanData = [
+    {
+      id: 1,
+      judul: 'Narasi Perihal Ayah',
+      penulis: 'Jaquenza Eden',
+      kategori: 'Family Fiction',
+      pinjam: '2025-12-01',
+      kembali: '2025-12-05',
+      status: 'dikembalikan'
+    },
+    {
+      id: 2,
+      judul: 'Laut Bercerita',
+      penulis: 'Leila S. Chudori',
+      kategori: 'Historical Fiction',
+      pinjam: '2025-12-02',
+      kembali: '2025-12-06',
+      status: 'terlambat'
     }
   ];
 
@@ -91,7 +105,13 @@ export default function AnggotaPage() {
 
             <div className="mt-auto flex items-center gap-3">
               {/* SOFT BLUE */}
-              <button className="rounded-lg bg-[#CFE8FF] px-3 py-2 text-sm font-medium text-[#1E4A7B] hover:bg-[#B7DBFF]">
+              <button
+                onClick={() => {
+                  setSelectedAnggota(item);
+                  setShowPeminjaman(true);
+                }}
+                className="rounded-lg bg-[#CFE8FF] px-3 py-2 text-sm font-medium text-[#1E4A7B]"
+              >
                 Lihat Peminjaman
               </button>
 
@@ -288,6 +308,7 @@ export default function AnggotaPage() {
         </div>
       )}
 
+      {/* POPUP DELETE */}
       {showDelete && anggotaToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-[380px] rounded-xl bg-white p-5 shadow-lg">
@@ -316,6 +337,47 @@ export default function AnggotaPage() {
               >
                 Hapus
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* POPUP LIHAT PEMINJAMAN */}
+      {showPeminjaman && selectedAnggota && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-3xl rounded-xl bg-white shadow-lg">
+            <div className="flex items-center justify-between border-b px-6 py-4">
+              <div>
+                <h2 className="text-xl font-bold text-green-700">
+                  Peminjaman Buku
+                </h2>
+                <p className="text-sm text-gray-500">{selectedAnggota.nama}</p>
+              </div>
+              <button onClick={() => setShowPeminjaman(false)}>✕</button>
+            </div>
+
+            <div className="space-y-4 px-6 py-5">
+              {peminjamanData.map((item) => (
+                <div key={item.id} className="rounded-lg border p-4">
+                  <h3 className="font-semibold">{item.judul}</h3>
+                  <p className="text-sm text-gray-600">
+                    {item.penulis} • {item.kategori}
+                  </p>
+                  <p className="text-sm text-gray-600">Pinjam: {item.pinjam}</p>
+                  <p className="text-sm text-gray-600">
+                    Kembali: {item.kembali}
+                  </p>
+
+                  <span
+                    className={`mt-2 inline-block rounded px-3 py-1 text-xs font-semibold ${
+                      item.status === 'dikembalikan'
+                        ? 'bg-[#DFF3E3] text-[#1E6B3A]'
+                        : 'bg-[#FFD6D6] text-[#7A1F1F]'
+                    }`}
+                  >
+                    {item.status.toUpperCase()}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
