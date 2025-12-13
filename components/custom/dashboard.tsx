@@ -96,7 +96,6 @@ const Dashboard = () => {
           >
             ☰
           </button>
-          <h3 className="text-xl md:text-3xl font-bold tracking-wide">Dashboard</h3>
           <div className="w-8" />
         </div>
 

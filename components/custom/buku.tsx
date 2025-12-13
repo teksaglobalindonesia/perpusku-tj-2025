@@ -67,6 +67,9 @@ const BukuPage = () => {
   const [search, setSearch] = useState("");
   const [showPopup, setShowPopup] = useState(false);
 
+  const [showEditPopup, setShowEditPopup] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<any>(null);
+
   const filteredBooks = books.filter((book) =>
     book.title.toLowerCase().includes(search.toLowerCase())
   );
@@ -86,16 +89,16 @@ const BukuPage = () => {
           ✕
         </button>
 
-        <h2 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-[#D4AF37] tracking-wide">
+        <h2 className="text-3xl font-bold mb-8 text-[#D4AF37]">
           LIBRAVA
         </h2>
 
-        <nav className="flex flex-col gap-2 md:gap-4">
+        <nav className="flex flex-col gap-4">
           {nav_items.map((item) => (
             <Link
               key={item.name}
               href={item.href}
-              className="px-3 py-2 rounded-lg hover:bg-[#D4AF37]/20 text-sm md:text-base transition"
+              className="px-3 py-2 rounded-lg hover:bg-[#D4AF37]/20"
               onClick={() => setOpen(false)}
             >
               {item.name}
@@ -104,113 +107,108 @@ const BukuPage = () => {
         </nav>
       </aside>
 
-      {open && (
-        <div
-          className="fixed inset-0 bg-black/40 md:hidden z-20"
-          onClick={() => setOpen(false)}
-        />
-      )}
-
-      <main className="ml-0 md:ml-64 p-4 sm:p-6 w-full">
-
-        <div className="flex items-center justify-between mb-4 md:hidden">
-          <button
-            className="p-2 bg-[#D4AF37] text-black rounded-lg font-semibold active:scale-95"
-            onClick={() => setOpen(true)}
-          >
-            ☰
-          </button>
-          <h3 className="text-xl md:text-3xl font-bold tracking-wide">Dashboard</h3>
-          <div className="w-8" />
-        </div>
-
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 sm:mb-8 gap-3">
-
-          <h3 className="text-2xl sm:text-3xl font-bold text-[#D4AF37]">
+      <main className="ml-0 md:ml-64 p-6 w-full">
+        <div className="flex justify-between mb-6">
+          <h3 className="text-3xl font-bold text-[#D4AF37]">
             Data Buku
           </h3>
 
-          <div className="flex w-full sm:w-auto gap-2 sm:gap-3">
+          <div className="flex gap-3">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="bg-black border border-[#D4AF37]/40 text-white rounded-full 
-              p-2 sm:p-3 text-sm sm:text-base w-full sm:w-80 focus:ring-2 focus:ring-[#D4AF37]"
-              type="text"
+              className="bg-black border border-[#D4AF37]/40 rounded-full px-4"
               placeholder="Cari buku..."
             />
-
             <button
               onClick={() => setShowPopup(true)}
-              className="px-4 py-2 sm:px-5 sm:py-3 bg-[#D4AF37] text-black rounded-full 
-              text-sm sm:text-base font-semibold hover:bg-[#b6912c] transition"
+              className="bg-[#D4AF37] text-black px-5 py-2 rounded-full font-semibold"
             >
               + Tambah
             </button>
           </div>
         </div>
 
-        {filteredBooks.length === 0 ? (
-          <p className="text-center text-gray-400 text-sm sm:text-lg mt-10">
-            Maaf, buku tidak ditemukan.
-          </p>
-        ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
-            {filteredBooks.map((item) => (
-              <div
-                key={item.id}
-                className="bg-[#222] border border-[#D4AF37]/40 
-                p-3 sm:p-5 rounded-2xl"
-              >
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  className="w-full h-36 sm:h-56 object-cover rounded-xl 
-                  mb-3 sm:mb-4 border border-[#D4AF37]/30"
-                />
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredBooks.map((item) => (
+            <div
+              key={item.id}
+              className="bg-[#222] border border-[#D4AF37]/40 p-5 rounded-2xl"
+            >
+              <img
+                src={item.image}
+                className="w-full h-48 object-cover rounded-xl mb-4"
+              />
 
-                <h3 className="font-bold text-base sm:text-xl text-[#D4AF37] leading-tight">
-                  {item.title}
-                </h3>
+              <h3 className="font-bold text-xl text-[#D4AF37]">
+                {item.title}
+              </h3>
 
-                <p className="text-gray-300 text-xs sm:text-sm">Penulis: {item.author}</p>
-                <p className="text-gray-300 text-xs sm:text-sm">Kategori: {item.category}</p>
-                <p className="text-gray-300 text-xs sm:text-sm">Stok: {item.stock}</p>
+              <p className="text-sm">Penulis: {item.author}</p>
+              <p className="text-sm">Kategori: {item.category}</p>
+              <p className="text-sm">Stok: {item.stock}</p>
 
-                <div className="flex justify-between mt-3 sm:mt-4">
-                  <button className="px-2 py-1 sm:px-3 sm:py-2 bg-[#D4AF37] text-black 
-                  text-xs sm:text-sm font-semibold rounded-lg">
-                    Edit
-                  </button>
+              <div className="flex justify-between mt-4">
+                <button
+                  onClick={() => {
+                    setSelectedBook(item);
+                    setShowEditPopup(true);
+                  }}
+                  className="bg-[#D4AF37] text-black px-3 py-2 rounded-lg"
+                >
+                  Edit
+                </button>
 
-                  <button className="px-2 py-1 sm:px-3 sm:py-2 bg-red-600 text-white 
-                  text-xs sm:text-sm font-semibold rounded-lg">
-                    Hapus
-                  </button>
-                </div>
+                <button className="bg-red-600 px-3 py-2 rounded-lg">
+                  Hapus
+                </button>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          ))}
+        </div>
       </main>
 
       {showPopup && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-          <div className="bg-[#222] border border-[#D4AF37]/40 
-          p-5 sm:p-8 rounded-2xl w-full max-w-xs sm:max-w-md">
-
-            <h2 className="text-xl sm:text-2xl font-bold text-[#D4AF37] mb-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-[#222] p-6 rounded-2xl w-full max-w-md">
+            <h2 className="text-2xl font-bold text-[#D4AF37] mb-4">
               Tambah Buku
             </h2>
 
-            <div className="flex flex-col space-y-2 sm:space-y-3">
-              <input className="p-2 sm:p-3 rounded-lg bg-black border border-[#D4AF37]/40 text-white text-sm" placeholder="Judul Buku" />
-              <input className="p-2 sm:p-3 rounded-lg bg-black border border-[#D4AF37]/40 text-white text-sm" placeholder="Penulis" />
-              <input className="p-2 sm:p-3 rounded-lg bg-black border border-[#D4AF37]/40 text-white text-sm" placeholder="Penerbit" />
-              <input className="p-2 sm:p-3 rounded-lg bg-black border border-[#D4AF37]/40 text-white text-sm" placeholder="Tahun Terbit" />
+            <div className="flex flex-col space-y-3">
+              <input className="p-3 bg-black border border-[#D4AF37]/40 rounded-lg" placeholder="Judul Buku" />
+              <input className="p-3 bg-black border border-[#D4AF37]/40 rounded-lg" placeholder="Penulis" />
+              <input className="p-3 bg-black border border-[#D4AF37]/40 rounded-lg" placeholder="Penerbit" />
+              <input className="p-3 bg-black border border-[#D4AF37]/40 rounded-lg" placeholder="Tahun Terbit" />
+              <input type="number" className="p-3 bg-black border border-[#D4AF37]/40 rounded-lg" placeholder="Stok" />
+            </div>
 
-              <select className="p-2 sm:p-3 rounded-lg bg-black border border-[#D4AF37]/40 text-white text-sm">
-                <option>Pilih Kategori</option>
+            <div className="flex justify-end gap-3 mt-5">
+              <button
+                onClick={() => setShowPopup(false)}
+                className="bg-gray-500 px-4 py-2 rounded-lg"
+              >
+                Batal
+              </button>
+              <button className="bg-[#D4AF37] text-black px-4 py-2 rounded-lg">
+                Simpan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditPopup && selectedBook && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-[#222] p-6 rounded-2xl w-full max-w-md">
+            <h2 className="text-2xl font-bold text-[#D4AF37] mb-4">
+              Edit Buku
+            </h2>
+
+            <div className="flex flex-col space-y-3">
+              <input defaultValue={selectedBook.title} className="p-3 bg-black border border-[#D4AF37]/40 rounded-lg" />
+              <input defaultValue={selectedBook.author} className="p-3 bg-black border border-[#D4AF37]/40 rounded-lg" />
+              <select defaultValue={selectedBook.category} className="p-3 bg-black border border-[#D4AF37]/40 rounded-lg">
                 <option>Anak-anak</option>
                 <option>Edukasi</option>
                 <option>Fiksi</option>
@@ -218,22 +216,20 @@ const BukuPage = () => {
                 <option>Ilmu Pengetahuan</option>
                 <option>Puisi</option>
               </select>
-
-              <input type="number" className="p-2 sm:p-3 rounded-lg bg-black border border-[#D4AF37]/40 text-white text-sm" placeholder="Jumlah Stok" />
+              <input type="number" defaultValue={selectedBook.stock} className="p-3 bg-black border border-[#D4AF37]/40 rounded-lg" />
             </div>
 
-            <div className="flex justify-end gap-2 sm:gap-3 mt-5">
+            <div className="flex justify-end gap-3 mt-5">
               <button
-                onClick={() => setShowPopup(false)}
-                className="px-3 sm:px-4 py-2 bg-gray-500 rounded-lg text-sm hover:bg-gray-600"
+                onClick={() => setShowEditPopup(false)}
+                className="bg-gray-500 px-4 py-2 rounded-lg"
               >
                 Batal
               </button>
-              <button className="px-3 sm:px-4 py-2 bg-[#D4AF37] text-black font-semibold rounded-lg text-sm">
+              <button className="bg-[#D4AF37] text-black px-4 py-2 rounded-lg">
                 Simpan
               </button>
             </div>
-
           </div>
         </div>
       )}
