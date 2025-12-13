@@ -66,8 +66,8 @@ const BukuPage = () => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [showPopup, setShowPopup] = useState(false);
-
   const [showEditPopup, setShowEditPopup] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedBook, setSelectedBook] = useState<any>(null);
 
   const filteredBooks = books.filter((book) =>
@@ -75,23 +75,21 @@ const BukuPage = () => {
   );
 
   return (
-    <div className="flex bg-[#111] text-white font-sans min-h-screen">
-
+    <div className="flex bg-[#111] text-white min-h-screen">
+      {/* SIDEBAR */}
       <aside
-        className={`fixed top-0 left-0 h-screen w-64 bg-[#111] border-r border-[#D4AF37]/40 p-4 md:p-6 z-30
-        transform transition-transform duration-300 
+        className={`fixed top-0 left-0 h-screen w-64 bg-[#111] border-r border-[#D4AF37]/40 p-4 z-30
+        transform transition-transform duration-300
         ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
       >
         <button
-          className="md:hidden absolute top-3 right-3 text-white text-2xl font-bold"
+          className="md:hidden absolute top-3 right-3 text-2xl"
           onClick={() => setOpen(false)}
         >
           ✕
         </button>
 
-        <h2 className="text-3xl font-bold mb-8 text-[#D4AF37]">
-          LIBRAVA
-        </h2>
+        <h2 className="text-3xl font-bold mb-8 text-[#D4AF37]">LIBRAVA</h2>
 
         <nav className="flex flex-col gap-4">
           {nav_items.map((item) => (
@@ -107,11 +105,10 @@ const BukuPage = () => {
         </nav>
       </aside>
 
+      {/* MAIN */}
       <main className="ml-0 md:ml-64 p-6 w-full">
         <div className="flex justify-between mb-6">
-          <h3 className="text-3xl font-bold text-[#D4AF37]">
-            Data Buku
-          </h3>
+          <h3 className="text-3xl font-bold text-[#D4AF37]">Data Buku</h3>
 
           <div className="flex gap-3">
             <input
@@ -159,7 +156,14 @@ const BukuPage = () => {
                   Edit
                 </button>
 
-                <button className="bg-red-600 px-3 py-2 rounded-lg">
+                {/* HAPUS DI CARD */}
+                <button
+                  onClick={() => {
+                    setSelectedBook(item);
+                    setShowDeleteConfirm(true);
+                  }}
+                  className="bg-red-600 px-3 py-2 rounded-lg"
+                >
                   Hapus
                 </button>
               </div>
@@ -168,6 +172,7 @@ const BukuPage = () => {
         </div>
       </main>
 
+      {/* POPUP TAMBAH */}
       {showPopup && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <div className="bg-[#222] p-6 rounded-2xl w-full max-w-md">
@@ -178,8 +183,6 @@ const BukuPage = () => {
             <div className="flex flex-col space-y-3">
               <input className="p-3 bg-black border border-[#D4AF37]/40 rounded-lg" placeholder="Judul Buku" />
               <input className="p-3 bg-black border border-[#D4AF37]/40 rounded-lg" placeholder="Penulis" />
-              <input className="p-3 bg-black border border-[#D4AF37]/40 rounded-lg" placeholder="Penerbit" />
-              <input className="p-3 bg-black border border-[#D4AF37]/40 rounded-lg" placeholder="Tahun Terbit" />
               <input type="number" className="p-3 bg-black border border-[#D4AF37]/40 rounded-lg" placeholder="Stok" />
             </div>
 
@@ -198,6 +201,7 @@ const BukuPage = () => {
         </div>
       )}
 
+      {/* POPUP EDIT */}
       {showEditPopup && selectedBook && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <div className="bg-[#222] p-6 rounded-2xl w-full max-w-md">
@@ -219,15 +223,59 @@ const BukuPage = () => {
               <input type="number" defaultValue={selectedBook.stock} className="p-3 bg-black border border-[#D4AF37]/40 rounded-lg" />
             </div>
 
-            <div className="flex justify-end gap-3 mt-5">
+            <div className="flex justify-between mt-5">
               <button
-                onClick={() => setShowEditPopup(false)}
+                onClick={() => setShowDeleteConfirm(true)}
+                className="bg-red-600 px-4 py-2 rounded-lg"
+              >
+                Hapus
+              </button>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowEditPopup(false)}
+                  className="bg-gray-500 px-4 py-2 rounded-lg"
+                >
+                  Batal
+                </button>
+                <button className="bg-[#D4AF37] text-black px-4 py-2 rounded-lg">
+                  Simpan
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* KONFIRMASI HAPUS */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-[#222] p-6 rounded-2xl w-full max-w-sm text-center border border-red-500/40">
+            <h3 className="text-xl font-bold text-red-500 mb-4">
+              Konfirmasi Hapus
+            </h3>
+
+            <p className="mb-6">
+              Apakah anda yakin untuk menghapus ini?
+            </p>
+
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
                 className="bg-gray-500 px-4 py-2 rounded-lg"
               >
-                Batal
+                Tidak
               </button>
-              <button className="bg-[#D4AF37] text-black px-4 py-2 rounded-lg">
-                Simpan
+
+              <button
+                onClick={() => {
+                  console.log("Hapus buku:", selectedBook);
+                  setShowDeleteConfirm(false);
+                  setShowEditPopup(false);
+                }}
+                className="bg-red-600 px-4 py-2 rounded-lg"
+              >
+                Iya
               </button>
             </div>
           </div>
