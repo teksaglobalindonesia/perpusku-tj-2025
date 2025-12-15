@@ -5,6 +5,73 @@ import { useState } from 'react';
 export default function PeminjamanPage() {
   const [search, setSearch] = useState('');
   const [showTambah, setShowTambah] = useState(false);
+  const [showPilihBuku, setShowPilihBuku] = useState(false);
+  const [selectedBuku, setSelectedBuku] = useState<any>(null);
+  const [showPilihAnggota, setShowPilihAnggota] = useState(false);
+  const [selectedAnggota, setSelectedAnggota] = useState<any>(null);
+
+  const anggota = [
+    {
+      id: 1,
+      nama: 'Rina Putri',
+      nomor: 'AG001',
+      alamat: 'Jakarta Selatan',
+      email: 'rina@gmail.com'
+    },
+    {
+      id: 2,
+      nama: 'Bagas Pratama',
+      nomor: 'AG002',
+      alamat: 'Bandung',
+      email: 'bagas@gmail.com'
+    },
+    {
+      id: 3,
+      nama: 'Siti Marlina',
+      nomor: 'AG003',
+      alamat: 'Depok',
+      email: 'siti@gmail.com'
+    }
+  ];
+
+  const buku = [
+    {
+      judul: 'Narasi Perihal Ayah',
+      kategori: 'Family Fiction',
+      penulis: 'Jaquenza Eden',
+      penerbit: 'Gramedia',
+      tahun: '2022',
+      stok: 0,
+      cover: '/images/narasi-perihal-ayah.jpeg'
+    },
+    {
+      judul: 'Laut Bercerita',
+      kategori: 'Historical Fiction',
+      penulis: 'Leila S. Chudori',
+      penerbit: 'Gramedia',
+      tahun: '2017',
+      stok: 12,
+      cover: '/images/laut-bercerita.jpg'
+    },
+    {
+      judul: 'Bandung After Rain',
+      kategori: 'Romance',
+      penulis: 'Wulan Nur Amalia',
+      penerbit: 'Ice Cube',
+      tahun: '2021',
+      stok: 10,
+      cover: '/images/bandung-after-rain.jpeg'
+    },
+    {
+      judul: 'Sisi Tergelap Surga',
+      kategori: 'Fiksi',
+      penulis: 'Brian Khrisna',
+      penerbit: 'Mediakita',
+      tahun: '2020',
+      stok: 20,
+      cover: '/images/sisi-tergelap-surga.jpeg'
+    }
+  ];
 
   const peminjamanData = [
     {
@@ -90,9 +157,9 @@ export default function PeminjamanPage() {
                 )}
               </div>
 
-              <button className="rounded-lg bg-green-600 px-4 py-2 text-xs font-medium text-white hover:bg-green-700">
+              <span className="rounded-lg bg-green-600 px-4 py-2 text-xs font-medium text-white hover:bg-green-700">
                 KEMBALIKAN
-              </button>
+              </span>
             </div>
           </div>
         ))}
@@ -104,7 +171,7 @@ export default function PeminjamanPage() {
         </p>
       )}
 
-      {/* ================= POPUP TAMBAH PEMINJAMAN (STYLE DISAMAKAN) ================= */}
+      {/* POPUP TAMBAH PEMINJAMAN */}
       {showTambah && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="flex w-full max-w-[430px] flex-col rounded-xl bg-white shadow-lg md:max-w-[500px]">
@@ -121,24 +188,26 @@ export default function PeminjamanPage() {
                 <label className="mb-1 block font-medium text-gray-700">
                   Buku
                 </label>
-                <select className="w-full rounded-lg border p-2 focus:outline-green-600">
-                  <option>Pilih Buku</option>
-                  <option>Narasi Perihal Ayah</option>
-                  <option>Laut Bercerita</option>
-                  <option>Sisi Tergelap Surga</option>
-                </select>
-              </div>
 
+                <button
+                  type="button"
+                  onClick={() => setShowPilihBuku(true)}
+                  className="w-full rounded-lg border p-2 text-left hover:border-green-600"
+                >
+                  {selectedBuku ? selectedBuku.judul : 'Pilih Buku'}
+                </button>
+              </div>
               <div>
                 <label className="mb-1 block font-medium text-gray-700">
                   Anggota
                 </label>
-                <select className="w-full rounded-lg border p-2 focus:outline-green-600">
-                  <option>Pilih Anggota</option>
-                  <option>Rina Putri</option>
-                  <option>Bagas Pratama</option>
-                  <option>Siti Marlina</option>
-                </select>
+                <button
+                  type="button"
+                  onClick={() => setShowPilihAnggota(true)}
+                  className="w-full rounded-lg border p-2 text-left hover:border-green-600"
+                >
+                  {selectedAnggota ? selectedAnggota.nama : 'Pilih Anggota'}
+                </button>
               </div>
 
               <div>
@@ -153,12 +222,13 @@ export default function PeminjamanPage() {
 
               <div>
                 <label className="mb-1 block font-medium text-gray-700">
-                  Tanggal Pengembalian
+                  Durasi Pengembalian
                 </label>
-                <input
-                  type="date"
-                  className="w-full rounded-lg border p-2 focus:outline-green-600"
-                />
+                <select className="w-full rounded-lg border p-2 focus:outline-green-600">
+                  <option value="7">1 Minggu</option>
+                  <option value="14">2 Minggu</option>
+                  <option value="30">1 Bulan (30 Hari)</option>
+                </select>
               </div>
             </div>
 
@@ -175,6 +245,121 @@ export default function PeminjamanPage() {
                 className="rounded-lg bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700"
               >
                 Simpan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPilihBuku && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-[520px] rounded-xl bg-white shadow-lg">
+            {/* HEADER */}
+            <div className="border-b px-5 py-3">
+              <h3 className="text-lg font-bold text-green-700">Pilih Buku</h3>
+            </div>
+
+            {/* LIST BUKU */}
+            <div className="max-h-[60vh] space-y-4 overflow-y-auto px-5 py-4">
+              {buku.map((b, i) => (
+                <button
+                  key={i}
+                  disabled={b.stok === 0}
+                  onClick={() => {
+                    setSelectedBuku(b);
+                    setShowPilihBuku(false);
+                  }}
+                  className={`flex w-full gap-4 rounded-xl border p-3 text-left transition
+                    ${
+                      b.stok === 0
+                        ? 'cursor-not-allowed opacity-50'
+                        : 'hover:border-green-600'
+                    }`}
+                >
+                  <img
+                    src={b.cover}
+                    alt={b.judul}
+                    className="h-20 w-14 rounded-lg object-cover"
+                  />
+
+                  <div className="flex-1 text-sm">
+                    <h4 className="font-semibold text-gray-800">{b.judul}</h4>
+                    <p className="text-xs text-gray-600">
+                      Penulis: {b.penulis}
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      Penerbit: {b.penerbit}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Tahun: {b.tahun} • {b.kategori}
+                    </p>
+
+                    <span
+                      className={`mt-2 inline-block rounded-full px-3 py-1 text-xs
+                        ${
+                          b.stok === 0
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-green-100 text-green-700'
+                        }`}
+                    >
+                      {b.stok === 0 ? 'Stok Habis' : `Stok: ${b.stok}`}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* FOOTER */}
+            <div className="flex justify-end border-t px-5 py-3">
+              <button
+                onClick={() => setShowPilihBuku(false)}
+                className="rounded-lg bg-gray-200 px-4 py-2 text-sm"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPilihAnggota && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-[520px] rounded-xl bg-white shadow-lg">
+            {/* HEADER */}
+            <div className="border-b px-5 py-3">
+              <h3 className="text-lg font-bold text-green-700">
+                Pilih Anggota
+              </h3>
+            </div>
+
+            {/* LIST ANGGOTA */}
+            <div className="max-h-[60vh] space-y-3 overflow-y-auto px-5 py-4">
+              {anggota.map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => {
+                    setSelectedAnggota(a);
+                    setShowPilihAnggota(false);
+                  }}
+                  className="w-full rounded-xl border p-3 text-left transition hover:border-green-600"
+                >
+                  <h4 className="font-semibold text-gray-800">{a.nama}</h4>
+                  <p className="text-xs text-gray-600">
+                    No. Anggota: {a.nomor}
+                  </p>
+                  <p className="text-xs text-gray-500">Alamat: {a.alamat}</p>
+                  <p className="text-xs text-gray-500">Email: {a.email}</p>
+                </button>
+              ))}
+            </div>
+
+            {/* FOOTER */}
+            <div className="flex justify-end border-t px-5 py-3">
+              <button
+                onClick={() => setShowPilihAnggota(false)}
+                className="rounded-lg bg-gray-200 px-4 py-2 text-sm"
+              >
+                Tutup
               </button>
             </div>
           </div>
