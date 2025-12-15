@@ -42,26 +42,60 @@ export default function AnggotaPage() {
       email: 'siti@gmail.com'
     }
   ];
-  const peminjamanData = [
-    {
-      id: 1,
-      judul: 'Narasi Perihal Ayah',
-      penulis: 'Jaquenza Eden',
-      kategori: 'Family Fiction',
-      pinjam: '2025-12-01',
-      kembali: '2025-12-05',
-      status: 'dikembalikan'
-    },
-    {
-      id: 2,
-      judul: 'Laut Bercerita',
-      penulis: 'Leila S. Chudori',
-      kategori: 'Historical Fiction',
-      pinjam: '2025-12-02',
-      kembali: '2025-12-06',
-      status: 'terlambat'
-    }
-  ];
+
+  const peminjamanData: Record<number, any[]> = {
+    1: [
+      {
+        id: 1,
+        judul: 'Laut Bercerita',
+        penulis: 'Leila S. Chudori',
+        kategori: 'Historical Fiction',
+        pinjam: '2025-12-01',
+        kembali: '-',
+        status: 'dipinjam'
+      },
+      {
+        id: 2,
+        judul: 'Narasi Perihal Ayah',
+        penulis: 'Jaquenza Eden',
+        kategori: 'Family Fiction',
+        pinjam: '2025-11-20',
+        kembali: '2025-11-25',
+        status: 'dikembalikan'
+      }
+    ],
+    2: [
+      {
+        id: 1,
+        judul: 'Laut Bercerita',
+        penulis: 'Leila S. Chudori',
+        kategori: 'Historical Fiction',
+        pinjam: '2025-11-25',
+        kembali: '-',
+        status: 'terlambat'
+      }
+    ],
+    3: [
+      {
+        id: 1,
+        judul: 'Narasi Perihal Ayah',
+        penulis: 'Jaquenza Eden',
+        kategori: 'Family Fiction',
+        pinjam: '2025-11-15',
+        kembali: '-',
+        status: 'terlambat'
+      },
+      {
+        id: 2,
+        judul: 'Laut Bercerita',
+        penulis: 'Leila S. Chudori',
+        kategori: 'Historical Fiction',
+        pinjam: '2025-11-10',
+        kembali: '2025-11-17',
+        status: 'dikembalikan'
+      }
+    ]
+  };
 
   const filtered = anggotaData.filter((a) =>
     a.nama.toLowerCase().includes(search.toLowerCase())
@@ -94,7 +128,7 @@ export default function AnggotaPage() {
         {filtered.map((item) => (
           <div
             key={item.id}
-            className="flex flex-col rounded-xl border border-green-300 bg-white p-4 shadow-sm"
+            className="flex flex-col rounded-xl border bg-white p-4 shadow-sm"
           >
             <h2 className="mb-1 text-xl font-bold text-green-800">
               {item.nama}
@@ -104,7 +138,6 @@ export default function AnggotaPage() {
             <p className="mb-4 text-gray-500">Email: {item.email}</p>
 
             <div className="mt-auto flex items-center gap-3">
-              {/* SOFT BLUE */}
               <button
                 onClick={() => {
                   setSelectedAnggota(item);
@@ -114,8 +147,6 @@ export default function AnggotaPage() {
               >
                 Lihat Peminjaman
               </button>
-
-              {/* SOFT YELLOW */}
               <button
                 onClick={() => {
                   setSelectedAnggota(item);
@@ -125,8 +156,6 @@ export default function AnggotaPage() {
               >
                 Edit
               </button>
-
-              {/* SOFT RED (OPEN DELETE POPUP) */}
               <button
                 onClick={() => {
                   setAnggotaToDelete(item);
@@ -140,6 +169,13 @@ export default function AnggotaPage() {
           </div>
         ))}
       </div>
+
+      {/* DATA KOSONG */}
+      {filtered.length === 0 && (
+        <p className="mt-10 text-center text-gray-600">
+          Anggota tidak ditemukan.
+        </p>
+      )}
 
       {/* POPUP TAMBAH */}
       {showAdd && (
@@ -356,28 +392,38 @@ export default function AnggotaPage() {
             </div>
 
             <div className="space-y-4 px-6 py-5">
-              {peminjamanData.map((item) => (
-                <div key={item.id} className="rounded-lg border p-4">
-                  <h3 className="font-semibold">{item.judul}</h3>
-                  <p className="text-sm text-gray-600">
-                    {item.penulis} • {item.kategori}
-                  </p>
-                  <p className="text-sm text-gray-600">Pinjam: {item.pinjam}</p>
-                  <p className="text-sm text-gray-600">
-                    Kembali: {item.kembali}
-                  </p>
+              {(peminjamanData[selectedAnggota.id] || []).length === 0 ? (
+                <p className="text-center text-sm text-gray-500">
+                  Belum ada data peminjaman
+                </p>
+              ) : (
+                peminjamanData[selectedAnggota.id].map((item) => (
+                  <div key={item.id} className="rounded-lg border p-4">
+                    <h3 className="font-semibold">{item.judul}</h3>
+                    <p className="text-sm text-gray-600">
+                      {item.penulis} • {item.kategori}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Pinjam: {item.pinjam}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Kembali: {item.kembali}
+                    </p>
 
-                  <span
-                    className={`mt-2 inline-block rounded px-3 py-1 text-xs font-semibold ${
-                      item.status === 'dikembalikan'
-                        ? 'bg-[#DFF3E3] text-[#1E6B3A]'
-                        : 'bg-[#FFD6D6] text-[#7A1F1F]'
-                    }`}
-                  >
-                    {item.status.toUpperCase()}
-                  </span>
-                </div>
-              ))}
+                    <span
+                      className={`mt-2 inline-block rounded px-3 py-1 text-xs font-semibold ${
+                        item.status === 'dikembalikan'
+                          ? 'bg-[#DFF3E3] text-[#1E6B3A]'
+                          : item.status === 'dipinjam'
+                          ? 'bg-[#E0ECFF] text-[#1E4A7B]'
+                          : 'bg-[#FFD6D6] text-[#7A1F1F]'
+                      }`}
+                    >
+                      {item.status.toUpperCase()}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

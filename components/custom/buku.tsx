@@ -109,7 +109,6 @@ export default function BukuPage() {
     setPreviewEditCover(url);
   };
 
-  // belum ada API → cuma close
   const saveEdit = () => {
     closeEditModal();
   };
@@ -128,7 +127,6 @@ export default function BukuPage() {
     setShowDeleteModal(false);
   };
 
-  // belum API → cuma close modal
   const confirmDelete = () => {
     closeDeleteModal();
   };
@@ -209,7 +207,6 @@ export default function BukuPage() {
               </div>
             </div>
 
-            {/* TOMBOL — SELALU DI BAWAH */}
             <div className="mt-auto flex justify-between pt-3">
               <button
                 onClick={() => openEditModal(b)}
@@ -239,7 +236,7 @@ export default function BukuPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="flex max-h-[85vh] w-full max-w-[430px] flex-col rounded-xl bg-white shadow-lg md:max-w-[500px]">
             <div className="border-b px-5 py-3">
-              <h2 className="text-base font-semibold text-gray-800">
+              <h2 className="text-base font-semibold text-green-700">
                 Tambah Buku
               </h2>
             </div>
