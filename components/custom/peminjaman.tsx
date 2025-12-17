@@ -9,6 +9,8 @@ export default function PeminjamanPage() {
   const [selectedBuku, setSelectedBuku] = useState<any>(null);
   const [showPilihAnggota, setShowPilihAnggota] = useState(false);
   const [selectedAnggota, setSelectedAnggota] = useState<any>(null);
+  const [showKembalikan, setShowKembalikan] = useState(false);
+  const [selectedPeminjaman, setSelectedPeminjaman] = useState<any>(null);
 
   const anggota = [
     {
@@ -157,9 +159,15 @@ export default function PeminjamanPage() {
                 )}
               </div>
 
-              <span className="rounded-lg bg-green-600 px-4 py-2 text-xs font-medium text-white hover:bg-green-700">
+              <button
+                onClick={() => {
+                  setSelectedPeminjaman(item);
+                  setShowKembalikan(true);
+                }}
+                className="flex w-full items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-center text-xs font-medium text-white hover:bg-green-700 sm:w-auto"
+              >
                 KEMBALIKAN
-              </span>
+              </button>
             </div>
           </div>
         ))}
@@ -360,6 +368,62 @@ export default function PeminjamanPage() {
                 className="rounded-lg bg-gray-200 px-4 py-2 text-sm"
               >
                 Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* POPUP KEMBALIKAN */}
+      {showKembalikan && selectedPeminjaman && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-[380px] rounded-xl bg-white shadow-lg">
+            {/* HEADER */}
+            <div className="border-b px-4 py-3 sm:px-5">
+              <h3 className="text-lg font-bold text-green-700">
+                Konfirmasi Pengembalian
+              </h3>
+            </div>
+
+            {/* BODY */}
+            <div className="space-y-2 px-4 py-4 text-sm sm:px-5">
+              <p className="text-gray-700">
+                Apakah buku berikut ingin dikembalikan?
+              </p>
+
+              <div className="rounded-lg bg-gray-50 p-3 text-sm">
+                <p className="font-semibold text-gray-800">
+                  {selectedPeminjaman.judul}
+                </p>
+                <p className="text-gray-600">
+                  Peminjam: {selectedPeminjaman.peminjam}
+                </p>
+                <p className="text-gray-600">
+                  Tanggal Pinjam: {selectedPeminjaman.pinjam}
+                </p>
+              </div>
+            </div>
+
+            {/* FOOTER */}
+            <div className="flex flex-col gap-2 border-t px-4 py-3 sm:flex-row sm:justify-end sm:px-5">
+              <button
+                onClick={() => {
+                  setShowKembalikan(false);
+                  setSelectedPeminjaman(null);
+                }}
+                className="rounded-lg bg-gray-200 px-4 py-2 text-sm hover:bg-gray-300"
+              >
+                Batal
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowKembalikan(false);
+                  setSelectedPeminjaman(null);
+                }}
+                className="flex w-full items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-center text-sm text-white hover:bg-green-700 sm:w-auto"
+              >
+                Kembalikan
               </button>
             </div>
           </div>

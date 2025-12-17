@@ -137,7 +137,7 @@ export default function AnggotaPage() {
             <p className="text-gray-500">Alamat: {item.alamat}</p>
             <p className="mb-4 text-gray-500">Email: {item.email}</p>
 
-            <div className="mt-auto flex items-center gap-3">
+            <div className="mt-auto flex flex-wrap gap-2 sm:flex-nowrap">
               <button
                 onClick={() => {
                   setSelectedAnggota(item);
@@ -180,7 +180,7 @@ export default function AnggotaPage() {
       {/* POPUP TAMBAH */}
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="flex w-full max-w-[430px] flex-col rounded-xl bg-white shadow-lg md:max-w-[500px]">
+          <div className="flex max-h-[90vh] w-full max-w-[430px] flex-col overflow-y-auto rounded-xl bg-white shadow-lg md:max-w-[500px]">
             <div className="border-b px-5 py-3">
               <h2 className="text-xl font-bold text-green-700">
                 Tambah Anggota
@@ -256,7 +256,7 @@ export default function AnggotaPage() {
       {/* POPUP EDIT */}
       {showEdit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="flex w-full max-w-[430px] flex-col rounded-xl bg-white shadow-lg md:max-w-[500px]">
+          <div className="flex max-h-[90vh] w-full max-w-[430px] flex-col overflow-y-auto rounded-xl bg-white shadow-lg md:max-w-[500px]">
             <div className="border-b px-5 py-3">
               <h2 className="text-xl font-bold text-green-700">Edit Anggota</h2>
             </div>
@@ -380,8 +380,8 @@ export default function AnggotaPage() {
       {/* POPUP LIHAT PEMINJAMAN */}
       {showPeminjaman && selectedAnggota && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-3xl rounded-xl bg-white shadow-lg">
-            <div className="flex items-center justify-between border-b px-6 py-4">
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white shadow-lg">
+            <div className="flex items-center justify-between border-b px-4 py-3 sm:px-6 sm:py-4">
               <div>
                 <h2 className="text-xl font-bold text-green-700">
                   Peminjaman Buku
