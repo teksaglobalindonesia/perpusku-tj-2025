@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FiSearch } from "react-icons/fi";
+import { BASE_URL, TOKEN, MEMBER_NAME} from "../../lib/constant";
 
 const PeminjamanPage = () => {
   const [search, setSearch] = useState("");
@@ -18,77 +19,42 @@ const [selectedMember, setSelectedMember] = useState<any>(null);
 const [newLoanDate, setNewLoanDate] = useState("");
 const [newReturnDate, setNewReturnDate] = useState("");
 
+const [loans, setLoans] = useState<any[]>([]);
+const [books, setBooks] = useState<any[]>([]);
+const [members, setMembers] = useState<any[]>([]);
 
-  // Dummy data peminjaman
-  const loans = [
-    {
-      id: 1,
-      title: "Dr. STONE",
-      borrower: "Ahmad Rizki",
-      loanDate: "2025-12-01",
-      returnDate: "2025-12-15",
-    },
-    {
-      id: 2,
-      title: "Death Note",
-      borrower: "Siti Aisyah",
-      loanDate: "2025-12-01",
-      returnDate: "2025-12-03",
-    },
-    {
-      id: 3,
-      title: "Harry Potter",
-      borrower: "Budi Santoso",
-      loanDate: "2025-11-28",
-      returnDate: "2025-12-01",
-    },
-  ];
 
-  const books = [
-    { id: 1, title: "Dr. STONE", author: "Riichiro Inagaki", publisher: "Shueisha", year: 2017, category: "Komik", stock: 5, cover: "images/dr-stone.jpg" },
-    { id: 2, title: "Death Note", author: "Tsugumi Ohba", publisher: "Shueisha", year: 2003, category: "Komik", stock: 0, cover: "images/death-note.jpg" },
-    { id: 3, title: "How to Win at Chess", author: "Levy Rozman", publisher: "Penguin", year: 2020, category: "Pendidikan", stock: 3, cover: "images/chess-guide.jpg" },
-    { id: 4, title: "Harry Potter", author: "J.K. Rowling", publisher: "Bloomsburry Publishing", year: 2001, category: "Magic", stock: 10, cover: "images/harry-potter.jpg" },
-];
+useEffect(() => {
+  (async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/loan/list`, {
+        method: "GET",
+        headers: {
+          Authorization: TOKEN,
+          "x-member-name": MEMBER_NAME,
+        },
+        cache: "no-store",
+      });
 
-const members = [
-{
-      id: 1,
-      name: "Ahmad Rizki",
-      no_member: "2023001",
-      address: "Kerobokan Kelod",
-      email: "ahmadfahrezi@yahoo.com",
-      status: "Aktif",
-    },
-    {
-      id: 2,
-      name: "Siti Aisyah",
-      no_member: "2023002",
-      address: "jl. taman sari 1",
-      email: "sitiaisyah@outlook.com",
-      status: "Aktif",
-    },
-    {
-      id: 3,
-      name: "Budi Santoso",
-      no_member: "2023003",
-      address: "Kuta Utara",
-      email: "budisantoso@gmail.com",
-      status: "Nonaktif",
-    },
-];
+      const json = await res.json();
+      setLoans(json?.data ?? []);
+    } catch (err) {
+      console.error("Gagal ambil anggota:", err);
+    }
+  })();
+}, []);
 
 
   const today = new Date();
 
-  const filteredLoans = loans.filter((loan) =>
-    loan.title.toLowerCase().includes(search.toLowerCase())
-  );
+const filteredLoans = loans.filter((loan) =>
+  loan.book?.title?.toLowerCase().includes(search.toLowerCase())
+);
 
-  const isLate = (returnDate: string) => {
-    const dueDate = new Date(returnDate);
-    return dueDate < today;
-  };
+
+const isLate = (returnDate: string) => {
+  return new Date(returnDate) < new Date();
+};
 
   const handleReturn = (loan: any) => {
     setSelectedLoan(loan);
@@ -137,13 +103,13 @@ const members = [
               {/* Info */}
               <div className="flex flex-col gap-1">
                 <h2 className="text-sm sm:text-base font-semibold text-gray-800">
-                  {loan.title}
+                  {loan.book?.title}
                 </h2>
 
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] sm:text-xs text-gray-500">
-                  <span>Peminjam: {loan.borrower}</span>
-                  <span>Pinjam: {loan.loanDate}</span>
-                  <span>Kembali: {loan.returnDate}</span>
+                  <span>Peminjam: {loan.member?.name}</span>
+                  <span>Pinjam: {loan.loan_date}</span>
+                  <span>Kembali: {loan.return_date}</span>
                 </div>
 
                 <div className="flex flex-wrap gap-2 mt-2">
@@ -187,11 +153,11 @@ const members = [
             <p className="text-sm text-gray-600 mb-6">
               Yakin ingin mengembalikan buku{" "}
               <span className="font-semibold text-gray-800">
-                {selectedLoan.title}
+                {selectedLoan.book?.title}
               </span>{" "}
               dari{" "}
               <span className="font-semibold text-gray-800">
-                {selectedLoan.borrower}
+                {selectedLoan.member?.name}
               </span>
               ?
             </p>

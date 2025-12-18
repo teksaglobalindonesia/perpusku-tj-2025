@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import gsap from "gsap";
+import { BASE_URL, TOKEN, MEMBER_NAME } from "@/lib/constant";
 
 const Dashboard = () => {
   const headerRef = useRef<HTMLDivElement>(null);
@@ -10,54 +11,51 @@ const Dashboard = () => {
   const bookRef = useRef<HTMLDivElement>(null);
   const activityRef = useRef<HTMLDivElement>(null);
 
-const books = [
-  { id: 1, title: "Dr. STONE", cover: "dr-stone.jpg", stock: 5, status: "Tersedia" },
-  { id: 2, title: "Death Note", cover: "death-note.jpg", stock: 0, status: "Habis" },
-  { id: 3, title: "How to Win at Chess", cover: "chess-guide.jpg", stock: 3, status: "Tersedia" },
-  { id: 4, title: "Harry Potter", cover: "harry-potter.jpg", stock: 10, status: "Tersedia" },
-];
+const [books, setBooks] = useState<any[]>([]);
+const [loans, setLoans] = useState<any[]>([]);
+const [returns, setReturns] = useState<any[]>([]);
 
 
-  const borrowings = [
-    { id: 1, name: "Andi", book: "Death Note", date: "08 Des 2025" },
-    { id: 2, name: "Siti", book: "Hunter X Hunter", date: "08 Des 2025" },
-    { id: 3, name: "Budi", book: "Dr. STONE", date: "08 Des 2025" },
-  ];
+useEffect(() => {
+  (async () => {
+    try {
+      const headers = {
+        
+        Authorization: TOKEN,
+        "x-member-name": MEMBER_NAME,
+      };
 
-  const returns = [
-    { id: 1, name: "Rina", book: "Harry Potter", date: "08 Des 2025" },
-    { id: 2, name: "Tono", book: "How to Win at Chess", date: "08 Des 2025" },
-  ];
+      const [bookRes, loanRes, returnRes] = await Promise.all([
+        fetch(`${BASE_URL}/api/book/list`, { headers, cache: "no-store" }),
+        fetch(`${BASE_URL}/api/loan/list`, { headers, cache: "no-store" }),
+        fetch(`${BASE_URL}/api/return/list`, { headers, cache: "no-store" }),
+      ]);
 
-  useEffect(() => {
-    // Header animation
-    gsap.from(headerRef.current, {
-      y: -30,
-      opacity: 0,
-      duration: 0.8,
-      ease: "power2.out",
-    });
+      const bookJson = await bookRes.json();
+      const loanJson = await loanRes.json();
+      const returnJson = await returnRes.json();
 
-    // Statistik cards
+      setBooks(bookJson?.data ?? []);
+      setLoans(loanJson?.data ?? []);
+      setReturns(returnJson?.data ?? []);
+    } catch (err) {
+      console.error("Dashboard fetch error:", err);
+    }
+  })();
+}, []);
 
-    // Stok buku
-    gsap.from(bookRef.current, {
-      x: -50,
-      opacity: 0,
-      duration: 0.8,
-      delay: 0.6,
-      ease: "power2.out",
-    });
+const today = new Date().toISOString().split("T")[0];
 
-    // Aktivitas
-    gsap.from(activityRef.current, {
-      x: 50,
-      opacity: 0,
-      duration: 0.8,
-      delay: 0.6,
-      ease: "power2.out",
-    });
-  }, []);
+const totalBooks = books.length;
+const availableBooks = books.filter(b => b.stock > 0).length;
+
+const todayLoans = loans.filter(l => l.loan_date === today);
+const todayReturns = returns.filter(
+  r => r.return?.actual_return_date === today
+);
+
+
+;
 
 return (
   <div className="min-h-screen bg-gray-100">
@@ -69,10 +67,10 @@ return (
         className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8"
       >
         {[
-          { title: "Total Buku", value: 120 },
-          { title: "Buku Tersedia", value: 90 },
-          { title: "Dipinjam Hari Ini", value: 15 },
-          { title: "Pengembalian Hari Ini", value: 10 },
+          { title: "Total Buku", value: totalBooks },
+          { title: "Buku Tersedia", value: availableBooks },
+          { title: "Dipinjam Hari Ini", value: todayLoans.length },
+          { title: "Pengembalian Hari Ini", value: todayReturns.length },
         ].map((stat, i) => (
           <div
             key={i}
@@ -113,7 +111,7 @@ return (
                 {/* Cover */}
                 <div className="w-full h-32 sm:h-40 bg-gray-100 rounded-lg overflow-hidden mb-3">
                   <img
-                    src={`/images/${book.cover}`}
+                    src={`${BASE_URL}${book.cover?.url}`}
                     alt={book.title}
                     className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                   />
@@ -160,21 +158,21 @@ return (
             </div>
 
             <div className="space-y-3 sm:space-y-4">
-              {borrowings.map((item) => (
+              {todayLoans.map((item) => (
                 <div
                   key={item.id}
                   className="flex justify-between items-center border-b pb-2 sm:pb-3 last:border-none"
                 >
                   <div>
                     <p className="font-medium text-gray-800 text-xs sm:text-sm">
-                      {item.name}
+                      {item.member?.name}
                     </p>
                     <p className="text-[10px] sm:text-xs text-gray-500">
-                      {item.book}
+                      {item.book?.title}
                     </p>
                   </div>
                   <span className="text-[10px] sm:text-xs text-gray-400">
-                    {item.date}
+                    {item.loan?.loan_date}
                   </span>
                 </div>
               ))}
@@ -203,14 +201,14 @@ return (
                 >
                   <div>
                     <p className="font-medium text-gray-800 text-xs sm:text-sm">
-                      {item.name}
+                      {item.member?.name}
                     </p>
                     <p className="text-[10px] sm:text-xs text-gray-500">
-                      {item.book}
+                      {item.book?.title}
                     </p>
                   </div>
                   <span className="text-[10px] sm:text-xs text-gray-400">
-                    {item.date}
+                    {item.return?.return_date}
                   </span>
                 </div>
               ))}

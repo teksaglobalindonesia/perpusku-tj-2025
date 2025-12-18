@@ -1,50 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FiSearch } from "react-icons/fi";
+import { BASE_URL, TOKEN, MEMBER_NAME } from "@/lib/constant";
+
+
 
 const PengembalianPage = () => {
   const [search, setSearch] = useState("");
+  const [returns, setReturns] = useState<any[]>([]);
+const [books, setBooks] = useState<any[]>([]);
+const [members, setMembers] = useState<any[]>([]);
 
-  // Dummy data pengembalian
-  const returns = [
-    {
-      id: 1,
-      title: "Dr. STONE",
-      borrower: "Ahmad Rizki",
-      loanDate: "2025-12-01",
-      estimatedReturnDate: "2025-12-10",
-      actualReturnDate: "2025-12-12",
-    },
-    {
-      id: 2,
-      title: "Death Note",
-      borrower: "Siti Aisyah",
-      loanDate: "2025-12-01",
-      estimatedReturnDate: "2025-12-05",
-      actualReturnDate: "2025-12-05",
-    },
-    {
-      id: 3,
-      title: "Harry Potter",
-      borrower: "Budi Santoso",
-      loanDate: "2025-11-20",
-      estimatedReturnDate: "2025-11-25",
-      actualReturnDate: "2025-11-30",
-    },
-  ];
+useEffect(() => {
+  (async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/return/list`, {
+        method: "GET",
+        headers: {
+          Authorization: TOKEN,
+          "x-member-name": MEMBER_NAME,
+        },
+        cache: "no-store",
+      });
 
-  // Filter berdasarkan judul buku
-  const filteredReturns = returns.filter((item) =>
-    item.title.toLowerCase().includes(search.toLowerCase())
-  );
+      const json = await res.json();
+      setReturns(json?.data ?? []);
+    } catch (err) {
+      console.error("Gagal ambil pengembalian:", err);
+    }
+  })();
+}, []);
+
+  // Filter Search
+const filteredReturns = returns.filter((item) =>
+  item.book?.title?.toLowerCase().includes(search.toLowerCase())
+);
+
 
   // Cek keterlambatan
-  const isLate = (estimated: string, actual: string) => {
-    const est = new Date(estimated);
-    const act = new Date(actual);
-    return act > est;
-  };
+const isLate = (estimated: string, actual: string) => {
+  return new Date(actual) > new Date(estimated);
+};
+
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 sm:px-6 lg:px-10 py-6 sm:py-8">
@@ -83,14 +81,17 @@ const PengembalianPage = () => {
               {/* Info */}
               <div className="flex flex-col gap-1">
                 <h2 className="text-sm sm:text-base font-semibold text-gray-800">
-                  {item.title}
+                  {item.book?.title}
                 </h2>
 
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] sm:text-xs text-gray-500">
-                  <span>Peminjam: {item.borrower}</span>
-                  <span>Pinjam: {item.loanDate}</span>
-                  <span>Estimasi: {item.estimatedReturnDate}</span>
-                  <span>Dikembalikan: {item.actualReturnDate}</span>
+                  <span>Peminjam: {item.member?.name}</span>
+                  <span>Pinjam: {item.loan_date}</span>
+                  <span>Estimasi: {item.return_date}</span>
+                  <span>
+                     Dikembalikan:{" "}
+                     {item.return?.actual_return_date ?? "-"}
+                  </span>
                 </div>
 
                 <div className="flex flex-wrap gap-2 mt-2">
