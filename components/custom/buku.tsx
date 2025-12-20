@@ -110,22 +110,7 @@ const BukuPage = () => {
     (book.title || "").toString().toLowerCase().includes(search.toLowerCase())
   );
 
-  // buka modal edit — set form sesuai struktur API (categories disimpan sebagai string id)
-  const handleEdit = (book: any) => {
-    setSelectedBook(book);
 
-    setForm({
-      title: book.title || "",
-      writer: book.writer || "",
-      publisher: book.publisher || "",
-      published_year: book.published_year?.toString() || "",
-      stock: String(book.stock ?? ""),
-      cover: (typeof book.cover === "string" ? book.cover : (book.cover?.url ?? book.cover?.data?.attributes?.url ?? "")) || "",
-      categories: book.categories?.[0]?.id?.toString() || "" // store as string
-    });
-
-    setShowEditModal(true);
-  };
 
   const handleDelete = (book: any) => {
     setSelectedBook(book);
@@ -300,9 +285,6 @@ const payload = {
               </div>
 
               <div className="flex justify-end gap-2 mt-4">
-                <button onClick={() => handleEdit(book)} type="button" className="text-xs px-3 py-1 bg-yellow-100 text-yellow-700 rounded">
-                  Edit
-                </button>
                 <button onClick={() => handleDelete(book)} type="button" className="text-xs px-3 py-1 bg-red-100 text-red-600 rounded">
                   Hapus
                 </button>

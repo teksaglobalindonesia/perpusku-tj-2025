@@ -15,9 +15,6 @@ const AnggotaPage = () => {
   const [members, setMembers] = useState<any[]>([]);
 
 
-
-
-
  // GET DATA
 useEffect(() => {
   (async () => {
