@@ -36,15 +36,19 @@ const books = [
 
 export default function BukuPage() {
   const [search, setSearch] = useState("");
-  const [showAdd, setShowAdd] = useState(false);
-  const [showEdit, setShowEdit] = useState(false);
-  const [showDelete, setShowDelete] = useState(false);
-  const [selectedBook, setSelectedBook] = useState<any>(null);
+  const [modal, setModal] = useState<"add" | "edit" | "delete" | null>(null);
+  const [selected, setSelected] = useState<any>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
   const filteredBooks = books.filter((b) =>
     b.title.toLowerCase().includes(search.toLowerCase())
   );
+
+  const closeModal = () => {
+    setModal(null);
+    setSelected(null);
+    setPreview(null);
+  };
 
   const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -52,15 +56,15 @@ export default function BukuPage() {
   };
 
   return (
-    <div className="flex bg-[#111] text-white min-h-screen">
-      <aside className="fixed top-0 left-0 h-screen w-64 bg-[#111] border-r border-[#D4AF37]/40 p-4">
-        <h2 className="text-3xl font-bold mb-8 text-[#D4AF37]">LIBRAVA</h2>
-        <nav className="flex flex-col gap-4">
+    <div className="flex min-h-screen bg-[#111] text-white">
+      <aside className="fixed left-0 top-0 h-screen w-64 border-r border-[#D4AF37]/40 bg-[#111] p-5">
+        <h2 className="mb-10 text-3xl font-bold text-[#D4AF37]">LIBRAVA</h2>
+        <nav className="flex flex-col gap-3">
           {nav_items.map((item) => (
             <Link
               key={item.name}
               href={item.href}
-              className="px-3 py-2 rounded-lg hover:bg-[#D4AF37]/20"
+              className="rounded-lg px-4 py-2 hover:bg-[#D4AF37]/20"
             >
               {item.name}
             </Link>
@@ -68,68 +72,62 @@ export default function BukuPage() {
         </nav>
       </aside>
 
-      <main className="ml-64 p-6 w-full">
-        <div className="flex justify-between mb-6">
+      <main className="ml-64 w-full p-8">
+        <div className="mb-8 flex items-center justify-between">
           <h3 className="text-3xl font-bold text-[#D4AF37]">Data Buku</h3>
-
           <div className="flex gap-3">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="bg-black border border-[#D4AF37]/40 rounded-full px-4"
               placeholder="Cari buku..."
+              className="rounded-full border border-[#D4AF37]/40 bg-black px-4 py-2 text-sm"
             />
             <button
-              onClick={() => {
-                setSelectedBook(null);
-                setPreview(null);
-                setShowAdd(true);
-              }}
-              className="bg-[#D4AF37] text-black px-5 py-2 rounded-full font-semibold"
+              onClick={() => setModal("add")}
+              className="rounded-full bg-[#D4AF37] px-6 py-2 font-semibold text-black"
             >
               + Tambah
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredBooks.map((item) => (
             <div
               key={item.id}
-              className="bg-[#222] border border-[#D4AF37]/40 p-5 rounded-2xl"
+              className="rounded-2xl border border-[#D4AF37]/30 bg-[#1c1c1c] p-5"
             >
               <img
                 src={item.image}
-                className="w-full h-48 object-cover rounded-xl mb-4"
+                className="mb-4 h-48 w-full rounded-xl object-cover"
               />
 
-              <h3 className="font-bold text-xl text-[#D4AF37]">
+              <h3 className="mb-1 text-xl font-bold text-[#D4AF37]">
                 {item.title}
               </h3>
-
               <p className="text-sm">Penulis: {item.author}</p>
               <p className="text-sm">Penerbit: {item.publisher}</p>
               <p className="text-sm">Tahun: {item.year}</p>
               <p className="text-sm">Kategori: {item.category}</p>
               <p className="text-sm">Stok: {item.stock}</p>
 
-              <div className="flex justify-between mt-4">
+              <div className="mt-4 grid grid-cols-2 gap-2">
                 <button
                   onClick={() => {
-                    setSelectedBook(item);
+                    setSelected(item);
                     setPreview(item.image);
-                    setShowEdit(true);
+                    setModal("edit");
                   }}
-                  className="bg-[#D4AF37] text-black px-3 py-2 rounded-lg"
+                  className="rounded-lg bg-[#D4AF37] py-2 text-black"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => {
-                    setSelectedBook(item);
-                    setShowDelete(true);
+                    setSelected(item);
+                    setModal("delete");
                   }}
-                  className="bg-red-600 px-3 py-2 rounded-lg"
+                  className="rounded-lg bg-red-600 py-2"
                 >
                   Hapus
                 </button>
@@ -139,63 +137,60 @@ export default function BukuPage() {
         </div>
       </main>
 
-      {(showAdd || showEdit) && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-[#222] p-6 rounded-2xl w-full max-w-md">
-            <h2 className="text-2xl font-bold text-[#D4AF37] mb-4">
-              {showAdd ? "Tambah Buku" : "Edit Buku"}
-            </h2>
+      {modal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+          <div className="w-full max-w-md rounded-2xl bg-[#222] p-6">
+            {(modal === "add" || modal === "edit") && (
+              <>
+                <h2 className="mb-4 text-2xl font-bold text-[#D4AF37]">
+                  {modal === "add" ? "Tambah Buku" : "Edit Buku"}
+                </h2>
 
-            <div className="space-y-3">
-              <input defaultValue={selectedBook?.title || ""} placeholder="Judul Buku" className="w-full p-3 bg-black border border-[#D4AF37]/40 rounded-lg" />
-              <input defaultValue={selectedBook?.author || ""} placeholder="Penulis" className="w-full p-3 bg-black border border-[#D4AF37]/40 rounded-lg" />
-              <input defaultValue={selectedBook?.publisher || ""} placeholder="Penerbit" className="w-full p-3 bg-black border border-[#D4AF37]/40 rounded-lg" />
-              <input type="number" defaultValue={selectedBook?.year || ""} placeholder="Tahun Terbit" className="w-full p-3 bg-black border border-[#D4AF37]/40 rounded-lg" />
+                <div className="space-y-3">
+                  <input defaultValue={selected?.title} placeholder="Judul Buku" className="w-full rounded-lg border border-[#D4AF37]/40 bg-black p-3" />
+                  <input defaultValue={selected?.author} placeholder="Penulis" className="w-full rounded-lg border border-[#D4AF37]/40 bg-black p-3" />
+                  <input defaultValue={selected?.publisher} placeholder="Penerbit" className="w-full rounded-lg border border-[#D4AF37]/40 bg-black p-3" />
+                  <input type="number" defaultValue={selected?.year} placeholder="Tahun Terbit" className="w-full rounded-lg border border-[#D4AF37]/40 bg-black p-3" />
+                  <select defaultValue={selected?.category} className="w-full rounded-lg border border-[#D4AF37]/40 bg-black p-3">
+                    <option value="">Pilih Kategori</option>
+                    <option>Anak-anak</option>
+                    <option>Edukasi</option>
+                    <option>Fiksi</option>
+                    <option>Non-Fiksi</option>
+                    <option>Ilmu Pengetahuan</option>
+                    <option>Puisi</option>
+                  </select>
+                  <input type="number" defaultValue={selected?.stock} placeholder="Jumlah Stok" className="w-full rounded-lg border border-[#D4AF37]/40 bg-black p-3" />
+                  <input type="file" accept="image/*" onChange={handleImage} />
 
-              <select defaultValue={selectedBook?.category || ""} className="w-full p-3 bg-black border border-[#D4AF37]/40 rounded-lg">
-                <option value="">Pilih Kategori</option>
-                <option>Anak-anak</option>
-                <option>Edukasi</option>
-                <option>Fiksi</option>
-                <option>Non-Fiksi</option>
-                <option>Ilmu Pengetahuan</option>
-                <option>Puisi</option>
-              </select>
+                  {preview && (
+                    <img src={preview} className="h-40 w-full rounded-xl object-cover" />
+                  )}
+                </div>
+              </>
+            )}
 
-              <input type="number" defaultValue={selectedBook?.stock || ""} placeholder="Jumlah Stok" className="w-full p-3 bg-black border border-[#D4AF37]/40 rounded-lg" />
-              <input type="file" accept="image/*" onChange={handleImage} />
+            {modal === "delete" && (
+              <>
+                <h2 className="mb-6 text-center text-xl font-semibold">
+                  Yakin ingin menghapus buku ini?
+                </h2>
+              </>
+            )}
 
-              {preview && (
-                <img src={preview} className="h-40 w-full object-cover rounded-xl" />
-              )}
-            </div>
-
-            <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => { setShowAdd(false); setShowEdit(false); }} className="bg-gray-500 px-4 py-2 rounded-lg">
+            <div className="mt-6 flex justify-end gap-3">
+              <button onClick={closeModal} className="rounded-lg bg-gray-500 px-4 py-2">
                 Batal
               </button>
-              <button className="bg-[#D4AF37] text-black px-4 py-2 rounded-lg">
+              <button
+                onClick={closeModal}
+                className={`rounded-lg px-4 py-2 ${
+                  modal === "delete"
+                    ? "bg-red-600"
+                    : "bg-[#D4AF37] text-black"
+                }`}
+              >
                 Simpan
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showDelete && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-[#222] p-6 rounded-2xl max-w-sm text-center">
-            <h3 className="text-xl font-bold text-red-500 mb-4">
-              Konfirmasi Hapus
-            </h3>
-            <p className="mb-6">Yakin ingin menghapus buku ini?</p>
-
-            <div className="flex justify-center gap-4">
-              <button onClick={() => setShowDelete(false)} className="bg-gray-500 px-4 py-2 rounded-lg">
-                Tidak
-              </button>
-              <button onClick={() => setShowDelete(false)} className="bg-red-600 px-4 py-2 rounded-lg">
-                Iya
               </button>
             </div>
           </div>
