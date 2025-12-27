@@ -32,7 +32,7 @@ const returnData = [
   { name: "Joshua", book: "Useful Tree" },
 ];
 
-const Dashboard = () => {
+export default function Dashboard() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [fade, setFade] = useState(false);
@@ -43,36 +43,36 @@ const Dashboard = () => {
 
   useEffect(() => {
     setFade(false);
-    const timer = setTimeout(() => setFade(true), 150);
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => setFade(true), 120);
+    return () => clearTimeout(t);
   }, [search]);
 
   return (
-    <div className="flex bg-[#111] min-h-screen text-white">
+    <div className="flex min-h-screen bg-[#f6f5fb] text-[#2b2540]">
 
       <aside
-        className={`fixed top-0 left-0 h-screen w-64 bg-[#111] border-r border-[#D4AF37]/40 p-4 md:p-6 z-30
-        transform transition-transform duration-300 
+        className={`fixed top-0 left-0 z-40 h-screen w-64 bg-[#2b2540] text-white
+        border-r border-purple-800/40 p-6 transition-transform duration-300
         ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
       >
         <button
-          className="md:hidden absolute top-3 right-3 text-white text-2xl font-bold"
           onClick={() => setOpen(false)}
+          className="absolute right-4 top-4 text-2xl md:hidden"
         >
           ✕
         </button>
 
-        <h2 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-[#D4AF37] tracking-wide">
+        <h1 className="mb-10 text-3xl font-extrabold tracking-wide text-purple-300">
           LIBRAVA
-        </h2>
+        </h1>
 
-        <nav className="flex flex-col gap-2 md:gap-4">
+        <nav className="flex flex-col gap-2">
           {nav_items.map((item) => (
             <Link
               key={item.name}
               href={item.href}
-              className="px-3 py-2 rounded-lg hover:bg-[#D4AF37]/20 text-sm md:text-base transition"
               onClick={() => setOpen(false)}
+              className="rounded-lg px-4 py-2 text-sm font-medium hover:bg-purple-700/40 transition"
             >
               {item.name}
             </Link>
@@ -82,158 +82,133 @@ const Dashboard = () => {
 
       {open && (
         <div
-          className="fixed inset-0 bg-black/40 md:hidden z-20"
           onClick={() => setOpen(false)}
+          className="fixed inset-0 bg-black/40 md:hidden z-30"
         />
       )}
 
-      <main className="ml-0 md:ml-64 p-4 sm:p-6 w-full">
+      <main className="ml-0 md:ml-64 w-full p-4 sm:p-6">
 
-        <div className="flex items-center justify-between mb-4 md:hidden">
+        <div className="mb-5 flex items-center justify-between md:hidden">
           <button
-            className="p-2 bg-[#D4AF37] text-black rounded-lg font-semibold active:scale-95"
             onClick={() => setOpen(true)}
+            className="rounded-lg bg-purple-700 px-4 py-2 text-white font-semibold"
           >
             ☰
           </button>
-          <div className="w-8" />
         </div>
 
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-6">
-          <h3 className="text-2xl sm:text-3xl font-bold text-[#D4AF37]">
-            Dashboard
-          </h3>
-          <div className="w-full sm:w-80">
-            <input
-              type="text"
-              placeholder="Cari buku..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="bg-black border border-[#D4AF37]/40 rounded-full p-2 sm:p-3 w-full text-sm sm:text-base focus:ring-2 focus:ring-[#D4AF37] outline-none transition"
-            />
-          </div>
+        <div className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <h2 className="text-3xl font-bold text-[#2b2540]">Dashboard</h2>
+
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Cari buku..."
+            className="w-full sm:w-80 rounded-full border border-purple-300 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+          />
         </div>
 
-        <section className="mb-6">
-          <h4 className="text-lg md:text-2xl font-semibold mb-3 text-white">
-            Statistik Perpustakaan
-          </h4>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
+        <section className="mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
               { label: "Total Buku", value: 125 },
               { label: "Buku Tersedia", value: 85 },
               { label: "Dipinjam Hari Ini", value: 52 },
               { label: "Pengembalian Hari Ini", value: 35 },
-            ].map((stat, i) => (
+            ].map((s, i) => (
               <div
                 key={i}
-                className="bg-[#222] border border-[#D4AF37]/40 p-2 md:p-4 rounded-xl text-center"
+                className="rounded-2xl bg-white p-4 shadow-sm border border-purple-200 text-center"
               >
-                <p className="text-lg md:text-3xl font-extrabold text-[#D4AF37]">
-                  {stat.value}
+                <p className="text-3xl font-extrabold text-purple-700">
+                  {s.value}
                 </p>
-                <p className="text-xs md:text-sm text-gray-300">{stat.label}</p>
+                <p className="text-sm text-gray-600">{s.label}</p>
               </div>
             ))}
           </div>
         </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          <div className="lg:col-span-1 space-y-4 md:space-y-6">
-            <section>
-              <h4 className="text-lg md:text-2xl font-semibold mb-2 text-white">
+          <div className="space-y-6">
+            <div className="rounded-2xl bg-white p-4 border border-purple-200">
+              <h3 className="mb-3 text-lg font-bold text-purple-700">
                 Data Peminjaman
-              </h4>
-              <div className="bg-[#222] p-2 md:p-4 rounded-xl border border-[#D4AF37]/40">
-                <table className="w-full text-xs md:text-sm">
-                  <thead>
-                    <tr className="text-[#D4AF37] border-b border-[#2a2a2a]">
-                      <th className="pb-1 text-left">Nama</th>
-                      <th className="pb-1 text-left">Buku</th>
+              </h3>
+              <table className="w-full text-sm">
+                <tbody>
+                  {borrowData.map((b, i) => (
+                    <tr key={i} className="border-b last:border-0">
+                      <td className="py-2 font-medium">{b.name}</td>
+                      <td className="py-2 text-gray-600">{b.book}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {borrowData.map((it, idx) => (
-                      <tr key={idx} className="border-b border-[#2a2a2a]">
-                        <td className="py-1">{it.name}</td>
-                        <td className="py-1 text-gray-300">{it.book}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-            <section>
-              <h4 className="text-lg md:text-2xl font-semibold mb-2 text-white">
+            <div className="rounded-2xl bg-white p-4 border border-purple-200">
+              <h3 className="mb-3 text-lg font-bold text-purple-700">
                 Data Pengembalian
-              </h4>
-              <div className="bg-[#222] p-2 md:p-4 rounded-xl border border-[#D4AF37]/40">
-                <table className="w-full text-xs md:text-sm">
-                  <thead>
-                    <tr className="text-[#D4AF37] border-b border-[#2a2a2a]">
-                      <th className="pb-1 text-left">Nama</th>
-                      <th className="pb-1 text-left">Buku</th>
+              </h3>
+              <table className="w-full text-sm">
+                <tbody>
+                  {returnData.map((r, i) => (
+                    <tr key={i} className="border-b last:border-0">
+                      <td className="py-2 font-medium">{r.name}</td>
+                      <td className="py-2 text-gray-600">{r.book}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {returnData.map((it, idx) => (
-                      <tr key={idx} className="border-b border-[#2a2a2a]">
-                        <td className="py-1">{it.name}</td>
-                        <td className="py-1 text-gray-300">{it.book}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div className="lg:col-span-2">
-            <h5 className="text-lg md:text-2xl font-bold mb-4 text-white tracking-wide">
+            <h3 className="mb-4 text-xl font-bold text-[#2b2540]">
               Koleksi Buku
-            </h5>
-
-            {filteredBooks.length === 0 && (
-              <p className="text-center text-gray-400 text-sm md:text-base mt-4">
-                Maaf, buku tidak ditemukan.
-              </p>
-            )}
+            </h3>
 
             <div
-              className={`grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 transition-opacity duration-200 ${fade ? "opacity-100" : "opacity-0"}`}
+              className={`grid grid-cols-2 lg:grid-cols-3 gap-5 transition-opacity duration-200 ${
+                fade ? "opacity-100" : "opacity-0"
+              }`}
             >
-              {filteredBooks.map((item) => (
+              {filteredBooks.map((b) => (
                 <div
-                  key={item.id}
-                  className="bg-[#222] border border-[#D4AF37]/40 p-3 sm:p-5 rounded-2xl"
+                  key={b.id}
+                  className="rounded-2xl bg-white border border-purple-200 p-4 shadow-sm"
                 >
                   <img
-                    src={item.image}
-                    alt={item.title}
-                    className="w-full h-36 sm:h-56 object-cover rounded-xl mb-3 sm:mb-4 border border-[#D4AF37]/30"
+                    src={b.image}
+                    className="h-40 w-full rounded-xl object-cover mb-3"
                   />
 
-                  <h3 className="font-bold text-base sm:text-xl text-[#D4AF37] leading-tight mb-1">
-                    {item.title}
-                  </h3>
+                  <h4 className="font-bold text-purple-700">{b.title}</h4>
 
-                  <p className="text-gray-300 text-xs sm:text-sm mb-1">Stok: {item.stock}</p>
+                  <p className="text-sm text-gray-600">Stok: {b.stock}</p>
                   <p
-                    className={`text-xs sm:text-sm font-semibold ${item.stock > 0 ? "text-green-400" : "text-red-400"}`}
+                    className={`text-sm font-semibold ${
+                      b.stock > 0 ? "text-green-600" : "text-red-500"
+                    }`}
                   >
-                    {item.stock > 0 ? "Tersedia" : "Habis"}
+                    {b.stock > 0 ? "Tersedia" : "Habis"}
                   </p>
                 </div>
               ))}
             </div>
+
+            {filteredBooks.length === 0 && (
+              <p className="mt-6 text-center text-gray-500">
+                Buku tidak ditemukan
+              </p>
+            )}
           </div>
 
         </div>
       </main>
     </div>
   );
-};
-
-export default Dashboard;
+}
