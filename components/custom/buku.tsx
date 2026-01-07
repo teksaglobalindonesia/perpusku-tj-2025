@@ -232,8 +232,14 @@ const handleUpdate = async () => {
     publisher: form.publisher,
     published_year: form.published_year,
     stock: form.stock,
-    category_id: form.categories,
+     categories: form.categories
+        ? { set: [Number(form.categories)] }
+        : undefined,
   }));
+    if (form.cover) {
+    fd.append("cover", form.cover); 
+  }
+
 
   const res = await fetch(`${BASE_URL}/api/book/edit`, {
     method: "PATCH",
