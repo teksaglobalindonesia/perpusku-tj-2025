@@ -14,6 +14,32 @@ const Dashboard = () => {
 const [books, setBooks] = useState<any[]>([]);
 const [loans, setLoans] = useState<any[]>([]);
 const [returns, setReturns] = useState<any[]>([]);
+const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+
+  const getCoverUrl = (cover: any) => {
+    if (!cover) return "/no-image.png";
+
+    // jika cover adalah string path "/uploads/xxx.jpg" atau full url
+    if (typeof cover === "string") {
+      // jika sudah absolute URL
+      if (cover.startsWith("http")) return cover;
+      return `${BASE_URL}${cover}`;
+    }
+
+    // jika object { url: "/uploads/..." }
+    if (cover?.url) {
+      return cover.url.startsWith("http") ? cover.url : `${BASE_URL}${cover.url}`;
+    }
+
+    // jika bentuk Strapi media: { data: { attributes: { url: "/uploads/..." } } }
+    if (cover?.data?.attributes?.url) {
+      const url = cover.data.attributes.url;
+      return url.startsWith("http") ? url : `${BASE_URL}${url}`;
+    }
+
+    return "/no-image.png";
+  };
 
 
 useEffect(() => {
@@ -110,11 +136,12 @@ return (
               >
                 {/* Cover */}
                 <div className="w-full h-32 sm:h-40 bg-gray-100 rounded-lg overflow-hidden mb-3">
-                  <img
-                    src={`${BASE_URL}${book.cover?.url}`}
-                    alt={book.title}
-                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                  />
+              <img
+  src={getCoverUrl(book.cover)}
+  alt={book.title}
+  className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition"
+  onClick={() => setPreviewImage(getCoverUrl(book.cover))}
+/>
                 </div>
 
                 <h3 className="font-semibold text-gray-800 text-xs sm:text-sm mb-2 line-clamp-2">
@@ -124,15 +151,6 @@ return (
                 <div className="mt-auto flex justify-between items-center text-[10px] sm:text-xs">
                   <span className="text-gray-500">
                     Stok: {book.stock}
-                  </span>
-                  <span
-                    className={`px-2 py-1 rounded-full ${
-                      book.status === "Tersedia"
-                        ? "bg-green-100 text-green-600"
-                        : "bg-red-100 text-red-600"
-                    }`}
-                  >
-                    {book.status}
                   </span>
                 </div>
               </div>
@@ -194,7 +212,7 @@ return (
             </div>
 
             <div className="space-y-3 sm:space-y-4">
-              {returns.map((item) => (
+              {todayReturns.map((item) => (
                 <div
                   key={item.id}
                   className="flex justify-between items-center border-b pb-2 sm:pb-3 last:border-none"
@@ -212,6 +230,32 @@ return (
                   </span>
                 </div>
               ))}
+              {previewImage && (
+  <div
+    className="fixed inset-0 z-[99999] bg-black/80 flex items-center justify-center p-4"
+    onClick={() => setPreviewImage(null)}
+  >
+    <div
+      className="relative max-w-4xl w-full"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Tombol close */}
+      <button
+        onClick={() => setPreviewImage(null)}
+        className="absolute -top-10 right-0 text-white text-2xl font-bold"
+      >
+        ✕
+      </button>
+
+      <img
+        src={previewImage}
+        alt="Preview Cover"
+        className="w-full max-h-[80vh] object-contain rounded-lg shadow-lg"
+      />
+    </div>
+  </div>
+)}
+
             </div>
           </div>
 

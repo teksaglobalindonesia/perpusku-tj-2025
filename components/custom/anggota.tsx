@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { FiPlus, FiSearch } from "react-icons/fi";
 import { BASE_URL, TOKEN, MEMBER_NAME} from "../../lib/constant";
@@ -13,6 +14,10 @@ const AnggotaPage = () => {
   const [showLoanModal, setShowLoanModal] = useState(false);
   const [selectedLoans, setSelectedLoans] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
+  const [loans, setLoans] = useState<any[]>([]);
+  const [showBookDetailModal, setShowBookDetailModal] = useState(false);
+const [selectedBook, setSelectedBook] = useState<any>(null);
+
 
 
  // GET DATA
@@ -38,6 +43,29 @@ useEffect(() => {
 
 
 
+const handleViewLoans = async (member: any) => {
+  setSelectedMember(member);
+  setShowLoanModal(true);
+
+  try {
+    const res = await fetch(
+      `${BASE_URL}/api/loan/list?id_member=${member.documentId}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: TOKEN,
+          "x-member-name": MEMBER_NAME,
+        },
+        cache: "no-store",
+      }
+    );
+
+    const json = await res.json();
+    setSelectedLoans(json?.data || []);
+  } catch (err) {
+    console.error("Gagal ambil peminjaman:", err);
+  }
+};
 
 
   const filteredMembers = members.filter((member) =>
@@ -53,6 +81,47 @@ useEffect(() => {
     setSelectedMember(member);
     setShowDeleteModal(true);
   };
+
+  const handleDeleteMember = async () => {
+  if (!selectedMember?.id) return;
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/member/delete`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: TOKEN,
+        "x-member-name": MEMBER_NAME,
+      },
+      body: JSON.stringify({
+        documentId: selectedMember.documentId,
+      }),
+    });
+
+    if (!res.ok) {
+      console.error("STATUS:", res.status);
+      console.error("RESPONSE:", await res.text());
+      return;
+    }
+
+    setShowDeleteModal(false);
+    setSelectedMember(null);
+
+    // refresh list
+    const refreshed = await fetch(`${BASE_URL}/api/member/list`, {
+      headers: {
+        Authorization: TOKEN,
+        "x-member-name": MEMBER_NAME,
+      },
+    });
+    const json = await refreshed.json();
+    setMembers(json.data || []);
+
+  } catch (err) {
+    console.error("Gagal hapus anggota:", err);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 sm:px-6 lg:px-10 py-6 sm:py-8">
@@ -114,6 +183,12 @@ useEffect(() => {
       <div className="flex gap-2 justify-end sm:justify-start flex-wrap">
 
         <button
+          onClick={() => handleViewLoans(member)}
+          className="text-[11px] sm:text-xs px-4 py-1.5 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition"
+        >
+          Peminjaman
+        </button>
+        <button
           onClick={() => handleEdit(member)}
           className="text-[11px] sm:text-xs px-4 py-1.5 rounded-lg bg-yellow-100 text-yellow-700 hover:bg-yellow-200 transition"
         >
@@ -129,14 +204,94 @@ useEffect(() => {
     </div>
   ))}
 </div>
-
-
       {/* Kalau kosong */}
       {filteredMembers.length === 0 && (
         <div className="text-center text-gray-500 mt-12 text-sm">
           Anggota tidak ditemukan
         </div>
       )}
+{/* Modal Peminjaman */}
+{showLoanModal && selectedMember && (
+  <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
+    <div className="bg-white w-full max-w-lg rounded-2xl p-6">
+      <h2 className="text-lg font-semibold mb-4">
+        Peminjaman - {selectedMember.name}
+      </h2>
+
+      {selectedLoans.length === 0 ? (
+        <p className="text-sm text-gray-500">
+          Tidak ada data peminjaman
+        </p>
+      ) : (
+        <div className="space-y-3 max-h-[400px] overflow-y-auto">
+          {selectedLoans.map((loan) => (
+            <div
+              key={loan.id}
+              className="border rounded-lg p-3 text-sm"
+            >
+              <p className="font-medium">{loan.book?.title}</p>
+              <p className="text-xs text-gray-500">
+                Tanggal Pinjam: {loan.loan_date}
+              </p>
+              <p className="text-xs text-gray-500">
+                Tanggal Kembali: {loan.return_date ?? "-"}
+              </p>
+                        <button
+      onClick={() => {
+        setSelectedBook(loan.book);
+        setShowBookDetailModal(true);
+      }}
+      className="mt-2 text-xs px-3 py-1 bg-blue-100 text-blue-600 rounded"
+    >
+      Detail Buku
+    </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+
+      <div className="flex justify-end mt-5">
+        <button
+          onClick={() => setShowLoanModal(false)}
+          className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm"
+        >
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+{showBookDetailModal && selectedBook && (
+  <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
+    <div className="bg-white w-full max-w-md rounded-xl p-6 relative">
+      <h2 className="text-lg font-semibold mb-4">Detail Buku</h2>
+      <div className="space-y-2 text-sm">
+        <p><b>Judul:</b> {selectedBook.title}</p>
+        <p><b>Penulis:</b> {selectedBook.writer}</p>
+        <p><b>Penerbit:</b> {selectedBook.publisher}</p>
+        <p><b>Tahun:</b> {selectedBook.published_year}</p>
+        <p><b>Stok:</b> {selectedBook.stock}</p>
+      </div>
+                    <Link
+                href="/buku"
+                className="text-xs sm:text-sm text-blue-600 hover:underline"
+              >
+                Lihat Selengkapnya
+              </Link>
+
+      <div className="flex justify-end mt-4">
+        <button
+          onClick={() => setShowBookDetailModal(false)}
+          className="px-4 py-2 rounded bg-gray-100"
+        >
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
       {/* Modal Edit */}
       {showEditModal && selectedMember && (
@@ -222,7 +377,7 @@ useEffect(() => {
               >
                 Batal
               </button>
-              <button className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm">
+              <button onClick={handleDeleteMember}className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm">
                 Hapus
               </button>
             </div>
@@ -281,23 +436,6 @@ useEffect(() => {
     </div>
   </div>
 )}
-
-{/* Modal Lihat Pinjaman */}
-{selectedLoans.map((loan, index) => (
-  <div key={index} className="border rounded-lg p-3 text-sm">
-    <span className="font-medium">{loan.title}</span>
-    <span className="text-xs text-gray-500">
-      Tanggal Pinjam: {loan.loanDate}
-    </span>
-    <span className="text-xs text-gray-500">
-      Tanggal Kembali: {loan.returnDate}
-    </span>
-  </div>
-))}
-
-
-
-
 
     </div>
   );

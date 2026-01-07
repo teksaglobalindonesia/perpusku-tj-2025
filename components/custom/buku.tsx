@@ -6,21 +6,66 @@ import { BASE_URL, TOKEN, MEMBER_NAME } from "@/lib/constant";
 
 const BukuPage = () => {
   const [search, setSearch] = useState("");
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+type ModalType = "add" | "edit" | "delete" | "preview" | null;
+
+const [activeModal, setActiveModal] = useState<ModalType>(null);
+
   const [selectedBook, setSelectedBook] = useState<any>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+
 
   const [books, setBooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // contoh kategori sementara (nanti fetch dari API)
-  const categories = [
-    { id: 2, name: "Sci-Fi" },
-    { id: 8, name: "Psychological" },
-    { id: 9, name: "Romance" },
-    { id: 10, name: "Comedy" },
-  ];
+const fetchCategories = async () => {
+  try {
+    const res = await fetch(`${BASE_URL}/api/book-category/list`, {
+      method: "GET",
+      headers: {
+        Authorization: TOKEN,
+        "x-member-name": MEMBER_NAME,
+      },
+      cache: "no-store",
+    });
+
+    const json = await res.json();
+    setCategories(json?.data || []);
+  } catch (err) {
+    console.error("Gagal ambil category:", err);
+  }
+};
+const openModal = (type: ModalType, book?: any) => {
+  setSelectedBook(book || null);
+  setActiveModal(type);
+};
+
+const Modal = ({
+  children,
+  onClose,
+}: {
+  children: React.ReactNode;
+  onClose: () => void;
+}) => (
+  <div
+    className="fixed inset-0 z-[9999] flex items-center justify-center"
+    onClick={onClose} 
+  >
+    {/* Backdrop */}
+    <div className="absolute inset-0 bg-black/50" />
+
+    {/* Content */}
+    <div
+      className="relative z-10 bg-white rounded-xl p-6"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {children}
+    </div>
+  </div>
+);
+
 
   // form: semua value disimpan sebagai string agar controlled input aman
   const [form, setForm] = useState({
@@ -28,13 +73,12 @@ const BukuPage = () => {
     writer: "",
     publisher: "",
     published_year: "",
-    categories: "", // string id or ""
+    categories: "",
     stock: "",
     cover: null as File | null,
     loans: ""
   });
 
-  // helper untuk dapatkan URL cover dalam berbagai bentuk respons Strapi
   const getCoverUrl = (cover: any) => {
     if (!cover) return "/no-image.png";
 
@@ -59,6 +103,10 @@ const BukuPage = () => {
     return "/no-image.png";
   };
 
+const closeModal = () => {
+  setActiveModal(null);
+  setSelectedBook(null);
+};
 
   const refreshBooks = async () => {
     try {
@@ -78,10 +126,6 @@ const BukuPage = () => {
       console.error("Gagal refresh buku:", err);
     }
   };
-  useEffect(() => {
-    refreshBooks();
-  }, []);
-    
   // GET DATA
   useEffect(() => {
     (async () => {
@@ -110,11 +154,30 @@ const BukuPage = () => {
     (book.title || "").toString().toLowerCase().includes(search.toLowerCase())
   );
 
+useEffect(() => {
+  fetchCategories();
+}, []);
+
+
+const openEditModal = (book: any) => {
+  setSelectedBook(book);
+  setForm({
+    title: book.title || "",
+    writer: book.writer || "",
+    publisher: book.publisher || "",
+    published_year: book.published_year || "",
+    stock: book.stock?.toString() || "",
+    categories: book.categories?.[0]?.id?.toString() || "",
+    cover: null,
+    loans: "",
+  });
+  setActiveModal("edit");
+};
 
 
   const handleDelete = (book: any) => {
     setSelectedBook(book);
-    setShowDeleteModal(true);
+    setActiveModal("delete");
   };
 
   // CREATE
@@ -146,84 +209,84 @@ const BukuPage = () => {
       return;
     }
   
-    setShowAddModal(false);
+    setActiveModal(null);
     await refreshBooks();
 
   };
   
 
   // UPDATE
-  const handleUpdate = async () => {
-    if (!selectedBook?.id) return;
+const handleUpdate = async () => {
+  if (!selectedBook?.id) return;
 
-    try {
-const payload = {
-  data: {
-    title: form.title,
-    writer: form.writer,
-    publisher: form.publisher,
-    published_year: form.published_year,
-    stock: Number(form.stock),
-    cover: form.cover,
-    categories: form.categories ? [Number(form.categories)] : []
+  const fd = new FormData();
+  fd.append("title", form.title);
+  fd.append("writer", form.writer);
+  fd.append("publisher", form.publisher);
+  fd.append("published_year", form.published_year);
+  fd.append("stock", form.stock);
+  fd.append("category_id", form.categories);
+
+  if (form.cover) {
+    fd.append("cover", form.cover);
+  }
+
+  const res = await fetch(
+    `${BASE_URL}/api/book/update/${selectedBook.id}`,
+    {
+      method: "PATCH", 
+      headers: {
+        Authorization: TOKEN,
+        "x-member-name": MEMBER_NAME,
+      },
+      body: fd,
+    }
+  );
+
+  if (!res.ok) {
+    console.error(await res.text());
+    return;
+  }
+
+  setActiveModal(null);
+  await refreshBooks();
+};
+
+  // DELETE
+const handleDestroy = async () => {
+  if (!selectedBook?.documentId || isDeleting) return;
+
+  setIsDeleting(true);
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/book/delete`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: TOKEN,
+        "x-member-name": MEMBER_NAME,
+      },
+      body: JSON.stringify({
+        documentId: selectedBook.documentId,
+      }),
+    });
+
+    if (!res.ok) {
+      console.error("STATUS:", res.status);
+      console.error("RESPONSE:", await res.text());
+      return;
+    }
+
+    setActiveModal(null);
+    setSelectedBook(null);
+    await refreshBooks();
+  } catch (err) {
+    console.error("Delete error:", err);
+  } finally {
+    setIsDeleting(false);
   }
 };
 
-
-      const res = await fetch(`${BASE_URL}/api/book/update/${selectedBook.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${TOKEN}`,
-          "x-member-name": MEMBER_NAME
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        console.error("Update error:", text);
-      } else {
-        const json = await res.json();
-        console.log("UPDATE RESPONSE:", json);
-      }
-
-      setShowEditModal(false);
-      setSelectedBook(null);
-      await refreshBooks();
-
-    } catch (err) {
-      console.error("Gagal update buku", err);
-    }
-  };
-
-  // DELETE
-  const handleDestroy = async () => {
-    if (!selectedBook?.id) return;
-  
-    const res = await fetch(
-      `${BASE_URL}/api/book/delete/${selectedBook.id}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: TOKEN,
-          "x-member-name": MEMBER_NAME,
-        },
-      }
-    );
-  
-    if (!res.ok) {
-      console.error(await res.text());
-      return;
-    }
-  
-    setShowDeleteModal(false);
-    setSelectedBook(null);
-    await refreshBooks();
-
-  };
-  
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 sm:px-6 lg:px-10 py-6">
@@ -232,7 +295,9 @@ const payload = {
         <h1 className="text-xl font-bold text-gray-800">Data Buku</h1>
 
         <button
+         type= "button"
           onClick={() => {
+            setSelectedBook(null);
             setForm({
               title: "",
               writer: "",
@@ -243,10 +308,9 @@ const payload = {
               cover: null,
               loans: ""
             });
-            setShowAddModal(true);
+            setActiveModal("add");
           }}
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl"
-          type="button"
         >
           <FiPlus /> Tambah Buku
         </button>
@@ -272,7 +336,17 @@ const payload = {
         {filteredBooks.map((book) => (
           <div key={book.id} className="bg-white rounded-xl shadow flex flex-col overflow-hidden">
             <div className="h-40 bg-gray-100">
-              <img src={getCoverUrl(book.cover)} alt={book.title} className="w-full h-full object-cover" />
+<img
+  src={getCoverUrl(book.cover)}
+  alt={book.title}
+  className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition"
+  onClick={() => {
+    setPreviewImage(getCoverUrl(book.cover));
+    setActiveModal("preview");
+  }}
+/>
+
+
             </div>
 
             <div className="p-4 flex flex-col justify-between flex-1">
@@ -285,7 +359,9 @@ const payload = {
               </div>
 
               <div className="flex justify-end gap-2 mt-4">
-                <button onClick={() => handleDelete(book)} type="button" className="text-xs px-3 py-1 bg-red-100 text-red-600 rounded">
+                <button onClick={() => openModal("edit", book)}>Edit</button>
+
+                <button onClick={() => openModal("delete", book)} type="button" className="text-xs px-3 py-1 bg-red-100 text-red-600 rounded">
                   Hapus
                 </button>
               </div>
@@ -295,7 +371,7 @@ const payload = {
       </div>
 
       {/* Modal Add */}
-      {showAddModal && (
+{activeModal === "add" && (
   <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
     {/* Modal */}
     <div
@@ -376,7 +452,7 @@ const payload = {
       <div className="flex justify-end gap-2 mt-4">
         <button
           type="button"
-          onClick={() => setShowAddModal(false)}
+          onClick={() => setActiveModal(null)}
           className="px-4 py-2 rounded border"
         >
           Batal
@@ -384,10 +460,7 @@ const payload = {
 
         <button
           type="button"
-          onClick={() => {
-            console.log("SIMPAN CLICKED");
-            handleCreate();
-          }}
+          onClick={handleCreate}
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
           Simpan
@@ -397,121 +470,189 @@ const payload = {
   </div>
 )}
 
+{activeModal === "preview" && previewImage && (
+  <div
+    className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4"
+    onClick={() => setActiveModal(null)}
+  >
+    <div
+      className="relative max-w-4xl w-full"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Close */}
+      <button
+        onClick={() => setActiveModal(null)}
+        className="absolute -top-10 right-0 text-white text-2xl font-bold"
+      >
+        ✕
+      </button>
+
+      <img
+        src={previewImage}
+        alt="Preview Cover"
+        className="w-full max-h-[80vh] object-contain rounded-lg shadow-lg"
+      />
+    </div>
+  </div>
+)}
 
 
       {/* Modal Edit */}
-      {showEditModal && selectedBook && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowEditModal(false)} />
-          <div className="bg-white w-full max-w-lg rounded-xl p-6 relative z-10">
-            <h2 className="font-semibold text-lg mb-4">Edit Buku</h2>
-
-            <div className="space-y-3">
-              <input
-                type="text"
-                placeholder="Title"
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="w-full border p-2 rounded"
-              />
-              <input
-                type="text"
-                placeholder="Writer"
-                value={form.writer}
-                onChange={(e) => setForm({ ...form, writer: e.target.value })}
-                className="w-full border p-2 rounded"
-              />
-              <input
-                type="text"
-                placeholder="Publisher"
-                value={form.publisher}
-                onChange={(e) => setForm({ ...form, publisher: e.target.value })}
-                className="w-full border p-2 rounded"
-              />
-              <input
-                type="number"
-                placeholder="Published year"
-                value={form.published_year}
-                onChange={(e) => setForm({ ...form, published_year: e.target.value })}
-                className="w-full border p-2 rounded"
-              />
-
-              <select
-                value={form.categories}
-                onChange={(e) => setForm({ ...form, categories: e.target.value })}
-                className="w-full border p-2 rounded"
-              >
-                <option value="">Pilih kategori</option>
-                {categories.map((cat) => <option key={cat.id} value={cat.id.toString()}>{cat.name}</option>)}
-              </select>
-
-              <input
-                type="number"
-                placeholder="Stock"
-                value={form.stock}
-                onChange={(e) => setForm({ ...form, stock: e.target.value })}
-                className="w-full border p-2 rounded"
-              />
-
-<input
-  type="file"
-  accept="image/*"
-  onChange={(e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setForm({ ...form, cover: file });
-  }}
-  className="w-full border p-2 rounded"
-/>
-
-            </div>
-
-            <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setShowEditModal(false)} type="button" className="px-4 py-2 rounded border">Batal</button>
-              <button type="button" onClick={handleUpdate} className="bg-blue-600 text-white px-4 py-2 rounded">Update</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-{showDeleteModal && selectedBook && (
+{activeModal === "edit" && selectedBook && (
   <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
     {/* Backdrop */}
     <div
       className="absolute inset-0 bg-black/50"
-      onClick={() => setShowDeleteModal(false)}
+      onClick={() => setActiveModal(null)}
     />
 
     {/* Modal */}
     <div
-      className="bg-white w-full max-w-sm rounded-xl p-6 relative z-10 text-center"
+      className="bg-white w-full max-w-lg rounded-xl p-6 relative z-10"
       onClick={(e) => e.stopPropagation()}
     >
-      <h2 className="font-semibold mb-4">Hapus Buku</h2>
+      <h2 className="font-semibold text-lg mb-4">Edit Buku</h2>
 
-      <p className="text-sm mb-6">
-        Yakin ingin menghapus <b>{selectedBook.title}</b>?
-      </p>
+      <div className="space-y-3">
+        <input
+          type="text"
+          placeholder="Title"
+          value={form.title}
+          onChange={(e) => setForm({ ...form, title: e.target.value })}
+          className="w-full border p-2 rounded"
+        />
 
-      <div className="flex justify-center gap-2">
+        <input
+          type="text"
+          placeholder="Writer"
+          value={form.writer}
+          onChange={(e) => setForm({ ...form, writer: e.target.value })}
+          className="w-full border p-2 rounded"
+        />
+
+        <input
+          type="text"
+          placeholder="Publisher"
+          value={form.publisher}
+          onChange={(e) => setForm({ ...form, publisher: e.target.value })}
+          className="w-full border p-2 rounded"
+        />
+
+        <input
+          type="number"
+          placeholder="Published year"
+          value={form.published_year}
+          onChange={(e) =>
+            setForm({ ...form, published_year: e.target.value })
+          }
+          className="w-full border p-2 rounded"
+        />
+
+        <select
+          value={form.categories}
+          onChange={(e) => setForm({ ...form, categories: e.target.value })}
+          className="w-full border p-2 rounded"
+        >
+          <option value="">Pilih kategori</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
+
+        <input
+          type="number"
+          placeholder="Stock"
+          value={form.stock}
+          onChange={(e) => setForm({ ...form, stock: e.target.value })}
+          className="w-full border p-2 rounded"
+        />
+
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            setForm({ ...form, cover: file });
+          }}
+          className="w-full border p-2 rounded"
+        />
+      </div>
+
+      <div className="flex justify-end gap-8 mt-4">
         <button
-          onClick={() => setShowDeleteModal(false)}
           type="button"
+          onClick={() => setActiveModal(null)}
           className="px-4 py-2 rounded border"
         >
           Batal
         </button>
 
         <button
-          onClick={handleDestroy}
           type="button"
-          className="bg-red-600 text-white px-4 py-2 rounded"
+          onClick={handleUpdate}
+          className="bg-blue-600 text-white px-4 py-2 rounded"
         >
-          Hapus
+          Update
         </button>
       </div>
     </div>
   </div>
+)}
+
+{activeModal === "delete" && selectedBook && (
+  <Modal onClose={closeModal}>
+    <div className="w-full max-w-sm">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+          <span className="text-red-600 text-xl font-bold">!</span>
+        </div>
+        <h2 className="text-lg font-semibold text-gray-800">
+          Hapus Buku
+        </h2>
+      </div>
+
+      {/* Content */}
+      <p className="text-sm text-gray-600 mb-6">
+        Yakin ingin menghapus buku
+        <span className="font-semibold text-gray-800">
+          {" "}
+          “{selectedBook.title}”
+        </span>
+        ?<br />
+        Tindakan ini tidak dapat dibatalkan.
+      </p>
+
+      {/* Actions */}
+      <div className="flex justify-end gap-3">
+        <button
+          type="button"
+          onClick={closeModal}
+          className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
+        >
+          Batal
+        </button>
+
+        <button
+          type="button"
+          onClick={handleDestroy}
+          disabled={isDeleting}
+          className="
+            px-4 py-2 text-sm rounded-lg
+            bg-red-600 text-white
+            hover:bg-red-700
+            disabled:opacity-50 disabled:cursor-not-allowed
+            transition
+          "
+        >
+          {isDeleting ? "Menghapus..." : "Hapus"}
+        </button>
+      </div>
+    </div>
+  </Modal>
 )}
 
     </div>
