@@ -161,16 +161,18 @@ useEffect(() => {
 
 const openEditModal = (book: any) => {
   setSelectedBook(book);
+
   setForm({
-    title: book.title || "",
-    writer: book.writer || "",
-    publisher: book.publisher || "",
-    published_year: book.published_year || "",
-    stock: book.stock?.toString() || "",
-    categories: book.categories?.[0]?.id?.toString() || "",
-    cover: null,
-    loans: "",
+    title: book.title ?? "",
+    writer: book.writer ?? "",
+    publisher: book.publisher ?? "",
+    published_year: book.published_year?.toString() ?? "",
+    stock: book.stock?.toString() ?? "",
+    categories: book.categories?.[0]?.id?.toString() ?? "",
+    cover: null, 
+    loans: book.loans ?? "",
   });
+
   setActiveModal("edit");
 };
 
@@ -217,36 +219,35 @@ const openEditModal = (book: any) => {
 
   // UPDATE
 const handleUpdate = async () => {
-  if (!selectedBook?.id) return;
-
-  const fd = new FormData();
-  fd.append("title", form.title);
-  fd.append("writer", form.writer);
-  fd.append("publisher", form.publisher);
-  fd.append("published_year", form.published_year);
-  fd.append("stock", form.stock);
-  fd.append("category_id", form.categories);
-
-  if (form.cover) {
-    fd.append("cover", form.cover);
-  }
-
-  const res = await fetch(
-    `${BASE_URL}/api/book/update/${selectedBook.id}`,
-    {
-      method: "PATCH", 
-      headers: {
-        Authorization: TOKEN,
-        "x-member-name": MEMBER_NAME,
-      },
-      body: fd,
-    }
-  );
-
-  if (!res.ok) {
-    console.error(await res.text());
+  if (!selectedBook?.documentId) {
+    console.error("documentId TIDAK ADA", selectedBook);
     return;
   }
+
+  const fd = new FormData();
+  fd.append("documentId", selectedBook.documentId);
+  fd.append("data", JSON.stringify({
+    title: form.title,
+    writer: form.writer,
+    publisher: form.publisher,
+    published_year: form.published_year,
+    stock: form.stock,
+    category_id: form.categories,
+  }));
+
+  const res = await fetch(`${BASE_URL}/api/book/edit`, {
+    method: "PATCH",
+    headers: {
+      Authorization: TOKEN,
+      "x-member-name": MEMBER_NAME,
+    },
+    body: fd,
+  });
+
+  const text = await res.text();
+  console.log("RESPONSE:", text);
+
+  if (!res.ok) return;
 
   setActiveModal(null);
   await refreshBooks();
@@ -359,8 +360,7 @@ const handleDestroy = async () => {
               </div>
 
               <div className="flex justify-end gap-2 mt-4">
-                <button onClick={() => openModal("edit", book)}>Edit</button>
-
+                <button onClick={() => openEditModal(book)}>Edit</button>
                 <button onClick={() => openModal("delete", book)} type="button" className="text-xs px-3 py-1 bg-red-100 text-red-600 rounded">
                   Hapus
                 </button>
@@ -590,13 +590,14 @@ const handleDestroy = async () => {
           Batal
         </button>
 
-        <button
-          type="button"
-          onClick={handleUpdate}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          Update
-        </button>
+<button
+  type="button"
+  onClick={handleUpdate}
+  className="bg-blue-600 text-white px-4 py-2 rounded"
+>
+  Update
+</button>
+
       </div>
     </div>
   </div>

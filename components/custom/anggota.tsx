@@ -17,6 +17,13 @@ const AnggotaPage = () => {
   const [loans, setLoans] = useState<any[]>([]);
   const [showBookDetailModal, setShowBookDetailModal] = useState(false);
 const [selectedBook, setSelectedBook] = useState<any>(null);
+const [editForm, setEditForm] = useState({
+  name: "",
+  email: "",
+  address: "",
+  id_member: "",
+});
+
 
 
 
@@ -72,10 +79,59 @@ const handleViewLoans = async (member: any) => {
     member.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleEdit = (member: any) => {
-    setSelectedMember(member);
-    setShowEditModal(true);
-  };
+const handleEdit = (member: any) => {
+  setSelectedMember(member);
+
+  setEditForm({
+    name: member.name ?? "",
+    email: member.email ?? "",
+    address: member.address ?? "",
+    id_member: member.id_member ?? "",
+  });
+
+  setShowEditModal(true);
+};
+
+const handleUpdateMember = async () => {
+  if (!selectedMember?.documentId) return;
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/member/edit`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: TOKEN,
+        "x-member-name": MEMBER_NAME,
+      },
+      body: JSON.stringify({
+        documentId: selectedMember.documentId,
+        data: editForm,
+      }),
+    });
+
+    if (!res.ok) {
+      console.error("UPDATE GAGAL:", await res.text());
+      return;
+    }
+
+    setShowEditModal(false);
+    setSelectedMember(null);
+
+    // refresh list
+    const refreshed = await fetch(`${BASE_URL}/api/member/list`, {
+      headers: {
+        Authorization: TOKEN,
+        "x-member-name": MEMBER_NAME,
+      },
+    });
+
+    const json = await refreshed.json();
+    setMembers(json.data || []);
+  } catch (err) {
+    console.error("Gagal update anggota:", err);
+  }
+};
+
 
   const handleDelete = (member: any) => {
     setSelectedMember(member);
@@ -294,67 +350,73 @@ const handleViewLoans = async (member: any) => {
 
 
       {/* Modal Edit */}
-      {showEditModal && selectedMember && (
-        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-lg rounded-2xl p-6 animate-scale-in">
-            <h2 className="text-lg font-semibold mb-5">Edit Anggota</h2>
+{/* Modal Edit */}
+{showEditModal && selectedMember && (
+  <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
+    <div className="bg-white w-full max-w-lg rounded-2xl p-6">
+      <h2 className="text-lg font-semibold mb-5">Edit Anggota</h2>
 
-            <div className="space-y-3">
-              <input
-                type="text"
-                defaultValue={selectedMember.name}
-                className="w-full border rounded-lg px-4 py-2 text-sm"
-              />
+      <div className="space-y-3">
+        <input
+          type="text"
+          value={editForm.name}
+          onChange={(e) =>
+            setEditForm({ ...editForm, name: e.target.value })
+          }
+          placeholder="Nama anggota"
+          className="w-full border rounded-lg px-4 py-2 text-sm"
+        />
 
-              <input
-                type="text"
-                defaultValue={selectedMember.nis}
-                className="w-full border rounded-lg px-4 py-2 text-sm"
-              />
+        <input
+          type="email"
+          value={editForm.email}
+          onChange={(e) =>
+            setEditForm({ ...editForm, email: e.target.value })
+          }
+          placeholder="Email"
+          className="w-full border rounded-lg px-4 py-2 text-sm"
+        />
 
-              <input
-                type="text"
-                defaultValue={selectedMember.class}
-                className="w-full border rounded-lg px-4 py-2 text-sm"
-              />
+        <input
+          type="text"
+          value={editForm.address}
+          onChange={(e) =>
+            setEditForm({ ...editForm, address: e.target.value })
+          }
+          placeholder="Alamat"
+          className="w-full border rounded-lg px-4 py-2 text-sm"
+        />
 
-              <input
-                type="text"
-                defaultValue={selectedMember.phone}
-                className="w-full border rounded-lg px-4 py-2 text-sm"
-              />
+        <input
+          type="text"
+          value={editForm.id_member}
+          onChange={(e) =>
+            setEditForm({ ...editForm, id_member: e.target.value })
+          }
+          placeholder="Nomor anggota"
+          className="w-full border rounded-lg px-4 py-2 text-sm"
+        />
+      </div>
 
-              <select
-                defaultValue={selectedMember.gender}
-                className="w-full border rounded-lg px-4 py-2 text-sm"
-              >
-                <option>Laki-laki</option>
-                <option>Perempuan</option>
-              </select>
+      <div className="flex justify-end gap-3 mt-6">
+        <button
+          onClick={() => setShowEditModal(false)}
+          className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm"
+        >
+          Batal
+        </button>
 
-              <select
-                defaultValue={selectedMember.status}
-                className="w-full border rounded-lg px-4 py-2 text-sm"
-              >
-                <option>Aktif</option>
-                <option>Nonaktif</option>
-              </select>
-            </div>
+        <button
+          onClick={handleUpdateMember}
+          className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm"
+        >
+          Simpan
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm"
-              >
-                Batal
-              </button>
-              <button className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm">
-                Simpan
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Modal Delete */}
       {showDeleteModal && selectedMember && (
