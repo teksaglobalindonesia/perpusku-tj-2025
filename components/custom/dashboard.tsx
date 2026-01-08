@@ -72,7 +72,11 @@ useEffect(() => {
 
 const today = new Date().toISOString().split("T")[0];
 
-const totalBooks = books.length;
+const totalBooks = books.reduce(
+  (total, book) => total + (Number(book.stock) || 0),
+  0
+);
+
 const availableBooks = books.filter(b => b.stock > 0).length;
 
 const todayLoans = loans.filter(l => l.loan_date === today);
@@ -93,10 +97,10 @@ return (
         className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8"
       >
         {[
-          { title: "Total Buku", value: totalBooks },
-          { title: "Buku Tersedia", value: availableBooks },
-          { title: "Dipinjam Hari Ini", value: todayLoans.length },
-          { title: "Pengembalian Hari Ini", value: todayReturns.length },
+          { title: "Total Stock", value: totalBooks },
+          { title: "Books Available", value: availableBooks },
+          { title: "Borrowed Today", value: todayLoans.length },
+          { title: "Returned Today", value: todayReturns.length },
         ].map((stat, i) => (
           <div
             key={i}
@@ -119,12 +123,12 @@ return (
           className="lg:col-span-2 bg-white rounded-xl shadow-sm p-4 sm:p-6"
         >
           <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-            <h2 className="text-base sm:text-lg font-semibold">Stok Buku</h2>
+            <h2 className="text-base sm:text-lg font-semibold">Books Stock</h2>
             <Link
               href="/buku"
               className="text-xs sm:text-sm text-blue-600 hover:underline"
             >
-              Lihat Semua
+              See more
             </Link>
           </div>
 
@@ -137,20 +141,19 @@ return (
                 {/* Cover */}
                 <div className="w-full h-32 sm:h-40 bg-gray-100 rounded-lg overflow-hidden mb-3">
               <img
-  src={getCoverUrl(book.cover)}
-  alt={book.title}
-  className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition"
-  onClick={() => setPreviewImage(getCoverUrl(book.cover))}
-/>
+                src={getCoverUrl(book.cover)}
+                alt={book.title}
+                className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition"
+                onClick={() => setPreviewImage(getCoverUrl(book.cover))}
+              />
                 </div>
-
                 <h3 className="font-semibold text-gray-800 text-xs sm:text-sm mb-2 line-clamp-2">
                   {book.title}
                 </h3>
 
                 <div className="mt-auto flex justify-between items-center text-[10px] sm:text-xs">
                   <span className="text-gray-500">
-                    Stok: {book.stock}
+                    Stock: {book.stock}
                   </span>
                 </div>
               </div>
@@ -165,7 +168,7 @@ return (
           <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-base sm:text-lg font-semibold">
-                Peminjaman Hari Ini
+                Today's Loan 
               </h2>
               <Link
                 href="/peminjaman"
@@ -201,7 +204,7 @@ return (
           <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-base sm:text-lg font-semibold">
-                Pengembalian Hari Ini
+                Today's Return
               </h2>
               <Link
                 href="/pengembalian"

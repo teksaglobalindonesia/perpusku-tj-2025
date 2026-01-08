@@ -79,6 +79,70 @@ const handleViewLoans = async (member: any) => {
     member.name.toLowerCase().includes(search.toLowerCase())
   );
 
+
+const [addForm, setAddForm] = useState({
+  name: "",
+  email: "",
+  address: "",
+  id_member: "",
+});
+
+const handleCreateMember = async () => {
+  if (
+    !addForm.name ||
+    !addForm.email ||
+    !addForm.address ||
+    !addForm.id_member
+  ) {
+    alert("Semua field wajib diisi");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/member/add`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: TOKEN,
+        "x-member-name": MEMBER_NAME,
+      },
+      body: JSON.stringify({
+        data: addForm, 
+      }),
+    });
+
+    const text = await res.text();
+    console.log("ADD MEMBER RESPONSE:", text);
+
+    if (!res.ok) {
+      alert("Gagal menambah anggota");
+      return;
+    }
+
+    setShowAddModal(false);
+    setAddForm({
+      name: "",
+      email: "",
+      address: "",
+      id_member: "",
+    });
+
+    // refresh list
+    const refreshed = await fetch(`${BASE_URL}/api/member/list`, {
+      headers: {
+        Authorization: TOKEN,
+        "x-member-name": MEMBER_NAME,
+      },
+    });
+
+    const json = await refreshed.json();
+    setMembers(json.data || []);
+  } catch (err) {
+    console.error("ADD MEMBER ERROR:", err);
+  }
+};
+
+
 const handleEdit = (member: any) => {
   setSelectedMember(member);
 
@@ -446,42 +510,52 @@ const handleUpdateMember = async () => {
           </div>
         </div>
       )}
-      {/* Modal Tambah */}
+{/* Modal Tambah */}
 {showAddModal && (
   <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
-    <div className="bg-white w-full max-w-lg rounded-2xl p-6 animate-scale-in">
+    <div className="bg-white w-full max-w-lg rounded-2xl p-6">
       <h2 className="text-lg font-semibold mb-5">Tambah Anggota</h2>
 
       <div className="space-y-3">
         <input
           type="text"
           placeholder="Nama anggota"
+          value={addForm.name}
+          onChange={(e) =>
+            setAddForm({ ...addForm, name: e.target.value })
+          }
           className="w-full border rounded-lg px-4 py-2 text-sm"
         />
 
         <input
           type="text"
           placeholder="Nomor anggota"
+          value={addForm.id_member}
+          onChange={(e) =>
+            setAddForm({ ...addForm, id_member: e.target.value })
+          }
           className="w-full border rounded-lg px-4 py-2 text-sm"
         />
 
         <input
           type="text"
           placeholder="Alamat"
+          value={addForm.address}
+          onChange={(e) =>
+            setAddForm({ ...addForm, address: e.target.value })
+          }
           className="w-full border rounded-lg px-4 py-2 text-sm"
         />
 
         <input
           type="email"
           placeholder="Email"
+          value={addForm.email}
+          onChange={(e) =>
+            setAddForm({ ...addForm, email: e.target.value })
+          }
           className="w-full border rounded-lg px-4 py-2 text-sm"
         />
-
-        <select className="w-full border rounded-lg px-4 py-2 text-sm">
-          <option value="">Pilih Status</option>
-          <option>Aktif</option>
-          <option>Nonaktif</option>
-        </select>
       </div>
 
       <div className="flex justify-end gap-3 mt-6">
@@ -491,13 +565,18 @@ const handleUpdateMember = async () => {
         >
           Cancel
         </button>
-        <button className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm">
+
+        <button
+          onClick={handleCreateMember}
+          className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm"
+        >
           Save
         </button>
       </div>
     </div>
   </div>
 )}
+
 
     </div>
   );

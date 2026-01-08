@@ -5,11 +5,11 @@ import { usePathname } from "next/navigation";
 import React, { useState } from "react";
 
 const NAV_ITEMS: { name: string; href: string }[] = [
-  { name: "Dashboard", href: "/" },
-  { name: "Buku", href: "/buku" },
-  { name: "Anggota", href: "/anggota" },
-  { name: "Peminjaman", href: "/peminjaman" },
-  { name: "Pengembalian", href: "/pengembalian" },
+  { name: "Home", href: "/" },
+  { name: "Book", href: "/buku" },
+  { name: "Member", href: "/anggota" },
+  { name: "Loan", href: "/peminjaman" },
+  { name: "Return", href: "/pengembalian" },
 ];
 
 const Navbar: React.FC = () => {

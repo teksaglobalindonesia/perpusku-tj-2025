@@ -183,20 +183,37 @@ const openEditModal = (book: any) => {
   };
 
   // CREATE
-  const handleCreate = async () => {
-    const fd = new FormData();
-  
-    fd.append("title", form.title);
-    fd.append("writer", form.writer);
-    fd.append("publisher", form.publisher);
-    fd.append("published_year", form.published_year);
-    fd.append("stock", form.stock);
-    fd.append("category_id", form.categories);
-  
-    if (form.cover) {
-      fd.append("cover", form.cover);
-    }
-  
+const handleCreate = async () => {
+  if (
+    !form.title ||
+    !form.writer ||
+    !form.publisher ||
+    !form.published_year ||
+    !form.stock ||
+    !form.categories
+  ) {
+    alert("Semua field wajib diisi");
+    return;
+  }
+
+  const payload = {
+    title: form.title,
+    writer: form.writer,
+    publisher: form.publisher,
+    published_year: form.published_year,
+    stock: Number(form.stock),
+    categories: [form.categories], // SESUAI POSTMAN
+  };
+
+  const fd = new FormData();
+
+  fd.append("data", JSON.stringify(payload));
+
+  if (form.cover) {
+    fd.append("cover", form.cover);
+  }
+
+  try {
     const res = await fetch(`${BASE_URL}/api/book/add`, {
       method: "POST",
       headers: {
@@ -205,17 +222,33 @@ const openEditModal = (book: any) => {
       },
       body: fd,
     });
-  
+
+    const text = await res.text();
+    console.log("CREATE RESPONSE:", text);
+
     if (!res.ok) {
-      console.error(await res.text());
+      alert("Gagal menambah buku");
       return;
     }
-  
+
     setActiveModal(null);
     await refreshBooks();
 
-  };
-  
+    setForm({
+      title: "",
+      writer: "",
+      publisher: "",
+      published_year: "",
+      categories: "",
+      stock: "",
+      cover: null,
+      loans: "",
+    });
+  } catch (err) {
+    console.error("CREATE ERROR:", err);
+  }
+};
+
 
   // UPDATE
 const handleUpdate = async () => {
@@ -299,7 +332,7 @@ const handleDestroy = async () => {
     <div className="min-h-screen bg-gray-50 px-4 sm:px-6 lg:px-10 py-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-bold text-gray-800">Data Buku</h1>
+        <h1 className="text-xl font-bold text-gray-800">Book List</h1>
 
         <button
          type= "button"
@@ -319,7 +352,7 @@ const handleDestroy = async () => {
           }}
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl"
         >
-          <FiPlus /> Tambah Buku
+          <FiPlus /> Add Book
         </button>
       </div>
 
@@ -328,7 +361,7 @@ const handleDestroy = async () => {
         <FiSearch className="text-gray-400" />
         <input
           type="text"
-          placeholder="Cari judul buku..."
+          placeholder="Search by title..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full outline-none text-sm"
@@ -336,39 +369,36 @@ const handleDestroy = async () => {
       </div>
 
       {/* Loading */}
-      {loading && <p className="text-center text-sm text-gray-500">Memuat data...</p>}
+      {loading && <p className="text-center text-sm text-gray-500">Loading...</p>}
 
       {/* Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {filteredBooks.map((book) => (
           <div key={book.id} className="bg-white rounded-xl shadow flex flex-col overflow-hidden">
             <div className="h-40 bg-gray-100">
-<img
-  src={getCoverUrl(book.cover)}
-  alt={book.title}
-  className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition"
-  onClick={() => {
-    setPreviewImage(getCoverUrl(book.cover));
-    setActiveModal("preview");
-  }}
-/>
-
-
+              <img
+                src={getCoverUrl(book.cover)}
+                alt={book.title}
+                className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition"
+                onClick={() => {
+                setPreviewImage(getCoverUrl(book.cover));
+                setActiveModal("preview");
+               }}
+              />
             </div>
-
             <div className="p-4 flex flex-col justify-between flex-1">
               <div>
                 <h2 className="font-semibold text-gray-800">{book.title}</h2>
-                <p className="text-xs text-gray-500">Penulis: {book.writer || "-"}</p>
+                <p className="text-xs text-gray-500">Writer: {book.writer || "-"}</p>
                 <p className="text-xs text-gray-500">{book.publisher} • {book.published_year ?? "-"}</p>
-                <p className="text-xs mt-2">Kategori: {book.categories?.map((cat: any) => cat.name).join(", ") || "-"}</p>
-                <p className="text-xs mt-1">Stok: {book.stock ?? "-"}</p>
+                <p className="text-xs mt-2">Category: {book.categories?.map((cat: any) => cat.name).join(", ") || "-"}</p>
+                <p className="text-xs mt-1">Stock: {book.stock ?? "-"}</p>
               </div>
 
               <div className="flex justify-end gap-2 mt-4">
                 <button onClick={() => openEditModal(book)}>Edit</button>
                 <button onClick={() => openModal("delete", book)} type="button" className="text-xs px-3 py-1 bg-red-100 text-red-600 rounded">
-                  Hapus
+                  Delete
                 </button>
               </div>
             </div>
@@ -384,7 +414,7 @@ const handleDestroy = async () => {
       className="bg-white w-full max-w-lg rounded-xl p-6 relative"
       onClick={(e) => e.stopPropagation()}
     >
-      <h2 className="font-semibold text-lg mb-4">Tambah Buku</h2>
+      <h2 className="font-semibold text-lg mb-4">Add Book</h2>
 
       <div className="space-y-3">
         <input
@@ -426,7 +456,7 @@ const handleDestroy = async () => {
           onChange={(e) => setForm({ ...form, categories: e.target.value })}
           className="w-full border p-2 rounded"
         >
-          <option value="">Pilih kategori</option>
+          <option value="">Select Category</option>
           {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
               {cat.name}
@@ -461,7 +491,7 @@ const handleDestroy = async () => {
           onClick={() => setActiveModal(null)}
           className="px-4 py-2 rounded border"
         >
-          Batal
+          Cancel
         </button>
 
         <button
@@ -469,7 +499,7 @@ const handleDestroy = async () => {
           onClick={handleCreate}
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
-          Simpan
+          Save
         </button>
       </div>
     </div>
@@ -618,19 +648,21 @@ const handleDestroy = async () => {
           <span className="text-red-600 text-xl font-bold">!</span>
         </div>
         <h2 className="text-lg font-semibold text-gray-800">
-          Hapus Buku
+          Delete Book
         </h2>
       </div>
 
       {/* Content */}
       <p className="text-sm text-gray-600 mb-6">
-        Yakin ingin menghapus buku
+        Are you sure you want to delete the
         <span className="font-semibold text-gray-800">
           {" "}
           “{selectedBook.title}”
+          {" "} 
         </span>
-        ?<br />
-        Tindakan ini tidak dapat dibatalkan.
+          book?
+        <br />
+        This action can't be undone.
       </p>
 
       {/* Actions */}
