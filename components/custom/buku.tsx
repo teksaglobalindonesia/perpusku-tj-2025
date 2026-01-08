@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import {useEffect, useState } from "react";
 import Link from "next/link";
+import {BASE_URL, TOKEN, MEMBER_NAME} from "../../lib/constant";
 
 const nav_items = [
   { name: "Dashboard", href: "/" },
@@ -11,37 +12,38 @@ const nav_items = [
   { name: "Pengembalian", href: "/pengembalian" },
 ];
 
-const books = [
-  {
-    id: 1,
-    title: "A Smart Bunny",
-    author: "Jonathan Miles",
-    publisher: "Kids World",
-    year: 2022,
-    category: "Anak-anak",
-    stock: 12,
-    image: "/img/foto1.jpg",
-  },
-  {
-    id: 2,
-    title: "The Clever Bee",
-    author: "Laura White",
-    publisher: "Edu Press",
-    year: 2021,
-    category: "Edukasi",
-    stock: 8,
-    image: "/img/foto2.jpg",
-  },
-];
 
-export default function BukuPage() {
+const BukuPage = () => {
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState<"add" | "edit" | "delete" | null>(null);
   const [selected, setSelected] = useState<any>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
+  const [books, setBooks] = useState <any[]>([]);
+
+useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/api/book/list`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: TOKEN,
+            "x-member-name": MEMBER_NAME,
+          },
+          cache: "no-store",
+        });
+  
+        const json = await res.json();
+        setBooks(json?.data || []);
+      } catch (err) {
+        console.error("Gagal ambil buku:",  err);
+      }
+    })();
+  }, []);
+  
   const filteredBooks = books.filter((b) =>
-    b.title.toLowerCase().includes(search.toLowerCase())
+    b.title?.toLowerCase().includes(search.toLowerCase())
   );
 
   const closeModal = () => {
@@ -95,40 +97,41 @@ export default function BukuPage() {
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredBooks.map((item) => (
+          {filteredBooks.map((b, index) => (
             <div
-              key={item.id}
+              key={index}
               className="rounded-2xl bg-white border border-purple-200 p-5 shadow-sm"
             >
               <img
-                src={item.image}
+                src={b.cover?.url ? `${BASE_URL}${b.cover?.url}` : "/placeholder-book.jpg"}
+                alt={b.title}
                 className="mb-4 h-48 w-full rounded-xl object-cover"
               />
 
               <h3 className="mb-1 text-xl font-bold text-purple-700">
-                {item.title}
+                {b.title}
               </h3>
 
-              <p className="text-sm text-gray-600">Penulis: {item.author}</p>
-              <p className="text-sm text-gray-600">Penerbit: {item.publisher}</p>
-              <p className="text-sm text-gray-600">Tahun: {item.year}</p>
-              <p className="text-sm text-gray-600">Kategori: {item.category}</p>
+              <p className="text-sm text-gray-600">Penulis: {b.writer}</p>
+              <p className="text-sm text-gray-600">Penerbit: {b.publisher}</p>
+              <p className="text-sm text-gray-600">Tahun: {b.published_year}</p>
+              <p className="text-sm text-gray-600">Kategori: {b.categories?.map((c: any) => c.name).join(", ")}</p>
               <p className="text-sm font-semibold">
-                Stok:{" "}
+                stock:{" "}
+                 
                 <span
                   className={
-                    item.stock > 0 ? "text-green-600" : "text-red-500"
+                    b.stock > 0 ? "text-green-600" : "text-red-500"
                   }
                 >
-                  {item.stock}
+                  {b.stock}
                 </span>
               </p>
 
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <button
                   onClick={() => {
-                    setSelected(item);
-                    setPreview(item.image);
+                    setSelected(b);
                     setModal("edit");
                   }}
                   className="rounded-lg bg-purple-600 py-2 text-white hover:bg-purple-700 transition"
@@ -137,7 +140,7 @@ export default function BukuPage() {
                 </button>
                 <button
                   onClick={() => {
-                    setSelected(item);
+                    setSelected(b);
                     setModal("delete");
                   }}
                   className="rounded-lg bg-red-500 py-2 text-white hover:bg-red-600 transition"
@@ -161,10 +164,10 @@ export default function BukuPage() {
 
                 <div className="space-y-3">
                   <input defaultValue={selected?.title} placeholder="Judul Buku" className="w-full rounded-lg border border-purple-300 p-3" />
-                  <input defaultValue={selected?.author} placeholder="Penulis" className="w-full rounded-lg border border-purple-300 p-3" />
+                  <input defaultValue={selected?.writer} placeholder="Penulis" className="w-full rounded-lg border border-purple-300 p-3" />
                   <input defaultValue={selected?.publisher} placeholder="Penerbit" className="w-full rounded-lg border border-purple-300 p-3" />
-                  <input type="number" defaultValue={selected?.year} placeholder="Tahun Terbit" className="w-full rounded-lg border border-purple-300 p-3" />
-                  <select defaultValue={selected?.category} className="w-full rounded-lg border border-purple-300 p-3">
+                  <input type="number" defaultValue={selected?.published_year} placeholder="Tahun Terbit" className="w-full rounded-lg border border-purple-300 p-3" />
+                  <select defaultValue={selected?.categories} className="w-full rounded-lg border border-purple-300 p-3">
                     <option value="">Pilih Kategori</option>
                     <option>Anak-anak</option>
                     <option>Edukasi</option>
@@ -204,7 +207,7 @@ export default function BukuPage() {
                     : "bg-purple-700"
                 }`}
               >
-                Simpan
+                Hapus
               </button>
             </div>
           </div>
@@ -213,3 +216,5 @@ export default function BukuPage() {
     </div>
   );
 }
+
+export default BukuPage;

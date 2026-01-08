@@ -18,18 +18,40 @@ const books = [
 ];
 
 const members = [
-  { id: 1, name: "Shela Putri", nis: "11111", email: "shela@gmail.com" },
-  { id: 2, name: "Dimas Pratama", nis: "22222", email: "dimas@gmail.com" },
-  { id: 3, name: "Rina Aulia", nis: "33333", email: "rina@gmail.com" },
+  { id: 1, name: "agatha celine jjavorkai", email: "agathavorka2@gmail.com" },
+  { id: 2, name: "anak agung aldebaran", email: "aldebaranagung@gmail.com" },
+  { id: 3, name: "i gede satria jati wibawa", email: "sajajaja08@gmail.com" },
+  { id: 4, name: "lionel jastive mouel", email: "jastive35@gmail.com" },
 ];
 
 const borrowList = [
   {
     id: 1,
-    title: "A Smart Bunny",
-    borrower: "Shela Putri",
-    borrowDate: "2025-01-10",
-    returnDate: "2025-01-17",
+    title: "Delicious Mushroom",
+    borrower: "i gede satria jati wibawa",
+    borrowDate: "01/17/2026",
+    returnDate: "01/24/2026",
+  },
+  {
+    id: 2,
+    title: "As Green as a Leaf",
+    borrower: "agatha celine jjavorka",
+    borrowDate: "01/03/2026",
+    returnDate: "01/10/2026",
+  },
+  {
+    id: 3,
+    title: " A Smart Bunny",
+    borrower: "i gede satria jati wibawa",
+    borrowDate: "01/03/2026",
+    returnDate: "01/10/2026",
+  },
+  {
+    id: 4,
+    title: "Calm Clouds",
+    borrower: "anak agung aldebaran",
+    borrowDate: "01/10/2026",
+    returnDate: "01/17/2026",
   },
 ];
 

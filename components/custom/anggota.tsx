@@ -14,10 +14,9 @@ const nav_items = [
 const members = [
   {
     id: 1,
-    name: "Shela Putri",
-    number: "AGT-001",
-    address: "Jl. Merdeka No. 10",
-    email: "shela@mail.com",
+    name: "agatha celine jjavorka",
+    address: "Jl. Jakarta",
+    email: "agathavorka2@gmail.com",
     borrowed: [
       { title: "A Smart Bunny", date: "2025-01-10" },
       { title: "The Clever Bee", date: "2025-01-15" },
@@ -26,10 +25,25 @@ const members = [
   },
   {
     id: 2,
-    name: "Dimas Pratama",
-    number: "AGT-002",
-    address: "Jl. Sudirman No. 5",
-    email: "dimas@mail.com",
+    name: "anak agung aldebaran",
+    address: "Jl. Busan",
+    email: "aldebaranagung@gmail.com",
+    borrowed: [{ title: "Useful Tree", date: "2025-01-18" }],
+    returned: [],
+  },
+   {
+    id: 3,
+    name: "i gede satria jati wibawa",
+    address: "Jl. Tabanan",
+    email: "sajajaja08@gmail.com",
+    borrowed: [{ title: "Useful Tree", date: "2025-01-18" }],
+    returned: [],
+  },
+   {
+    id: 4,
+    name: "lionel jastive mouel",
+    address: "Jl. Manado",
+    email: "jastive35@gmail.com",
     borrowed: [{ title: "Useful Tree", date: "2025-01-18" }],
     returned: [],
   },
@@ -132,7 +146,6 @@ export default function AnggotaPage() {
               <h3 className="text-lg font-bold text-purple-700">
                 {item.name}
               </h3>
-              <p className="text-sm text-gray-600">Nomor: {item.number}</p>
               <p className="text-sm text-gray-600">Alamat: {item.address}</p>
               <p className="text-sm text-gray-600">Email: {item.email}</p>
 

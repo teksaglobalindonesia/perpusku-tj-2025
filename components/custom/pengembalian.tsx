@@ -14,17 +14,24 @@ const nav_items = [
 const borrowList = [
   {
     id: 1,
-    title: "A Smart Bunny",
-    borrower: "Shela Putri",
-    borrowDate: "2025-01-10",
-    returnDate: "2025-01-17",
+    title: "As Green as a Leaf",
+    borrower: "agatha celine jjavorka",
+    borrowDate: "01/03/2026",
+    returnDate: "01/10/2026", 
   },
   {
     id: 2,
-    title: "The Clever Bee",
-    borrower: "Dimas Pratama",
-    borrowDate: "2025-01-05",
-    returnDate: "2025-01-12",
+    title: "Delicious Mushroom",
+    borrower: "i gede satria jati wibawa",
+    borrowDate: "01/17/2026",
+    returnDate: "01/27/2026",
+  },
+  {
+    id: 3, 
+    title: "Calm Clouds",
+    borrower: "anak agung aldebaran",
+    borrowDate: "01/10/2026",
+    returnDate: "01/17/2026  ",
   },
 ];
 
