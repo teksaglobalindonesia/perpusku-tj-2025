@@ -16,6 +16,8 @@ const AnggotaPage = () => {
   const [members, setMembers] = useState<any[]>([]);
   const [loans, setLoans] = useState<any[]>([]);
   const [showBookDetailModal, setShowBookDetailModal] = useState(false);
+  const ITEMS_PER_PAGE = 4;
+  const [currentPage, setCurrentPage] = useState(1);
 const [selectedBook, setSelectedBook] = useState<any>(null);
 const [editForm, setEditForm] = useState({
   name: "",
@@ -75,9 +77,16 @@ const handleViewLoans = async (member: any) => {
 };
 
 
-  const filteredMembers = members.filter((member) =>
-    member.name.toLowerCase().includes(search.toLowerCase())
-  );
+const filteredMembers = members.filter((member) =>
+  member.name.toLowerCase().includes(search.toLowerCase())
+);
+
+const totalPages = Math.ceil(filteredMembers.length / ITEMS_PER_PAGE);
+
+const paginatedMembers = filteredMembers.slice(
+  (currentPage - 1) * ITEMS_PER_PAGE,
+  currentPage * ITEMS_PER_PAGE
+);
 
 
 const [addForm, setAddForm] = useState({
@@ -241,6 +250,9 @@ const handleUpdateMember = async () => {
     console.error("Gagal hapus anggota:", err);
   }
 };
+useEffect(() => {
+  setCurrentPage(1);
+}, [search]);
 
 
   return (
@@ -248,13 +260,13 @@ const handleUpdateMember = async () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6 sm:mb-8">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
-          Data Anggota
+          Member List
         </h1>
 
         <button onClick={() => setShowAddModal(true)}
           className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow text-sm sm:text-base">
           <FiPlus />
-          <span>Tambah Anggota</span>
+          <span>Add Member</span>
         </button>
       </div>
 
@@ -263,7 +275,7 @@ const handleUpdateMember = async () => {
         <FiSearch className="text-gray-400" />
         <input
           type="text"
-          placeholder="Cari nama anggota..."
+          placeholder="Search by name..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full outline-none text-sm text-gray-700"
@@ -272,7 +284,7 @@ const handleUpdateMember = async () => {
 
 {/* List Anggota */}
 <div className="space-y-3 sm:space-y-4">
-  {filteredMembers.map((member) => (
+  {paginatedMembers.map((member) => (
     <div
       key={member.id}
       className="bg-white rounded-xl shadow hover:shadow-md transition p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
@@ -284,8 +296,8 @@ const handleUpdateMember = async () => {
         </h2>
 
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] sm:text-xs text-gray-500">
-          <span>Nomor Anggota: {member.id}</span>
-          <span>Alamat: {member.address}</span>
+          <span>Member's ID: {member.id}</span>
+          <span>Address: {member.address}</span>
           <span>{member.email}</span>
         </div>
 
@@ -306,7 +318,7 @@ const handleUpdateMember = async () => {
           onClick={() => handleViewLoans(member)}
           className="text-[11px] sm:text-xs px-4 py-1.5 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition"
         >
-          Peminjaman
+          Loans
         </button>
         <button
           onClick={() => handleEdit(member)}
@@ -318,7 +330,7 @@ const handleUpdateMember = async () => {
           onClick={() => handleDelete(member)}
           className="text-[11px] sm:text-xs px-4 py-1.5 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition"
         >
-          Hapus
+          Delete
         </button>
       </div>
     </div>
@@ -327,20 +339,19 @@ const handleUpdateMember = async () => {
       {/* Kalau kosong */}
       {filteredMembers.length === 0 && (
         <div className="text-center text-gray-500 mt-12 text-sm">
-          Anggota tidak ditemukan
+          Member data not found
         </div>
       )}
 {/* Modal Peminjaman */}
 {showLoanModal && selectedMember && (
   <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
-    <div className="bg-white w-full max-w-lg rounded-2xl p-6">
+    <div className="bg-white w-full max-w-lg rounded-2xl p-6 animate-scale-in">
       <h2 className="text-lg font-semibold mb-4">
-        Peminjaman - {selectedMember.name}
+        Loan - {selectedMember.name}
       </h2>
-
       {selectedLoans.length === 0 ? (
         <p className="text-sm text-gray-500">
-          Tidak ada data peminjaman
+          Loan's Data not found.
         </p>
       ) : (
         <div className="space-y-3 max-h-[400px] overflow-y-auto">
@@ -351,32 +362,27 @@ const handleUpdateMember = async () => {
             >
               <p className="font-medium">{loan.book?.title}</p>
               <p className="text-xs text-gray-500">
-                Tanggal Pinjam: {loan.loan_date}
+                Loan's Date: {loan.loan_date}
               </p>
               <p className="text-xs text-gray-500">
-                Tanggal Kembali: {loan.return_date ?? "-"}
+                Return's Date: {loan.return_date ?? "-"}
               </p>
-                        <button
-      onClick={() => {
-        setSelectedBook(loan.book);
-        setShowBookDetailModal(true);
-      }}
-      className="mt-2 text-xs px-3 py-1 bg-blue-100 text-blue-600 rounded"
-    >
-      Detail Buku
-    </button>
+             <button onClick={() => {
+                setSelectedBook(loan.book);
+                setShowBookDetailModal(true);
+                }}
+                className="mt-2 text-xs px-3 py-1 bg-blue-100 text-blue-600 rounded">
+               Book's Detail
+             </button>
             </div>
           ))}
         </div>
       )}
-
-
       <div className="flex justify-end mt-5">
         <button
           onClick={() => setShowLoanModal(false)}
-          className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm"
-        >
-          Tutup
+          className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm">
+          Close
         </button>
       </div>
     </div>
@@ -384,41 +390,35 @@ const handleUpdateMember = async () => {
 )}
 {showBookDetailModal && selectedBook && (
   <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
-    <div className="bg-white w-full max-w-md rounded-xl p-6 relative">
+    <div className="bg-white w-full max-w-md rounded-xl p-6 relative animate-scale-in">
       <h2 className="text-lg font-semibold mb-4">Detail Buku</h2>
       <div className="space-y-2 text-sm">
-        <p><b>Judul:</b> {selectedBook.title}</p>
-        <p><b>Penulis:</b> {selectedBook.writer}</p>
-        <p><b>Penerbit:</b> {selectedBook.publisher}</p>
-        <p><b>Tahun:</b> {selectedBook.published_year}</p>
-        <p><b>Stok:</b> {selectedBook.stock}</p>
+        <p><b>Title:</b> {selectedBook.title}</p>
+        <p><b>Writer:</b> {selectedBook.writer}</p>
+        <p><b>Publisher:</b> {selectedBook.publisher}</p>
+        <p><b>Published Year:</b> {selectedBook.published_year}</p>
+        <p><b>Stock:</b> {selectedBook.stock}</p>
       </div>
-                    <Link
-                href="/buku"
-                className="text-xs sm:text-sm text-blue-600 hover:underline"
-              >
-                Lihat Selengkapnya
-              </Link>
-
+        <Link href="/buku" className="text-xs sm:text-sm text-blue-600 hover:underline">
+            See more
+        </Link>
       <div className="flex justify-end mt-4">
         <button
           onClick={() => setShowBookDetailModal(false)}
           className="px-4 py-2 rounded bg-gray-100"
         >
-          Tutup
+          Close
         </button>
       </div>
     </div>
   </div>
 )}
 
-
-      {/* Modal Edit */}
 {/* Modal Edit */}
 {showEditModal && selectedMember && (
   <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
-    <div className="bg-white w-full max-w-lg rounded-2xl p-6">
-      <h2 className="text-lg font-semibold mb-5">Edit Anggota</h2>
+    <div className="bg-white w-full max-w-lg rounded-2xl p-6 animate-scale-in">
+      <h2 className="text-lg font-semibold mb-5">Edit Member</h2>
 
       <div className="space-y-3">
         <input
@@ -427,7 +427,7 @@ const handleUpdateMember = async () => {
           onChange={(e) =>
             setEditForm({ ...editForm, name: e.target.value })
           }
-          placeholder="Nama anggota"
+          placeholder="Member name"
           className="w-full border rounded-lg px-4 py-2 text-sm"
         />
 
@@ -447,7 +447,7 @@ const handleUpdateMember = async () => {
           onChange={(e) =>
             setEditForm({ ...editForm, address: e.target.value })
           }
-          placeholder="Alamat"
+          placeholder="Address"
           className="w-full border rounded-lg px-4 py-2 text-sm"
         />
 
@@ -457,7 +457,7 @@ const handleUpdateMember = async () => {
           onChange={(e) =>
             setEditForm({ ...editForm, id_member: e.target.value })
           }
-          placeholder="Nomor anggota"
+          placeholder="ID Number"
           className="w-full border rounded-lg px-4 py-2 text-sm"
         />
       </div>
@@ -467,29 +467,27 @@ const handleUpdateMember = async () => {
           onClick={() => setShowEditModal(false)}
           className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm"
         >
-          Batal
+          Cancel
         </button>
 
         <button
           onClick={handleUpdateMember}
           className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm"
         >
-          Simpan
+          Save
         </button>
       </div>
     </div>
   </div>
 )}
-
-
       {/* Modal Delete */}
       {showDeleteModal && selectedMember && (
         <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-2xl p-6 text-center animate-scale-in">
-            <h2 className="text-lg font-semibold mb-4">Hapus Anggota</h2>
+            <h2 className="text-lg font-semibold mb-4">Delete Member</h2>
 
             <p className="text-sm text-gray-600 mb-6">
-              Yakin ingin menghapus{" "}
+              Are you sure you want to delete{" "}
               <span className="font-semibold text-gray-800">
                 {selectedMember.name}
               </span>
@@ -501,10 +499,10 @@ const handleUpdateMember = async () => {
                 onClick={() => setShowDeleteModal(false)}
                 className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm"
               >
-                Batal
+                Cancel
               </button>
               <button onClick={handleDeleteMember}className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm">
-                Hapus
+                Delete
               </button>
             </div>
           </div>
@@ -514,12 +512,12 @@ const handleUpdateMember = async () => {
 {showAddModal && (
   <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
     <div className="bg-white w-full max-w-lg rounded-2xl p-6">
-      <h2 className="text-lg font-semibold mb-5">Tambah Anggota</h2>
+      <h2 className="text-lg font-semibold mb-5">Add Member</h2>
 
       <div className="space-y-3">
         <input
           type="text"
-          placeholder="Nama anggota"
+          placeholder="Name"
           value={addForm.name}
           onChange={(e) =>
             setAddForm({ ...addForm, name: e.target.value })
@@ -529,7 +527,7 @@ const handleUpdateMember = async () => {
 
         <input
           type="text"
-          placeholder="Nomor anggota"
+          placeholder="ID Number"
           value={addForm.id_member}
           onChange={(e) =>
             setAddForm({ ...addForm, id_member: e.target.value })
@@ -539,7 +537,7 @@ const handleUpdateMember = async () => {
 
         <input
           type="text"
-          placeholder="Alamat"
+          placeholder="Address"
           value={addForm.address}
           onChange={(e) =>
             setAddForm({ ...addForm, address: e.target.value })
@@ -574,6 +572,43 @@ const handleUpdateMember = async () => {
         </button>
       </div>
     </div>
+  </div>
+)}
+
+{/* Pagination */}
+{totalPages > 1 && (
+  <div className="flex justify-center items-center gap-2 mt-8">
+    <button
+      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+      disabled={currentPage === 1}
+      className="px-3 py-1 rounded bg-gray-100 text-sm disabled:opacity-50"
+    >
+      Prev
+    </button>
+
+    {Array.from({ length: totalPages }).map((_, i) => (
+      <button
+        key={i}
+        onClick={() => setCurrentPage(i + 1)}
+        className={`px-3 py-1 rounded text-sm ${
+          currentPage === i + 1
+            ? "bg-blue-600 text-white"
+            : "bg-gray-100 text-gray-700"
+        }`}
+      >
+        {i + 1}
+      </button>
+    ))}
+
+    <button
+      onClick={() =>
+        setCurrentPage((p) => Math.min(p + 1, totalPages))
+      }
+      disabled={currentPage === totalPages}
+      className="px-3 py-1 rounded bg-gray-100 text-sm disabled:opacity-50"
+    >
+      Next
+    </button>
   </div>
 )}
 

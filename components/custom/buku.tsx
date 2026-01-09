@@ -15,6 +15,11 @@ const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
+const [page, setPage] = useState(1);
+const PAGE_SIZE = 8;
+
+const [total, setTotal] = useState(0);
+const totalPages = Math.ceil(total / PAGE_SIZE);
 
 
   const [books, setBooks] = useState<any[]>([]);
@@ -50,15 +55,15 @@ const Modal = ({
   onClose: () => void;
 }) => (
   <div
-    className="fixed inset-0 z-[9999] flex items-center justify-center"
+    className="fixed inset-0 z-[9999] flex items-center justify-center "
     onClick={onClose} 
   >
     {/* Backdrop */}
-    <div className="absolute inset-0 bg-black/50" />
+    <div className="absolute inset-0 bg-black/50 " />
 
     {/* Content */}
     <div
-      className="relative z-10 bg-white rounded-xl p-6"
+      className="relative z-10 bg-white rounded-xl p-6 animate-scale-in"
       onClick={(e) => e.stopPropagation()}
     >
       {children}
@@ -108,55 +113,46 @@ const closeModal = () => {
   setSelectedBook(null);
 };
 
-  const refreshBooks = async () => {
-    try {
-      const res = await fetch(`${BASE_URL}/api/book/list`, {
+ const fetchBooks = async () => {
+  setLoading(true);
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      page_size: PAGE_SIZE.toString(),
+      search: search,
+    });
+
+    const res = await fetch(
+      `${BASE_URL}/api/book/list?${params.toString()}`,
+      {
         method: "GET",
         headers: {
-          "Content-Type": "application/json",
           Authorization: TOKEN,
           "x-member-name": MEMBER_NAME,
         },
         cache: "no-store",
-      });
-  
-      const json = await res.json();
-      setBooks(json?.data || []);
-    } catch (err) {
-      console.error("Gagal refresh buku:", err);
-    }
-  };
-  // GET DATA
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch(`${BASE_URL}/api/book/list`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: TOKEN,
-            "x-member-name": MEMBER_NAME,
-          },
-          cache: "no-store",
-        });
-  
-        const json = await res.json();
-        setBooks(json?.data || []);
-      } catch (err) {
-        console.error("Gagal ambil buku:", err);
       }
-    })();
-  }, []);
-  
+    );
 
-  // filter search berdasarkan title
-  const filteredBooks = books.filter((book) =>
-    (book.title || "").toString().toLowerCase().includes(search.toLowerCase())
-  );
+    const json = await res.json();
+     console.log("FULL RESPONSE", json);
+
+    setBooks(json?.data || []);
+    setTotal(json?.meta?.pagination?.total || 0);
+  } catch (err) {
+    console.error("Gagal fetch buku:", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
 useEffect(() => {
   fetchCategories();
 }, []);
+
+useEffect(() => {
+  fetchBooks();
+}, [page, search]);
 
 
 const openEditModal = (book: any) => {
@@ -232,7 +228,7 @@ const handleCreate = async () => {
     }
 
     setActiveModal(null);
-    await refreshBooks();
+    await fetchBooks();
 
     setForm({
       title: "",
@@ -289,7 +285,7 @@ const handleUpdate = async () => {
   if (!res.ok) return;
 
   setActiveModal(null);
-  await refreshBooks();
+  await fetchBooks();
 };
 
   // DELETE
@@ -319,7 +315,7 @@ const handleDestroy = async () => {
 
     setActiveModal(null);
     setSelectedBook(null);
-    await refreshBooks();
+    await fetchBooks();
   } catch (err) {
     console.error("Delete error:", err);
   } finally {
@@ -359,13 +355,17 @@ const handleDestroy = async () => {
       {/* Search */}
       <div className="bg-white p-3 rounded-xl shadow mb-6 flex items-center gap-3">
         <FiSearch className="text-gray-400" />
-        <input
-          type="text"
-          placeholder="Search by title..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full outline-none text-sm"
-        />
+<input
+  type="text"
+  placeholder="Search by title..."
+  value={search}
+  onChange={(e) => {
+    setSearch(e.target.value);
+    setPage(1);
+  }}
+  className="w-full outline-none text-sm"
+/>
+
       </div>
 
       {/* Loading */}
@@ -373,7 +373,7 @@ const handleDestroy = async () => {
 
       {/* Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {filteredBooks.map((book) => (
+        {books.map((book) => (
           <div key={book.id} className="bg-white rounded-xl shadow flex flex-col overflow-hidden">
             <div className="h-40 bg-gray-100">
               <img
@@ -411,7 +411,7 @@ const handleDestroy = async () => {
   <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
     {/* Modal */}
     <div
-      className="bg-white w-full max-w-lg rounded-xl p-6 relative"
+      className="bg-white w-full max-w-lg rounded-xl p-6 relative animate-scale-in"
       onClick={(e) => e.stopPropagation()}
     >
       <h2 className="font-semibold text-lg mb-4">Add Book</h2>
@@ -512,7 +512,7 @@ const handleDestroy = async () => {
     onClick={() => setActiveModal(null)}
   >
     <div
-      className="relative max-w-4xl w-full"
+      className="relative max-w-4xl w-full animate-scale-in"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Close */}
@@ -544,7 +544,7 @@ const handleDestroy = async () => {
 
     {/* Modal */}
     <div
-      className="bg-white w-full max-w-lg rounded-xl p-6 relative z-10"
+      className="bg-white w-full max-w-lg rounded-xl p-6 relative z-10 animate-scale-in "
       onClick={(e) => e.stopPropagation()}
     >
       <h2 className="font-semibold text-lg mb-4">Edit Buku</h2>
@@ -589,7 +589,7 @@ const handleDestroy = async () => {
           onChange={(e) => setForm({ ...form, categories: e.target.value })}
           className="w-full border p-2 rounded"
         >
-          <option value="">Pilih kategori</option>
+          <option value="">Select Category</option>
           {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
               {cat.name}
@@ -623,7 +623,7 @@ const handleDestroy = async () => {
           onClick={() => setActiveModal(null)}
           className="px-4 py-2 rounded border"
         >
-          Batal
+          Cancel
         </button>
 
 <button
@@ -641,9 +641,9 @@ const handleDestroy = async () => {
 
 {activeModal === "delete" && selectedBook && (
   <Modal onClose={closeModal}>
-    <div className="w-full max-w-sm">
+    <div className="w-full max-w-sm animate-scale-in">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-4 ">
         <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
           <span className="text-red-600 text-xl font-bold">!</span>
         </div>
@@ -672,7 +672,7 @@ const handleDestroy = async () => {
           onClick={closeModal}
           className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
         >
-          Batal
+          Cancel
         </button>
 
         <button
@@ -687,11 +687,45 @@ const handleDestroy = async () => {
             transition
           "
         >
-          {isDeleting ? "Menghapus..." : "Hapus"}
+          {isDeleting ? "Menghapus..." : "Delete"}
         </button>
       </div>
     </div>
   </Modal>
+)}
+{/* Pagination */}
+{totalPages > 1 && (
+  <div className="flex justify-center items-center gap-2 mt-8">
+    <button
+      disabled={page === 1}
+      onClick={() => setPage(page - 1)}
+      className="px-3 py-1 text-sm rounded border disabled:opacity-50"
+    >
+      Prev
+    </button>
+
+    {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+      <button
+        key={p}
+        onClick={() => setPage(p)}
+        className={`px-3 py-1 text-sm rounded border ${
+          p === page
+            ? "bg-blue-600 text-white"
+            : "hover:bg-gray-100"
+        }`}
+      >
+        {p}
+      </button>
+    ))}
+
+    <button
+      disabled={page === totalPages}
+      onClick={() => setPage(page + 1)}
+      className="px-3 py-1 text-sm rounded border disabled:opacity-50"
+    >
+      Next
+    </button>
+  </div>
 )}
 
     </div>

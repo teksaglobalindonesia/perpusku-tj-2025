@@ -23,6 +23,9 @@ const [loans, setLoans] = useState<any[]>([]);
 const [books, setBooks] = useState<any[]>([]);
 const [members, setMembers] = useState<any[]>([]);
 
+const ITEMS_PER_PAGE = 4;
+const [currentPage, setCurrentPage] = useState(1);
+
 const getCoverUrl = (cover?: any) => {
   if (!cover?.url) return null;
   return `${BASE_URL}${cover.url}`;
@@ -60,12 +63,23 @@ useEffect(() => {
   })();
 }, [showAddModal]);
 
-  const today = new Date();
+const today = new Date();
+
+useEffect(() => {
+  setCurrentPage(1);
+}, [search]);
+
 
 const filteredLoans = loans.filter((loan) =>
   loan.book?.title
     ? loan.book.title.toLowerCase().includes(search.toLowerCase())
     : false
+);
+const totalPages = Math.ceil(filteredLoans.length / ITEMS_PER_PAGE);
+
+const paginatedLoans = filteredLoans.slice(
+  (currentPage - 1) * ITEMS_PER_PAGE,
+  currentPage * ITEMS_PER_PAGE
 );
 
 const isLate = (returnDate: string) => {
@@ -216,6 +230,9 @@ const handleConfirmReturn = async () => {
     console.error("RETURN FAILED:", err);
   }
 };
+const isReturned = (loan: any) => {
+  return !!loan.return;
+};
 
 
   return (
@@ -223,14 +240,14 @@ const handleConfirmReturn = async () => {
       {/* Header */}
 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6 sm:mb-8">
   <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
-    Data Peminjaman
+    Loan Data
   </h1>
 
   <button
     onClick={() => setShowAddModal(true)}
     className="px-4 py-2 text-sm rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition"
   >
-    + Tambah Peminjaman
+    + Add Loan
   </button>
 </div>
 
@@ -240,7 +257,7 @@ const handleConfirmReturn = async () => {
         <FiSearch className="text-gray-400" />
         <input
           type="text"
-          placeholder="Cari judul buku..."
+          placeholder="Search by title..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full outline-none text-sm text-gray-700"
@@ -250,10 +267,10 @@ const handleConfirmReturn = async () => {
       {/* List Peminjaman */}
       <div className="space-y-3 sm:space-y-4">
         
-        {filteredLoans.map((loan) => {
-console.log("BOOK:", loan.book);
-console.log("BOOK COVER:", loan.book?.cover);
-console.log("COVER URL:", getCoverUrl(loan.book?.cover));
+        {paginatedLoans.map((loan) => {
+          console.log("BOOK:", loan.book);
+          console.log("BOOK COVER:", loan.book?.cover);
+          console.log("COVER URL:", getCoverUrl(loan.book?.cover));
           const late = isLate(loan.return_date);
           const book = findBook(loan.book);
           return (
@@ -262,39 +279,53 @@ console.log("COVER URL:", getCoverUrl(loan.book?.cover));
               className="bg-white rounded-xl shadow hover:shadow-md transition p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
             >
               {/* Info */}
-{/* Info */}
-<div className="flex gap-4">
-  {/* Text */}
-  <div className="flex flex-col gap-1">
-    <h2 className="text-sm sm:text-base font-semibold text-gray-800">
-      {loan.book?.title}
-
-
-    </h2>
-
-    <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] sm:text-xs text-gray-500">
-      <span>Peminjam: {loan.member?.name}</span>
-      <span>Pinjam: {loan.loan_date}</span>
-      <span>Kembali: {loan.return_date}</span>
-    </div>
-
-    {late && (
-      <span className="mt-1 inline-block w-fit px-2 py-0.5 text-[10px] font-medium rounded-full bg-red-100 text-red-600">
-        Terlambat
-      </span>
-    )}
-  </div>
-</div>
-
-
+            <div className="flex gap-4">
+             {/* Text */}
+              <div className="flex flex-col gap-1">
+               <h2 className="text-sm sm:text-base font-semibold text-gray-800">
+                {loan.book?.title}
+               </h2>
+               <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] sm:text-xs text-gray-500">
+                 <span>Borrower: {loan.member?.name}</span>
+                 <span>Borrow Date: {loan.loan_date}</span>
+                 <span>Estimated Return Date: {loan.return_date}</span>
+               </div>
+               <div className="flex flex-row gap-2">
+               {isReturned(loan) ? (
+                 <span className="mt-1 inline-block w-fit px-2 py-0.5 text-[10px] font-medium rounded-full bg-green-100 text-green-700">
+                  Returned
+                 </span>
+                 
+                 ) : late ? (
+                 <span className="mt-1 inline-block w-fit px-2 py-0.5 text-[10px] font-medium rounded-full bg-red-100 text-red-600">
+                   Late
+                 </span>
+                 ) : null}
+                 {late && (
+                  <span className="mt-1 inline-block w-fit px-2 py-0.5 text-[10px] font-medium rounded-full bg-red-100 text-red-600">
+                  Late
+                  </span>
+                 )}
+                 {isReturned(loan) && (
+                  <p className="text-[11px] text-gray-500">
+                    Returned at: {loan.return.actual_return_date}
+                  </p>
+                 )}
+                </div>
+               </div>
+              </div>
               {/* Action */}
               <div className="flex gap-2 justify-end sm:justify-start">
-                <button
+               <button
+                  disabled={isReturned(loan)}
                   onClick={() => handleReturn(loan)}
-                  className="text-[11px] sm:text-xs px-4 py-1.5 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition"
-                >
-                  Kembalikan
-                </button>
+                  className={`text-[11px] sm:text-xs px-4 py-1.5 rounded-lg transition ${
+                  isReturned(loan)
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                 }`}>
+                 Return
+               </button>
               </div>
             </div>
           );
@@ -304,7 +335,7 @@ console.log("COVER URL:", getCoverUrl(loan.book?.cover));
       {/* Empty state */}
       {filteredLoans.length === 0 && (
         <div className="text-center text-gray-500 mt-12 text-sm">
-          Data peminjaman tidak ditemukan
+          Loan Data not found
         </div>
       )}
 
@@ -313,15 +344,15 @@ console.log("COVER URL:", getCoverUrl(loan.book?.cover));
         <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-2xl p-6 text-center animate-scale-in">
             <h2 className="text-lg font-semibold mb-4">
-              Konfirmasi Pengembalian
+              Return Confirmation
             </h2>
 
             <p className="text-sm text-gray-600 mb-6">
-              Yakin ingin mengembalikan buku{" "}
+              Are you sure you want to return the{" "}
               <span className="font-semibold text-gray-800">
                 {selectedLoan.book?.title}
               </span>{" "}
-              dari{" "}
+              book from{" "}
               <span className="font-semibold text-gray-800">
                 {selectedLoan.member?.name}
               </span>
@@ -333,55 +364,52 @@ console.log("COVER URL:", getCoverUrl(loan.book?.cover));
                 onClick={() => setShowReturnModal(false)}
                 className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm"
               >
-                Batal
+                Cancel
               </button>
-<button
-
-  onClick={handleConfirmReturn}
-  className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700"
->
-  Ya, Kembalikan
-</button>
-
+              <button
+                onClick={handleConfirmReturn}
+                className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700">
+                Yes, Return it
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal Tambah Peminjaman */}
+{/* Modal Tambah Peminjaman */}
 {showAddModal && (
   <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
     <div className="bg-white w-full max-w-md rounded-2xl p-6 animate-scale-in">
-      <h2 className="text-lg font-semibold mb-4">Tambah Peminjaman</h2>
+      <h2 className="text-lg font-semibold mb-4">Add Loans</h2>
 
       <div className="space-y-4">
         {/* Pilih Buku */}
         <div>
-          <label className="text-xs text-gray-500">Buku</label>
+          <label className="text-xs text-gray-500">Book</label>
           <button
             type="button"
             onClick={() => setShowBookModal(true)}
             className="w-full mt-1 px-3 py-2 text-sm rounded-lg border text-left hover:bg-gray-50"
           >
-            {selectedBook ? selectedBook.title : "Pilih Buku"}
+            {selectedBook ? selectedBook.title : "Select Book"}
           </button>
         </div>
 
         {/* Pilih Anggota */}
         <div>
-          <label className="text-xs text-gray-500">Anggota</label>
+          <label className="text-xs text-gray-500">Member</label>
           <button
             type="button"
             onClick={() => setShowMemberModal(true)}
             className="w-full mt-1 px-3 py-2 text-sm rounded-lg border text-left hover:bg-gray-50"
           >
-            {selectedMember ? selectedMember.name : "Pilih Anggota"}
+            {selectedMember ? selectedMember.name : "Select Member"}
           </button>
         </div>
 
         {/* Tanggal Pinjam */}
         <div>
-          <label className="text-xs text-gray-500">Tanggal Pinjam</label>
+          <label className="text-xs text-gray-500">Borrowing Date</label>
           <input
             type="date"
             value={newLoanDate}
@@ -392,7 +420,7 @@ console.log("COVER URL:", getCoverUrl(loan.book?.cover));
 
         {/* Tanggal Kembali */}
         <div>
-          <label className="text-xs text-gray-500">Tanggal Pengembalian</label>
+          <label className="text-xs text-gray-500">Return Date</label>
           <input
             type="date"
             value={newReturnDate}
@@ -407,15 +435,13 @@ console.log("COVER URL:", getCoverUrl(loan.book?.cover));
           onClick={() => setShowAddModal(false)}
           className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm"
         >
-          Batal
+          Cancel
         </button>
-<button
-  onClick={handleCreateLoan}
-  className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700"
->
-  Simpan
-</button>
-
+        <button
+          onClick={handleCreateLoan}
+          className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700">
+          Save
+        </button>
       </div>
     </div>
   </div>
@@ -424,7 +450,7 @@ console.log("COVER URL:", getCoverUrl(loan.book?.cover));
 {showBookModal && (
   <div className="fixed inset-0 z-[10000] bg-black/50 flex items-center justify-center p-4">
     <div className="bg-white w-full max-w-lg rounded-2xl p-5 animate-scale-in">
-      <h3 className="text-sm font-semibold mb-4">Pilih Buku</h3>
+      <h3 className="text-sm font-semibold mb-4">Select Book</h3>
 
       <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
         {books.map((book) =>{
@@ -455,16 +481,16 @@ console.log("COVER URL:", getCoverUrl(loan.book?.cover));
                 {book.title}
               </p>
               <p className="text-[11px] text-gray-500">
-                Penulis: {book.author}
+                Writer: {book.writer}
               </p>
               <p className="text-[11px] text-gray-500">
-                Penerbit: {book.publisher}
+                Publisher: {book.publisher}
               </p>
               <p className="text-[11px] text-gray-500">
-                Tahun: {book.year}
+                Published Year: {book.published_year}
               </p>
               <p className="text-[11px] text-gray-500">
-                Kategori: {book.category}
+                Category: {book.categories?.[0]?.name ?? "-"}
               </p>
 
               {/* Stok */}
@@ -473,8 +499,7 @@ console.log("COVER URL:", getCoverUrl(loan.book?.cover));
                   book.stock > 0
                     ? "bg-green-100 text-green-600"
                     : "bg-red-100 text-red-600"
-                }`}
-              >
+                }`}>
                 {book.stock > 0 ? `Stok: ${book.stock}` : "Stok Habis"}
               </span>
             </div>
@@ -487,7 +512,7 @@ console.log("COVER URL:", getCoverUrl(loan.book?.cover));
           onClick={() => setShowBookModal(false)}
           className="text-xs px-3 py-1.5 rounded-lg bg-gray-100"
         >
-          Tutup
+          Close
         </button>
       </div>
     </div>
@@ -498,7 +523,7 @@ console.log("COVER URL:", getCoverUrl(loan.book?.cover));
 {showMemberModal && (
   <div className="fixed inset-0 z-[10000] bg-black/50 flex items-center justify-center p-4">
     <div className="bg-white w-full max-w-lg rounded-2xl p-5 animate-scale-in">
-      <h3 className="text-sm font-semibold mb-4">Pilih Anggota</h3>
+      <h3 className="text-sm font-semibold mb-4">Select Member</h3>
 
       <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
         {members.map((member) => (
@@ -515,10 +540,10 @@ console.log("COVER URL:", getCoverUrl(loan.book?.cover));
                 {member.name}
               </p>
               <p className="text-[11px] text-gray-500">
-                No Anggota: {member.no_member}
+                Member ID: {member.id_member}
               </p>
               <p className="text-[11px] text-gray-500">
-                Alamat: {member.address}
+                Address: {member.address}
               </p>
               <p className="text-[11px] text-gray-500">
                 Email: {member.email}
@@ -533,10 +558,44 @@ console.log("COVER URL:", getCoverUrl(loan.book?.cover));
           onClick={() => setShowMemberModal(false)}
           className="text-xs px-3 py-1.5 rounded-lg bg-gray-100"
         >
-          Tutup
+          Close
         </button>
       </div>
     </div>
+  </div>
+)}
+{/* Pagination */}
+{totalPages > 1 && (
+  <div className="flex justify-center items-center gap-2 mt-8">
+    <button
+      onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+      disabled={currentPage === 1}
+      className="px-3 py-1 rounded bg-gray-100 text-sm disabled:opacity-50"
+    >
+      Prev
+    </button>
+
+    {Array.from({ length: totalPages }).map((_, i) => (
+      <button
+        key={i}
+        onClick={() => setCurrentPage(i + 1)}
+        className={`px-3 py-1 rounded text-sm ${
+          currentPage === i + 1
+            ? "bg-blue-600 text-white"
+            : "bg-gray-100 text-gray-700"
+        }`}
+      >
+        {i + 1}
+      </button>
+    ))}
+
+    <button
+      onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+      disabled={currentPage === totalPages}
+      className="px-3 py-1 rounded bg-gray-100 text-sm disabled:opacity-50"
+    >
+      Next
+    </button>
   </div>
 )}
 

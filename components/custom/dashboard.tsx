@@ -83,9 +83,10 @@ const todayLoans = loans.filter(l => l.loan_date === today);
 const todayReturns = returns.filter(
   r => r.return?.actual_return_date === today
 );
+const dashboardBooks = books
+  .filter((book) => getCoverUrl(book.cover) !== "/no-image.png")
+  .slice(0, 6);
 
-
-;
 
 return (
   <div className="min-h-screen bg-gray-100">
@@ -133,7 +134,7 @@ return (
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-            {books.map((book) => (
+            {dashboardBooks.map((book) => (
               <div
                 key={book.id}
                 className="border rounded-xl p-3 sm:p-4 hover:shadow transition flex flex-col"
@@ -234,31 +235,23 @@ return (
                 </div>
               ))}
               {previewImage && (
-  <div
-    className="fixed inset-0 z-[99999] bg-black/80 flex items-center justify-center p-4"
-    onClick={() => setPreviewImage(null)}
-  >
-    <div
-      className="relative max-w-4xl w-full"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {/* Tombol close */}
-      <button
-        onClick={() => setPreviewImage(null)}
-        className="absolute -top-10 right-0 text-white text-2xl font-bold"
-      >
-        ✕
-      </button>
-
-      <img
-        src={previewImage}
-        alt="Preview Cover"
-        className="w-full max-h-[80vh] object-contain rounded-lg shadow-lg"
-      />
-    </div>
-  </div>
-)}
-
+                 <div className="fixed inset-0 z-[99999] bg-black/80 flex items-center justify-center p-4 "
+                   onClick={() => setPreviewImage(null)}>
+                     <div className="relative max-w-4xl w-full animate-scale-in" onClick={(e) => e.stopPropagation()}
+                       >
+                    {/* Tombol close */}
+                  <button
+                   onClick={() => setPreviewImage(null)}
+                   className="absolute -top-10 right-0 text-white text-2xl font-bold">
+                   ✕
+                  </button>
+                  <img
+                     src={previewImage}
+                     alt="Preview Cover"
+                     className="w-full max-h-[80vh] object-contain rounded-lg shadow-lg"/>
+                 </div>
+               </div>
+              )}
             </div>
           </div>
 
