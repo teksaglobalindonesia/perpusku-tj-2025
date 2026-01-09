@@ -3,10 +3,13 @@
 import { useEffect, useState } from "react";
 import { FiPlus, FiSearch } from "react-icons/fi";
 import { BASE_URL, TOKEN, MEMBER_NAME } from "@/lib/constant";
+import Modal from "../custom/Modal";
+
+type ModalType = "add" | "edit" | "delete" | "preview" | "add-category" | null;
 
 const BukuPage = () => {
   const [search, setSearch] = useState("");
-type ModalType = "add" | "edit" | "delete" | "preview" | null;
+
 
 const [activeModal, setActiveModal] = useState<ModalType>(null);
 
@@ -20,15 +23,21 @@ const PAGE_SIZE = 8;
 
 const [total, setTotal] = useState(0);
 const totalPages = Math.ceil(total / PAGE_SIZE);
+const [categoryName, setCategoryName] = useState("");
+const [isAddingCategory, setIsAddingCategory] = useState(false);
 
+  const openModal = (type: ModalType, book?: any) => {
+    setSelectedBook(book || null);
+    setActiveModal(type);
+  };
 
   const [books, setBooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
+
 const fetchCategories = async () => {
   try {
     const res = await fetch(`${BASE_URL}/api/book-category/list`, {
-      method: "GET",
       headers: {
         Authorization: TOKEN,
         "x-member-name": MEMBER_NAME,
@@ -37,39 +46,67 @@ const fetchCategories = async () => {
     });
 
     const json = await res.json();
-    setCategories(json?.data || []);
+    const data = json?.data || [];
+    setCategories(data);
+    return data;
   } catch (err) {
     console.error("Gagal ambil category:", err);
+    return [];
   }
 };
-const openModal = (type: ModalType, book?: any) => {
-  setSelectedBook(book || null);
-  setActiveModal(type);
+
+
+
+const handleAddCategory = async () => {
+  if (!categoryName.trim()) {
+    alert("Nama category wajib diisi");
+    return;
+  }
+
+  setIsAddingCategory(true);
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/book-category/add`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: TOKEN,
+        "x-member-name": MEMBER_NAME,
+      },
+      body: JSON.stringify({
+        data: { name: categoryName },
+      }),
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error(text);
+      alert("Gagal menambah category");
+      return;
+    }
+
+    // 🔥 fetch ulang category
+    const updatedCategories = await fetchCategories();
+
+    // 🔥 ambil category terakhir
+    const lastCategory = updatedCategories[updatedCategories.length - 1];
+
+    if (lastCategory?.id) {
+      setForm((prev) => ({
+        ...prev,
+        categories: lastCategory.id.toString(),
+      }));
+    }
+
+    setCategoryName("");
+    setActiveModal(null);
+  } catch (err) {
+    console.error("Add category error:", err);
+  } finally {
+    setIsAddingCategory(false);
+  }
 };
-
-const Modal = ({
-  children,
-  onClose,
-}: {
-  children: React.ReactNode;
-  onClose: () => void;
-}) => (
-  <div
-    className="fixed inset-0 z-[9999] flex items-center justify-center "
-    onClick={onClose} 
-  >
-    {/* Backdrop */}
-    <div className="absolute inset-0 bg-black/50 " />
-
-    {/* Content */}
-    <div
-      className="relative z-10 bg-white rounded-xl p-6 animate-scale-in"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {children}
-    </div>
-  </div>
-);
 
 
   // form: semua value disimpan sebagai string agar controlled input aman
@@ -329,7 +366,16 @@ const handleDestroy = async () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-xl font-bold text-gray-800">Book List</h1>
+        <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveModal("add-category")}
+                className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-xl text-sm"
+                >
+                <FiPlus /> Add Category
+               </button>
 
+        
         <button
          type= "button"
           onClick={() => {
@@ -350,6 +396,7 @@ const handleDestroy = async () => {
         >
           <FiPlus /> Add Book
         </button>
+        </div>
       </div>
 
       {/* Search */}
@@ -408,7 +455,7 @@ const handleDestroy = async () => {
 
       {/* Modal Add */}
 {activeModal === "add" && (
-  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
+  <Modal onClose={() => setActiveModal(null)}>
     {/* Modal */}
     <div
       className="bg-white w-full max-w-lg rounded-xl p-6 relative animate-scale-in"
@@ -503,7 +550,7 @@ const handleDestroy = async () => {
         </button>
       </div>
     </div>
-  </div>
+  </Modal>
 )}
 
 {activeModal === "preview" && previewImage && (
@@ -726,6 +773,43 @@ const handleDestroy = async () => {
       Next
     </button>
   </div>
+)}
+
+{activeModal === "add-category" && (
+  <Modal onClose={() => setActiveModal(null)}>
+    <div className="w-full max-w-sm">
+      <h2 className="text-lg font-semibold mb-4 text-gray-800">
+        Add Book Category
+      </h2>
+
+      <input
+        type="text"
+        placeholder="Category name"
+        value={categoryName}
+        onChange={(e) => setCategoryName(e.target.value)}
+        className="w-full border rounded-lg p-2 text-sm"
+      />
+
+      <div className="flex justify-end gap-3 mt-6">
+        <button
+          type="button"
+          onClick={() => setActiveModal(null)}
+          className="px-4 py-2 text-sm rounded-lg border"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          onClick={handleAddCategory}
+          disabled={isAddingCategory}
+          className="px-4 py-2 text-sm rounded-lg bg-green-600 text-white disabled:opacity-50"
+        >
+          {isAddingCategory ? "Saving..." : "Save"}
+        </button>
+      </div>
+    </div>
+  </Modal>
 )}
 
     </div>
