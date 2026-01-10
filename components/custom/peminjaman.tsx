@@ -124,7 +124,7 @@ const isLate = (returnDate: string) => {
     console.log("ADD LOAN RESPONSE:", text);
 
     if (!res.ok) {
-      alert("Gagal menambah peminjaman");
+      alert("Stok buku habis!");
       return;
     }
 
@@ -204,7 +204,7 @@ const handleConfirmReturn = async () => {
       },
       body: JSON.stringify({
         data: {
-          loan: selectedLoan.documentId, // 🔥 INI PENTING
+          loan: selectedLoan.documentId,
           actual_return_date: today,
         },
       }),
@@ -250,7 +250,6 @@ const isReturned = (loan: any) => {
   </button>
 </div>
 
-
       {/* Search */}
       <div className="bg-white p-3 sm:p-4 rounded-2xl shadow mb-6 sm:mb-8 flex items-center gap-3">
         <FiSearch className="text-gray-400" />
@@ -265,7 +264,6 @@ const isReturned = (loan: any) => {
 
       {/* List Peminjaman */}
       <div className="space-y-3 sm:space-y-4">
-        
         {paginatedLoans.map((loan) => {
           console.log("BOOK:", loan.book);
           console.log("BOOK COVER:", loan.book?.cover);
