@@ -57,13 +57,19 @@ useEffect(() => {
         fetch(`${BASE_URL}/api/return/list`, { headers, cache: "no-store" }),
       ]);
 
-      const bookJson = await bookRes.json();
-      const loanJson = await loanRes.json();
-      const returnJson = await returnRes.json();
+const bookJson = await bookRes.json();
+console.log("BOOK RESPONSE:", bookJson);
 
-      setBooks(bookJson?.data ?? []);
-      setLoans(loanJson?.data ?? []);
-      setReturns(returnJson?.data ?? []);
+const loanJson = await loanRes.json();
+console.log("LOAN RESPONSE:", loanJson);
+
+const returnJson = await returnRes.json();
+console.log("RETURN RESPONSE:", returnJson);
+
+setBooks(bookJson?.data ?? []);
+setLoans(loanJson?.data ?? []);
+setReturns(returnJson?.data ?? []);
+
     } catch (err) {
       console.error("Dashboard fetch error:", err);
     }
@@ -169,7 +175,7 @@ return (
           <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-base sm:text-lg font-semibold">
-                Today's Loan 
+                Today&apos;s Loan
               </h2>
               <Link
                 href="/peminjaman"
@@ -205,7 +211,7 @@ return (
           <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-base sm:text-lg font-semibold">
-                Today's Return
+                Today&apos;s Return
               </h2>
               <Link
                 href="/pengembalian"

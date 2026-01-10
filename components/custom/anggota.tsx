@@ -26,7 +26,32 @@ const [editForm, setEditForm] = useState({
   id_member: "",
 });
 
+ //Label Status Loan
+const getLoanStatus = (loan: any) => {
+  // sudah dikembalikan
+  if (loan.return) {
+    return {
+      label: "Returned",
+      className: "bg-green-100 text-green-700",
+    };
+  }
 
+  // belum dikembalikan → cek telat
+  const today = new Date();
+  const due = new Date(loan.return_date);
+
+  if (today > due) {
+    return {
+      label: "Late",
+      className: "bg-red-100 text-red-600",
+    };
+  }
+
+  return {
+    label: "Borrowed",
+    className: "bg-yellow-100 text-yellow-700",
+  };
+};
 
 
  // GET DATA
@@ -296,7 +321,7 @@ useEffect(() => {
         </h2>
 
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] sm:text-xs text-gray-500">
-          <span>Member's ID: {member.id}</span>
+          <span>Member ID: {member.id}</span>
           <span>Address: {member.address}</span>
           <span>{member.email}</span>
         </div>
@@ -336,7 +361,7 @@ useEffect(() => {
     </div>
   ))}
 </div>
-      {/* Kalau kosong */}
+      
       {filteredMembers.length === 0 && (
         <div className="text-center text-gray-500 mt-12 text-sm">
           Member data not found
@@ -351,31 +376,37 @@ useEffect(() => {
       </h2>
       {selectedLoans.length === 0 ? (
         <p className="text-sm text-gray-500">
-          Loan's Data not found.
+          Loans Data not found.
         </p>
       ) : (
         <div className="space-y-3 max-h-[400px] overflow-y-auto">
-          {selectedLoans.map((loan) => (
+          {selectedLoans.map((loan) => {
+            const status = getLoanStatus(loan);
+            return(
             <div
               key={loan.id}
               className="border rounded-lg p-3 text-sm"
             >
               <p className="font-medium">{loan.book?.title}</p>
               <p className="text-xs text-gray-500">
-                Loan's Date: {loan.loan_date}
+                Loan Date: {loan.loan_date}
               </p>
               <p className="text-xs text-gray-500">
-                Return's Date: {loan.return_date ?? "-"}
+                Return Date: {loan.return_date ?? "-"}
               </p>
+                <span
+                 className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${status.className}`}>
+                 {status.label}
+                </span>
              <button onClick={() => {
                 setSelectedBook(loan.book);
                 setShowBookDetailModal(true);
                 }}
                 className="mt-2 text-xs px-3 py-1 bg-blue-100 text-blue-600 rounded">
-               Book's Detail
+               Book&apos;s Detail
              </button>
             </div>
-          ))}
+          )})}
         </div>
       )}
       <div className="flex justify-end mt-5">

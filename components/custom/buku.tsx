@@ -152,6 +152,7 @@ const closeModal = () => {
 
  const fetchBooks = async () => {
   setLoading(true);
+  
   try {
     const params = new URLSearchParams({
       page: page.toString(),
@@ -374,8 +375,6 @@ const handleDestroy = async () => {
                 >
                 <FiPlus /> Add Category
                </button>
-
-        
         <button
          type= "button"
           onClick={() => {
@@ -709,7 +708,7 @@ const handleDestroy = async () => {
         </span>
           book?
         <br />
-        This action can't be undone.
+        This action can&apos;t be undone.
       </p>
 
       {/* Actions */}

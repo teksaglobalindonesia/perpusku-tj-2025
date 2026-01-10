@@ -217,7 +217,6 @@ const handleConfirmReturn = async () => {
       return;
     }
 
-    // ✅ HAPUS LOAN DARI LIST (karena sudah dikembalikan)
     setLoans(prev =>
       prev.filter(l => l.documentId !== selectedLoan.documentId)
     );
@@ -296,11 +295,8 @@ const isReturned = (loan: any) => {
                   Returned
                  </span>
                  
-                 ) : late ? (
-                 <span className="mt-1 inline-block w-fit px-2 py-0.5 text-[10px] font-medium rounded-full bg-red-100 text-red-600">
-                   Late
-                 </span>
-                 ) : null}
+                 ) 
+                  : null}
                  {late && (
                   <span className="mt-1 inline-block w-fit px-2 py-0.5 text-[10px] font-medium rounded-full bg-red-100 text-red-600">
                   Late
