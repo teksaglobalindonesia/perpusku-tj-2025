@@ -1,62 +1,50 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { BASE_URL, TOKEN, MEMBER_NAME } from '../../lib/constant';
 
-export default function DashboardContent() {
-  const buku = [
-    {
-      judul: 'Narasi Perihal Ayah',
-      kategori: 'Family Fiction',
-      penulis: 'Jaquenza Eden',
-      stok: 0,
-      cover: '/images/narasi-perihal-ayah.jpeg'
-    },
-    {
-      judul: 'Laut Bercerita',
-      kategori: 'Historical Fiction',
-      penulis: 'Leila S. Chudori',
-      stok: 12,
-      cover: '/images/laut-bercerita.jpg'
-    },
-    {
-      judul: 'Bandung After Rain',
-      kategori: 'Romance',
-      penulis: 'Wulan Nur Amalia',
-      stok: 10,
-      cover: '/images/bandung-after-rain.jpeg'
-    },
-    {
-      judul: 'Sisi Tergelap Surga',
-      kategori: 'Fiksi',
-      penulis: 'saya',
-      stok: 20,
-      cover: '/images/sisi-tergelap-surga.jpeg'
-    }
-  ];
+const DashboardContent = () => {
+  const [books, setBooks] = useState<any[]>([]);
+  const [loans, setLoans] = useState<any[]>([]);
+  const [returns, setReturns] = useState<any[]>([]);
 
-  const peminjaman = [
-    {
-      judul: 'Bandung After Rain',
-      peminjam: 'Salsa',
-      peminjaman: '9 Des 2025',
-      pengembalian: '11 Des 2025'
-    },
-    {
-      judul: 'Narasi Perihal Ayah',
-      peminjam: 'Rendi',
-      peminjaman: '9 Des 2025',
-      pengembalian: '13 Des 2025'
-    }
-  ];
+  useEffect(() => {
+    (async () => {
+      try {
+        const headers = {
+          Authorization: TOKEN,
+          'x-member-name': MEMBER_NAME
+        };
 
-  const pengembalian = [
-    {
-      judul: 'Laut Bercerita',
-      peminjam: 'sean',
-      peminjaman: '8 Des 2025',
-      pengembalian: '10 Des 2025'
-    }
-  ];
+        const [bookRes, loanRes, returnRes] = await Promise.all([
+          fetch(`${BASE_URL}/api/book/list`, { headers, cache: 'no-store' }),
+          fetch(`${BASE_URL}/api/loan/list`, { headers, cache: 'no-store' }),
+          fetch(`${BASE_URL}/api/return/list`, { headers, cache: 'no-store' })
+        ]);
+
+        const bookJson = await bookRes.json();
+        const loanJson = await loanRes.json();
+        const returnJson = await returnRes.json();
+
+        setBooks(bookJson?.data ?? []);
+        setLoans(loanJson?.data ?? []);
+        setReturns(returnJson?.data ?? []);
+      } catch (err) {
+        console.error('Dashboard fetch error:', err);
+      }
+    })();
+  }, []);
+
+  const today = new Date().toISOString().split('T')[0];
+
+  const totalBooks = books.length;
+  const availableBooks = books.filter((b) => b.stock > 0).length;
+
+  const todayLoans = loans.filter((l) => l.loan_date === today);
+  const todayReturns = returns.filter(
+    (r) => r.return?.actual_return_date === today
+  );
 
   return (
     <main className="min-h-screen bg-gray-50 p-4 md:p-8">
@@ -64,22 +52,22 @@ export default function DashboardContent() {
       <div className="mb-10 grid w-full grid-cols-2 gap-4 md:grid-cols-4">
         <div className="rounded bg-white p-4 text-center shadow">
           <p className="text-sm text-gray-600">Total Buku</p>
-          <p className="text-2xl font-bold">100</p>
+          <p className="text-2xl font-bold">{totalBooks}</p>
         </div>
 
         <div className="rounded bg-white p-4 text-center shadow">
           <p className="text-sm text-gray-600">Buku Tersedia</p>
-          <p className="text-2xl font-bold">80</p>
+          <p className="text-2xl font-bold">{availableBooks}</p>
         </div>
 
         <div className="rounded bg-white p-4 text-center shadow">
           <p className="text-sm text-gray-600">Dipinjam Hari Ini</p>
-          <p className="text-2xl font-bold">{peminjaman.length}</p>
+          <p className="text-2xl font-bold">{todayLoans.length}</p>
         </div>
 
         <div className="rounded bg-white p-4 text-center shadow">
           <p className="text-sm text-gray-600">Pengembalian Hari Ini</p>
-          <p className="text-2xl font-bold">{pengembalian.length}</p>
+          <p className="text-2xl font-bold">{todayReturns.length}</p>
         </div>
       </div>
 
@@ -96,28 +84,34 @@ export default function DashboardContent() {
         </div>
 
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {buku.map((b, i) => (
+          {books.map((b, i) => (
             <div key={i} className="rounded border bg-white p-3 shadow-sm">
               <img
-                src={b.cover}
+                src={
+                  b.cover?.url
+                    ? `${BASE_URL}${b.cover?.url}`
+                    : '/placeholder-book.jpg'
+                }
                 className="h-32 w-full rounded object-cover md:h-40"
               />
               <p className="mt-2 text-sm font-semibold md:text-base">
-                {b.judul}
+                {b.title}
               </p>
 
               <p
                 className={`mt-1 w-fit rounded px-2 py-1 text-xs md:text-sm ${
-                  b.stok > 0
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-red-100 text-red-600'
+                  b.stock === 0
+                    ? 'bg-red-100 text-red-700'
+                    : b.stock <= 10
+                    ? 'bg-yellow-100 text-yellow-700'
+                    : 'bg-green-100 text-green-700'
                 }`}
               >
-                {b.stok > 0 ? 'Tersedia' : 'Habis'}
+                {b.stock > 0 ? 'Tersedia' : 'Habis'}
               </p>
 
               <p className="mt-1 text-xs text-gray-600 md:text-sm">
-                Stok: {b.stok}
+                Stok: {b.stock}
               </p>
             </div>
           ))}
@@ -140,11 +134,17 @@ export default function DashboardContent() {
             </Link>
           </div>
 
-          {peminjaman.map((p, i) => (
+          {todayLoans.map((p, i) => (
             <div key={i} className="mb-4 border-b pb-3">
-              <p className="text-sm font-semibold md:text-base">{p.peminjam}</p>
-              <p className="text-xs text-gray-600 md:text-sm">{p.judul}</p>
-              <p className="text-xs text-gray-500 md:text-sm">{p.peminjaman}</p>
+              <p className="text-sm font-semibold md:text-base">
+                {p.member?.name}
+              </p>
+              <p className="text-xs text-gray-600 md:text-sm">
+                {p.book?.title}
+              </p>
+              <p className="text-xs text-gray-500 md:text-sm">
+                {p.loan?.loan_date}
+              </p>
             </div>
           ))}
         </div>
@@ -163,12 +163,16 @@ export default function DashboardContent() {
             </Link>
           </div>
 
-          {pengembalian.map((p, i) => (
+          {todayReturns.map((p, i) => (
             <div key={i} className="mb-4 border-b pb-3">
-              <p className="text-sm font-semibold md:text-base">{p.peminjam}</p>
-              <p className="text-xs text-gray-600 md:text-sm">{p.judul}</p>
+              <p className="text-sm font-semibold md:text-base">
+                {p.member?.name}
+              </p>
+              <p className="text-xs text-gray-600 md:text-sm">
+                {p.book?.title}
+              </p>
               <p className="text-xs text-gray-500 md:text-sm">
-                {p.pengembalian}
+                {p.return?.return_date}
               </p>
             </div>
           ))}
@@ -176,4 +180,6 @@ export default function DashboardContent() {
       </div>
     </main>
   );
-}
+};
+
+export default DashboardContent;

@@ -1,85 +1,189 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { BASE_URL, TOKEN, MEMBER_NAME } from '../../lib/constant';
 
-export default function BukuPage() {
+const BukuPage = () => {
   const [search, setSearch] = useState('');
-  const [showModal, setShowModal] = useState(false);
-
+  const [modal, setModal] = useState<'add' | 'edit' | 'delete' | null>(null);
+  const [selected, setSelected] = useState<any>(null);
   const [previewCover, setPreviewCover] = useState<string | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [categories, setCategories] = useState<any[]>([]);
+  const [books, setBooks] = useState<any[]>([]);
 
-  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [form, setForm] = useState({
+    title: '',
+    writer: '',
+    publisher: '',
+    published_year: '',
+    stock: ''
+  });
+  const handleChange = (e: any) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+  const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (file) {
+      setCoverFile(file);
+      setPreviewCover(URL.createObjectURL(file));
+    }
+  };
 
-    if (previewCover) URL.revokeObjectURL(previewCover);
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/api/book-category/list`, {
+          method: 'GET',
+          headers: {
+            Authorization: TOKEN,
+            'x-member-name': MEMBER_NAME
+          },
+          cache: 'no-store'
+        });
 
-    const url = URL.createObjectURL(file);
-    setPreviewCover(url);
+        const json = await res.json();
+
+        if (!res.ok || !Array.isArray(json?.data)) {
+          console.error('Invalid category response:', json);
+          setCategories([]);
+          return;
+        }
+
+        setCategories(json.data);
+      } catch (error) {
+        console.error('Gagal fetch kategori:', error);
+        setCategories([]);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/api/book-category/list`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: TOKEN,
+            'x-member-name': MEMBER_NAME
+          },
+          cache: 'no-store'
+        });
+
+        const json = await res.json();
+        setCategories(json?.data || []);
+      } catch (err) {
+        console.error('Gagal ambil category:', err);
+      }
+    })();
+  }, []);
+
+  const handleCreateBook = async () => {
+    if (!selectedCategory) {
+      alert('Kategori wajib dipilih');
+      return;
+    }
+
+    if (!form.title || !form.writer || !form.publisher) {
+      alert('Semua field wajib diisi');
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+
+      if (coverFile) {
+        formData.append('cover', coverFile);
+      }
+
+      formData.append(
+        'data',
+        JSON.stringify({
+          title: form.title,
+          writer: form.writer,
+          publisher: form.publisher,
+          published_year: form.published_year,
+          stock: Number(form.stock),
+          categories: [selectedCategory]
+        })
+      );
+
+      const res = await fetch(`${BASE_URL}/api/book/add`, {
+        method: 'POST',
+        headers: {
+          Authorization: TOKEN,
+          'x-member-name': MEMBER_NAME
+        },
+        body: formData
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        console.error(json);
+        alert(json?.error?.message || 'Gagal tambah buku');
+        return;
+      }
+
+      setBooks((prev) => [json.data, ...prev]);
+      closeModal();
+    } catch (err) {
+      console.error('CREATE BOOK ERROR:', err);
+      alert('Terjadi kesalahan');
+    }
   };
 
   const openModal = () => {
     if (previewCover) URL.revokeObjectURL(previewCover);
     setPreviewCover(null);
-    setShowModal(true);
+    setModal('add');
   };
 
   const closeModal = () => {
-    if (previewCover) URL.revokeObjectURL(previewCover);
+    setModal(null);
+    setSelected(null);
     setPreviewCover(null);
-    setShowModal(false);
+    setCoverFile(null);
+    setSelectedCategory('');
+    setForm({
+      title: '',
+      writer: '',
+      publisher: '',
+      published_year: '',
+      stock: ''
+    });
   };
 
-  const [buku, setBuku] = useState([
-    {
-      judul: 'Narasi Perihal Ayah',
-      kategori: 'Family Fiction',
-      penulis: 'Jaquenza Eden',
-      penerbit: 'Gramedia',
-      tahun: '2022',
-      stok: 0,
-      cover: '/images/narasi-perihal-ayah.jpeg'
-    },
-    {
-      judul: 'Laut Bercerita',
-      kategori: 'Historical Fiction',
-      penulis: 'Leila S. Chudori',
-      penerbit: 'Gramedia',
-      tahun: '2017',
-      stok: 12,
-      cover: '/images/laut-bercerita.jpg'
-    },
-    {
-      judul: 'Bandung After Rain',
-      kategori: 'Romance',
-      penulis: 'Wulan Nur Amalia',
-      penerbit: 'Ice Cube',
-      tahun: '2021',
-      stok: 10,
-      cover: '/images/bandung-after-rain.jpeg'
-    },
-    {
-      judul: 'Sisi Tergelap Surga',
-      kategori: 'Fiksi',
-      penulis: 'Brian Khrisna',
-      penerbit: 'Mediakita',
-      tahun: '2020',
-      stok: 20,
-      cover: '/images/sisi-tergelap-surga.jpeg'
-    },
-    {
-      judul: 'Iyan Bukan Anak Tengah',
-      kategori: 'Family Fiction',
-      penulis: 'Armaraher',
-      penerbit: 'Elek Media',
-      tahun: '2023',
-      stok: 5,
-      cover: '/images/iyan-bukan-anak-tengah.jpeg'
-    }
-  ]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/api/book/list`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: TOKEN,
+            'x-member-name': MEMBER_NAME
+          },
+          cache: 'no-store'
+        });
 
-  const filteredBooks = buku.filter((b) =>
-    b.judul.toLowerCase().includes(search.toLowerCase())
+        const json = await res.json();
+        setBooks(json?.data || []);
+      } catch (err) {
+        console.error('Gagal ambil buku:', err);
+      }
+    })();
+  }, []);
+
+  const filteredBooks = books.filter(
+    (b) =>
+      b &&
+      typeof b.title === 'string' &&
+      b.title.toLowerCase().includes(search.toLowerCase())
   );
 
   // EDIT MODAL
@@ -99,32 +203,64 @@ export default function BukuPage() {
     setShowEditModal(false);
   };
 
-  const handleEditCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleDeleteBook = async () => {
+    if (!selected?.documentId) return;
+    console.log('DELETE URL:', `${BASE_URL}/api/book/delete`);
+    try {
+      const res = await fetch(`${BASE_URL}/api/book/delete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: TOKEN,
+          'x-member-name': MEMBER_NAME
+        },
+        body: JSON.stringify({
+          documentId: selected.documentId
+        })
+      });
 
-    if (previewEditCover) URL.revokeObjectURL(previewEditCover);
+      const json = await res.json();
 
-    const url = URL.createObjectURL(file);
-    setPreviewEditCover(url);
+      if (!res.ok) {
+        console.error('Gagal hapus buku:', json);
+        alert(json?.error?.message || 'Gagal menghapus buku');
+        return;
+      }
+
+      setBooks((prev) =>
+        prev.filter((b) => b.documentId !== selected.documentId)
+      );
+
+      closeModal();
+    } catch (err) {
+      console.error('Error delete:', err);
+      alert('Terjadi kesalahan saat menghapus buku');
+    }
   };
 
-  const saveEdit = () => {
-    closeEditModal();
-  };
+  const fetchBooks = async () => {
+    const res = await fetch(`${BASE_URL}/api/book/list`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: TOKEN,
+        'x-member-name': MEMBER_NAME
+      },
+      cache: 'no-store'
+    });
 
-  // DELETE MODAL
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+    const json = await res.json();
+    setBooks(json?.data || []);
+  };
 
   const openDeleteModal = (book: any) => {
-    setDeleteTarget(book);
-    setShowDeleteModal(true);
+    setSelected(book);
+    setModal('delete');
   };
 
   const closeDeleteModal = () => {
-    setDeleteTarget(null);
-    setShowDeleteModal(false);
+    setModal(null);
+    setSelected(null);
   };
 
   const confirmDelete = () => {
@@ -133,14 +269,12 @@ export default function BukuPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      {/* HEADER */}
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-bold text-green-700 md:text-2xl">
           Daftar Buku
         </h1>
       </div>
 
-      {/* SEARCH + BUTTON */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
         <input
           type="text"
@@ -158,66 +292,68 @@ export default function BukuPage() {
         </button>
       </div>
 
-      {/* LIST BUKU */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 xl:grid-cols-4">
-        {filteredBooks.map((b, index) => (
+      <div className="flex flex-col gap-6">
+        {filteredBooks.map((b) => (
           <div
-            key={index}
-            className="flex flex-col rounded-xl border bg-white p-3 shadow-sm transition hover:shadow-md"
+            key={b.documentId}
+            className="flex items-center justify-between gap-6 rounded-lg border border-[#c48a5a] bg-white p-4 shadow-sm"
           >
             <img
-              src={b.cover}
-              alt={b.judul}
-              className="h-40 w-full rounded-xl object-cover md:h-48"
+              src={
+                b?.cover?.url
+                  ? `${BASE_URL}${b.cover.url}`
+                  : '/placeholder-book.jpg'
+              }
+              alt={b?.title || 'Buku'}
+              className="h-28 w-20 rounded object-contain"
             />
 
-            {/* CONTAINER INFO BUKU */}
-            <div className="mt-3 flex flex-col gap-1">
-              <h3 className="text-sm font-semibold text-gray-800 md:text-base">
-                {b.judul}
+            <div className="flex flex-1 flex-col gap-1 text-sm">
+              <h3 className="text-base font-semibold text-gray-800">
+                {b.title}
               </h3>
 
               <div className="text-xs text-gray-600 md:text-sm">
                 <span className="font-medium text-gray-700">Penulis:</span>{' '}
-                {b.penulis}
+                {b.writer}
               </div>
 
               <div className="flex items-center gap-1 text-xs text-gray-500 md:text-sm">
-                <span>{b.penerbit}</span>
+                <span>{b.publisher}</span>
                 <span>•</span>
-                <span>{b.tahun}</span>
+                <span>{b.published_year}</span>
               </div>
 
               <div className="text-xs text-gray-500 md:text-sm">
-                Kategori: {b.kategori}
+                Kategori: {b.categories?.map((c: any) => c.name).join(', ')}
               </div>
 
               <div className="mt-2">
                 <span
                   className={`rounded-full px-3 py-1 text-xs ${
-                    b.stok === 0
+                    b.stock === 0
                       ? 'bg-red-100 text-red-700'
-                      : b.stok <= 10
+                      : b.stock <= 20
                       ? 'bg-yellow-100 text-yellow-700'
                       : 'bg-green-100 text-green-700'
                   }`}
                 >
-                  {b.stok === 0 ? 'Stok Habis' : `Stok: ${b.stok}`}
+                  {b.stock === 0 ? 'Stok Habis' : `Stok: ${b.stock}`}
                 </span>
               </div>
             </div>
 
-            <div className="mt-auto flex justify-between pt-3">
+            <div className="mt-2 flex gap-2">
               <button
                 onClick={() => openEditModal(b)}
-                className="rounded-full bg-green-100 px-3 py-2 text-xs text-green-700 transition hover:bg-green-200 md:text-sm"
+                className="rounded-full bg-green-100 px-3 py-2 text-sm text-green-700"
               >
                 Edit
               </button>
 
               <button
                 onClick={() => openDeleteModal(b)}
-                className="rounded-full bg-red-100 px-3 py-2 text-xs text-red-700 transition hover:bg-red-200 md:text-sm"
+                className="rounded-full bg-red-100 px-3 py-2 text-sm text-red-700"
               >
                 Hapus
               </button>
@@ -226,13 +362,12 @@ export default function BukuPage() {
         ))}
       </div>
 
-      {/* DATA KOSONG */}
       {filteredBooks.length === 0 && (
         <p className="mt-10 text-center text-gray-600">Buku tidak ditemukan.</p>
       )}
 
-      {/* MODAL */}
-      {showModal && (
+      {/* MODAL ADD */}
+      {modal === 'add' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="flex max-h-[85vh] w-full max-w-[430px] flex-col rounded-xl bg-white shadow-lg md:max-w-[500px]">
             <div className="border-b px-5 py-3">
@@ -247,62 +382,62 @@ export default function BukuPage() {
             >
               <div className="flex flex-col gap-3 text-sm">
                 <input
-                  type="text"
+                  name="title"
+                  onChange={handleChange}
                   placeholder="Judul Buku"
                   className="rounded-lg border p-2"
                 />
                 <input
-                  type="text"
+                  name="writer"
+                  onChange={handleChange}
                   placeholder="Penulis"
                   className="rounded-lg border p-2"
                 />
                 <input
-                  type="text"
+                  name="publisher"
+                  onChange={handleChange}
                   placeholder="Penerbit"
                   className="rounded-lg border p-2"
                 />
                 <input
+                  name="published_year"
                   type="text"
+                  onChange={handleChange}
                   placeholder="Tahun Terbit"
                   className="rounded-lg border p-2"
                 />
 
-                <select className="rounded-lg border p-2 text-gray-700">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="rounded-lg border p-2"
+                >
                   <option value="">Pilih Kategori</option>
-                  <option>Family Fiction</option>
-                  <option>Romance</option>
-                  <option>Historical Fiction</option>
-                  <option>Fiksi</option>
-                  <option>Fantasy</option>
-                  <option>Thriller</option>
+
+                  {categories.length > 0 ? (
+                    categories.map((cat) => (
+                      <option key={cat.documentId} value={cat.documentId}>
+                        {cat.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>Loading kategori...</option>
+                  )}
                 </select>
 
                 <input
+                  name="stock"
                   type="number"
-                  placeholder="Jumlah Stok"
+                  onChange={handleChange}
+                  placeholder="Stok"
                   className="rounded-lg border p-2"
                 />
-
-                <div>
-                  <label className="mb-1 block text-xs text-gray-600">
-                    Upload Cover Buku
-                  </label>
-
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleCoverChange}
-                    className="w-full rounded-lg border p-2"
-                  />
-
-                  {previewCover && (
-                    <img
-                      src={previewCover}
-                      alt="preview"
-                      className="mt-3 h-40 w-full rounded-lg border object-contain md:h-48"
-                    />
-                  )}
-                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImage}
+                  className="w-full rounded-lg border p-2"
+                />
               </div>
             </div>
 
@@ -313,8 +448,10 @@ export default function BukuPage() {
               >
                 Batal
               </button>
-
-              <button className="rounded-lg bg-green-600 px-4 py-1.5 text-sm text-white">
+              <button
+                onClick={handleCreateBook}
+                className="rounded-lg bg-green-600 px-4 py-1.5 text-sm text-white"
+              >
                 Tambah
               </button>
             </div>
@@ -323,7 +460,7 @@ export default function BukuPage() {
       )}
 
       {/* POPUP EDIT BUKU */}
-      {showEditModal && editData && (
+      {showEditModal && editData?.title && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="flex max-h-[85vh] w-full max-w-[430px] flex-col rounded-xl bg-white shadow-lg md:max-w-[500px]">
             <div className="border-b px-5 py-3">
@@ -337,82 +474,97 @@ export default function BukuPage() {
               style={{ maxHeight: '65vh' }}
             >
               <div className="flex flex-col gap-3 text-sm">
-                <input
-                  type="text"
-                  value={editData.judul}
-                  onChange={(e) =>
-                    setEditData({ ...editData, judul: e.target.value })
-                  }
-                  className="rounded-lg border p-2"
-                />
-                <input
-                  type="text"
-                  value={editData.penulis}
-                  onChange={(e) =>
-                    setEditData({ ...editData, penulis: e.target.value })
-                  }
-                  className="rounded-lg border p-2"
-                />
-                <input
-                  type="text"
-                  value={editData.penerbit}
-                  onChange={(e) =>
-                    setEditData({ ...editData, penerbit: e.target.value })
-                  }
-                  className="rounded-lg border p-2"
-                />
-                <input
-                  type="text"
-                  value={editData.tahun}
-                  onChange={(e) =>
-                    setEditData({ ...editData, tahun: e.target.value })
-                  }
-                  className="rounded-lg border p-2"
-                />
-
-                <select
-                  value={editData.kategori}
-                  onChange={(e) =>
-                    setEditData({ ...editData, kategori: e.target.value })
-                  }
-                  className="rounded-lg border p-2 text-gray-700"
-                >
-                  <option>Family Fiction</option>
-                  <option>Romance</option>
-                  <option>Historical Fiction</option>
-                  <option>Fiksi</option>
-                  <option>Fantasy</option>
-                  <option>Thriller</option>
-                </select>
-
-                <input
-                  type="number"
-                  value={editData.stok}
-                  onChange={(e) =>
-                    setEditData({ ...editData, stok: Number(e.target.value) })
-                  }
-                  className="rounded-lg border p-2"
-                />
-
-                {/* GANTI COVER */}
                 <div>
-                  <label className="mb-1 block text-xs text-gray-600">
-                    Ganti Cover Buku
-                  </label>
-
                   <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleEditCoverChange}
+                    type="text"
+                    placeholder="Judul Buku"
+                    value={editData?.title || ''}
+                    onChange={(e) =>
+                      setEditData({ ...editData, title: e.target.value })
+                    }
                     className="w-full rounded-lg border p-2"
                   />
+                </div>
 
-                  {previewEditCover && (
-                    <img
-                      src={previewEditCover}
-                      className="mt-3 h-40 w-full rounded-lg border object-contain md:h-48"
-                    />
-                  )}
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Penulis"
+                    value={editData.writer}
+                    onChange={(e) =>
+                      setEditData({ ...editData, writer: e.target.value })
+                    }
+                    className="w-full rounded-lg border p-2"
+                  />
+                </div>
+
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Penerbit"
+                    value={editData.publisher}
+                    onChange={(e) =>
+                      setEditData({ ...editData, publisher: e.target.value })
+                    }
+                    className="w-full rounded-lg border p-2"
+                  />
+                </div>
+
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Tahun Terbit"
+                    value={editData.published_year}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        published_year: e.target.value
+                      })
+                    }
+                    className="w-full rounded-lg border p-2"
+                  />
+                </div>
+
+                <div>
+                  <select
+                    placeholder="Kategori"
+                    value={editData.categories}
+                    onChange={(e) =>
+                      setEditData({ ...editData, categories: e.target.value })
+                    }
+                    className="w-full rounded-lg border p-2 text-gray-700"
+                  >
+                    <option>Family Fiction</option>
+                    <option>Romance</option>
+                    <option>Historical Fiction</option>
+                    <option>Fiksi</option>
+                    <option>Fantasy</option>
+                    <option>Thriller</option>
+                  </select>
+                </div>
+
+                <div>
+                  <input
+                    type="number"
+                    placeholder="Stok"
+                    value={editData.stock}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        stock: Number(e.target.value)
+                      })
+                    }
+                    className="w-full rounded-lg border p-2"
+                  />
+                </div>
+
+                <div>
+                  <input
+                    type="file"
+                    placeholder="Cover"
+                    accept="image/*"
+                    className="w-full rounded-lg border p-2"
+                  />
                 </div>
               </div>
             </div>
@@ -424,29 +576,26 @@ export default function BukuPage() {
               >
                 Batal
               </button>
-              <button
-                onClick={saveEdit}
-                className="rounded-lg bg-green-600 px-4 py-1.5 text-sm text-white"
-              >
-                Simpan Perubahan
+              <button className="rounded-lg bg-green-600 px-4 py-1.5 text-sm text-white">
+                Simpan
               </button>
             </div>
           </div>
         </div>
       )}
+
       {/* POPUP HAPUS */}
-      {showDeleteModal && deleteTarget && (
+      {modal === 'delete' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-[380px] rounded-xl bg-white p-5 shadow-lg">
             <h3 className="text-lg font-semibold text-gray-800">
               Konfirmasi Hapus
             </h3>
-
             <p className="mt-2 text-sm text-gray-600">
+              {' '}
               Apakah Anda yakin ingin menghapus buku{' '}
-              <span className="font-semibold">{deleteTarget.judul}</span>?
+              <span className="font-semibold">{selected?.title}</span>?
             </p>
-
             <div className="mt-5 flex justify-end gap-3">
               <button
                 onClick={closeDeleteModal}
@@ -454,9 +603,8 @@ export default function BukuPage() {
               >
                 Batal
               </button>
-
               <button
-                onClick={confirmDelete}
+                onClick={handleDeleteBook}
                 className="rounded-lg bg-red-600 px-4 py-1.5 text-sm text-white"
               >
                 Hapus
@@ -467,4 +615,6 @@ export default function BukuPage() {
       )}
     </div>
   );
-}
+};
+
+export default BukuPage;

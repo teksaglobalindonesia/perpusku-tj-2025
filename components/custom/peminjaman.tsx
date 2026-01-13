@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { BASE_URL, TOKEN, MEMBER_NAME } from '../../lib/constant';
 
-export default function PeminjamanPage() {
+const PeminjamanPage = () => {
   const [search, setSearch] = useState('');
   const [showTambah, setShowTambah] = useState(false);
   const [showPilihBuku, setShowPilihBuku] = useState(false);
@@ -11,6 +12,10 @@ export default function PeminjamanPage() {
   const [selectedAnggota, setSelectedAnggota] = useState<any>(null);
   const [showKembalikan, setShowKembalikan] = useState(false);
   const [selectedPeminjaman, setSelectedPeminjaman] = useState<any>(null);
+  const [loans, setLoans] = useState<any[]>([]);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   const anggota = [
     {
@@ -75,44 +80,39 @@ export default function PeminjamanPage() {
     }
   ];
 
-  const peminjamanData = [
-    {
-      id: 1,
-      judul: 'Narasi Perihal Ayah',
-      peminjam: 'Rina Putri',
-      pinjam: '17 Juli 2025, 08.00',
-      kembali: '24 Juli 2025',
-      status: 'normal'
-    },
-    {
-      id: 2,
-      judul: 'Laut Bercerita',
-      peminjam: 'Bagas Pratama',
-      pinjam: '10 Juli 2025, 08.00',
-      kembali: '17 Juli 2025',
-      status: 'terlambat'
-    },
-    {
-      id: 3,
-      judul: 'Sisi Tergelap Surga',
-      peminjam: 'Siti Marlina',
-      pinjam: '17 Juli 2025, 08.00',
-      kembali: '24 Juli 2025',
-      status: 'normal'
-    },
-    {
-      id: 4,
-      judul: 'Bandung After Rain',
-      peminjam: 'Rendi',
-      pinjam: '10 Juli 2025, 08.00',
-      kembali: '17 Juli 2025',
-      status: 'terlambat'
-    }
-  ];
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/api/loan/list`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: TOKEN,
+            'x-member-name': MEMBER_NAME
+          },
+          cache: 'no-store'
+        });
 
-  const filtered = peminjamanData.filter((item) =>
-    item.judul.toLowerCase().includes(search.toLowerCase())
+        const json = await res.json();
+        setLoans(json?.data || []);
+      } catch (err) {
+        console.error('Gagal ambil peminjaman:', err);
+      }
+    })();
+  }, []);
+
+  const filtered = loans.filter((item) =>
+    (item.book?.title ?? '').toLowerCase().includes(search.toLowerCase())
   );
+
+  const isLate = (returnDate?: string) => {
+    if (!returnDate) return false;
+
+    const dueDate = new Date(returnDate);
+    dueDate.setHours(0, 0, 0, 0);
+
+    return today > dueDate;
+  };
 
   return (
     <div className="mx-auto max-w-6xl p-6">
@@ -146,13 +146,15 @@ export default function PeminjamanPage() {
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
               <div className="space-y-1 text-sm">
                 <p className="font-semibold text-green-800">
-                  Judul Buku: {item.judul}
+                  {item.book?.title}
                 </p>
-                <p className="text-gray-600">Peminjam: {item.peminjam}</p>
-                <p className="text-gray-600">Peminjaman: {item.pinjam}</p>
-                <p className="text-gray-600">Pengembalian: {item.kembali}</p>
+                <p className="text-gray-600">Peminjam: {item.member?.name}</p>
+                <p className="text-gray-600">Peminjaman: {item.loan_date}</p>
+                <p className="text-gray-600">
+                  Pengembalian: {item.return_date}
+                </p>
 
-                {item.status === 'terlambat' && (
+                {isLate(item.return_date) && (
                   <span className="mt-2 inline-block rounded-lg bg-[#FFD6D6] px-3 py-1 text-xs font-semibold text-[#7A1F1F]">
                     TERLAMBAT
                   </span>
@@ -393,13 +395,13 @@ export default function PeminjamanPage() {
 
               <div className="rounded-lg bg-gray-50 p-3 text-sm">
                 <p className="font-semibold text-gray-800">
-                  {selectedPeminjaman.judul}
+                  {selectedPeminjaman.book?.title}
                 </p>
                 <p className="text-gray-600">
-                  Peminjam: {selectedPeminjaman.peminjam}
+                  Peminjam: {selectedPeminjaman.member?.name}
                 </p>
                 <p className="text-gray-600">
-                  Tanggal Pinjam: {selectedPeminjaman.pinjam}
+                  Tanggal Pinjam: {selectedPeminjaman.loan_date}
                 </p>
               </div>
             </div>
@@ -431,4 +433,6 @@ export default function PeminjamanPage() {
       )}
     </div>
   );
-}
+};
+
+export default PeminjamanPage;

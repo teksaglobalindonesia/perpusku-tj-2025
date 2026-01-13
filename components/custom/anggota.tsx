@@ -1,47 +1,50 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { BASE_URL, TOKEN, MEMBER_NAME } from '../../lib/constant';
 
-export default function AnggotaPage() {
+const AnggotaPage = () => {
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [showPeminjaman, setShowPeminjaman] = useState(false);
+  const [members, setMembers] = useState<any[]>([]);
 
   const [newAnggota, setNewAnggota] = useState({
-    nama: '',
-    nomor: '',
-    alamat: '',
+    name: '',
+    id_member: '',
+    address: '',
     email: ''
   });
 
   const [selectedAnggota, setSelectedAnggota] = useState<any>(null);
   const [anggotaToDelete, setAnggotaToDelete] = useState<any>(null);
 
-  const anggotaData = [
-    {
-      id: 1,
-      nama: 'Rina Putri',
-      nomor: 'AG001',
-      alamat: 'Jakarta Selatan',
-      email: 'rina@gmail.com'
-    },
-    {
-      id: 2,
-      nama: 'Bagas Pratama',
-      nomor: 'AG002',
-      alamat: 'Bandung',
-      email: 'bagas@gmail.com'
-    },
-    {
-      id: 3,
-      nama: 'Siti Marlina',
-      nomor: 'AG003',
-      alamat: 'Depok',
-      email: 'siti@gmail.com'
-    }
-  ];
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/api/member/list`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: TOKEN,
+            'x-member-name': MEMBER_NAME
+          },
+          cache: 'no-store'
+        });
+
+        const json = await res.json();
+        setMembers(json?.data || []);
+      } catch (err) {
+        console.error('Gagal ambil anggota:', err);
+      }
+    })();
+  }, []);
+
+  const filtered = members.filter(
+    (a) => a.name?.toLowerCase().includes(search.toLowerCase())
+  );
 
   const peminjamanData: Record<number, any[]> = {
     1: [
@@ -97,10 +100,6 @@ export default function AnggotaPage() {
     ]
   };
 
-  const filtered = anggotaData.filter((a) =>
-    a.nama.toLowerCase().includes(search.toLowerCase())
-  );
-
   return (
     <div className="mx-auto max-w-6xl p-6">
       <h1 className="mb-6 text-3xl font-bold text-green-700">Data Anggota</h1>
@@ -131,10 +130,10 @@ export default function AnggotaPage() {
             className="flex flex-col rounded-xl border bg-white p-4 shadow-sm"
           >
             <h2 className="mb-1 text-xl font-bold text-green-800">
-              {item.nama}
+              {item.name}
             </h2>
-            <p className="text-gray-500">Nomor Anggota: {item.nomor}</p>
-            <p className="text-gray-500">Alamat: {item.alamat}</p>
+            <p className="text-gray-500">Nomor Anggota: {item.id_member}</p>
+            <p className="text-gray-500">Alamat: {item.address}</p>
             <p className="mb-4 text-gray-500">Email: {item.email}</p>
 
             <div className="mt-auto flex flex-wrap gap-2 sm:flex-nowrap">
@@ -193,9 +192,9 @@ export default function AnggotaPage() {
               </label>
               <input
                 className="mb-3 w-full rounded-lg border p-2 focus:outline-green-600"
-                value={newAnggota.nama}
+                value={newAnggota.name}
                 onChange={(e) =>
-                  setNewAnggota({ ...newAnggota, nama: e.target.value })
+                  setNewAnggota({ ...newAnggota, name: e.target.value })
                 }
               />
 
@@ -204,9 +203,9 @@ export default function AnggotaPage() {
               </label>
               <input
                 className="mb-3 w-full rounded-lg border p-2 focus:outline-green-600"
-                value={newAnggota.nomor}
+                value={newAnggota.id_member}
                 onChange={(e) =>
-                  setNewAnggota({ ...newAnggota, nomor: e.target.value })
+                  setNewAnggota({ ...newAnggota, id_member: e.target.value })
                 }
               />
 
@@ -215,9 +214,9 @@ export default function AnggotaPage() {
               </label>
               <input
                 className="mb-3 w-full rounded-lg border p-2 focus:outline-green-600"
-                value={newAnggota.alamat}
+                value={newAnggota.address}
                 onChange={(e) =>
-                  setNewAnggota({ ...newAnggota, alamat: e.target.value })
+                  setNewAnggota({ ...newAnggota, address: e.target.value })
                 }
               />
 
@@ -237,7 +236,12 @@ export default function AnggotaPage() {
             <div className="flex justify-end gap-3 border-t px-5 py-3">
               <button
                 onClick={() => {
-                  setNewAnggota({ nama: '', nomor: '', alamat: '', email: '' });
+                  setNewAnggota({
+                    name: '',
+                    id_member: '',
+                    address: '',
+                    email: ''
+                  });
                   setShowAdd(false);
                 }}
                 className="rounded-lg bg-gray-200 px-4 py-2 text-sm hover:bg-gray-300"
@@ -267,11 +271,11 @@ export default function AnggotaPage() {
               </label>
               <input
                 className="mb-3 w-full rounded-lg border p-2 focus:outline-green-600"
-                value={selectedAnggota.nama}
+                value={selectedAnggota.name}
                 onChange={(e) =>
                   setSelectedAnggota({
                     ...selectedAnggota,
-                    nama: e.target.value
+                    name: e.target.value
                   })
                 }
               />
@@ -281,11 +285,11 @@ export default function AnggotaPage() {
               </label>
               <input
                 className="mb-3 w-full rounded-lg border p-2 focus:outline-green-600"
-                value={selectedAnggota.nomor}
+                value={selectedAnggota.id_member}
                 onChange={(e) =>
                   setSelectedAnggota({
                     ...selectedAnggota,
-                    nomor: e.target.value
+                    id_member: e.target.value
                   })
                 }
               />
@@ -295,11 +299,11 @@ export default function AnggotaPage() {
               </label>
               <input
                 className="mb-3 w-full rounded-lg border p-2 focus:outline-green-600"
-                value={selectedAnggota.alamat}
+                value={selectedAnggota.address}
                 onChange={(e) =>
                   setSelectedAnggota({
                     ...selectedAnggota,
-                    alamat: e.target.value
+                    address: e.target.value
                   })
                 }
               />
@@ -324,9 +328,9 @@ export default function AnggotaPage() {
                 onClick={() => {
                   setSelectedAnggota({
                     id: null,
-                    nama: '',
-                    nomor: '',
-                    alamat: '',
+                    name: '',
+                    id_member: '',
+                    address: '',
                     email: ''
                   });
                   setShowEdit(false);
@@ -337,7 +341,7 @@ export default function AnggotaPage() {
               </button>
 
               <button className="rounded-lg bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700">
-                Simpan Perubahan
+                Simpan
               </button>
             </div>
           </div>
@@ -354,7 +358,7 @@ export default function AnggotaPage() {
 
             <p className="mt-2 text-sm text-gray-600">
               Apakah Anda yakin ingin menghapus anggota{' '}
-              <span className="font-semibold">{anggotaToDelete.nama}</span>?
+              <span className="font-semibold">{anggotaToDelete.name}</span>?
             </p>
 
             <div className="mt-5 flex justify-end gap-3">
@@ -377,6 +381,7 @@ export default function AnggotaPage() {
           </div>
         </div>
       )}
+
       {/* POPUP LIHAT PEMINJAMAN */}
       {showPeminjaman && selectedAnggota && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
@@ -386,7 +391,7 @@ export default function AnggotaPage() {
                 <h2 className="text-xl font-bold text-green-700">
                   Peminjaman Buku
                 </h2>
-                <p className="text-sm text-gray-500">{selectedAnggota.nama}</p>
+                <p className="text-sm text-gray-500">{selectedAnggota.name}</p>
               </div>
               <button onClick={() => setShowPeminjaman(false)}>✕</button>
             </div>
@@ -399,9 +404,9 @@ export default function AnggotaPage() {
               ) : (
                 peminjamanData[selectedAnggota.id].map((item) => (
                   <div key={item.id} className="rounded-lg border p-4">
-                    <h3 className="font-semibold">{item.judul}</h3>
+                    <h3 className="font-semibold">{item.title}</h3>
                     <p className="text-sm text-gray-600">
-                      {item.penulis} • {item.kategori}
+                      {item.writer} • {item.categories}
                     </p>
                     <p className="text-sm text-gray-600">
                       Pinjam: {item.pinjam}
@@ -430,4 +435,6 @@ export default function AnggotaPage() {
       )}
     </div>
   );
-}
+};
+
+export default AnggotaPage;
