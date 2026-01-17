@@ -21,7 +21,7 @@ const BukuPage = () => {
   const [selected, setSelected] = useState<any>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [categories, setCategories] = useState<any[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [books, setBooks] = useState<any[]>([]);
   const [form, setForm] = useState({
@@ -153,9 +153,7 @@ const BukuPage = () => {
     if (!res.ok) return;
 
     setBooks((prev) =>
-      prev.map((b) =>
-        b.documentId === selected.documentId ? json.data : b
-      )
+      prev.map((b) => (b.documentId === selected.documentId ? json.data : b))
     );
 
     closeModal();
@@ -176,9 +174,7 @@ const BukuPage = () => {
 
     if (!res.ok) return;
 
-    setBooks((prev) =>
-      prev.filter((b) => b.documentId !== selected.documentId)
-    );
+    setBooks((prev) => prev.filter((b) => b.documentId !== selected.documentId));
     closeModal();
   };
 
@@ -207,23 +203,44 @@ const BukuPage = () => {
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold">Data Buku</h2>
           <div className="flex gap-3">
-            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Cari buku..." className="rounded-full border px-4 py-2 text-sm" />
-            <button onClick={() => setModal("add")} className="rounded-full bg-purple-700 px-5 py-2 text-sm text-white">+ Tambah</button>
+            <input
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Cari buku..."
+              className="rounded-full border px-4 py-2 text-sm"
+            />
+            <button onClick={() => setModal("add")} className="rounded-full bg-purple-700 px-5 py-2 text-sm text-white">
+              + Tambah
+            </button>
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {paginatedBooks.map((b) => (
             <div key={b.documentId} className="flex flex-col overflow-hidden rounded-xl border bg-white">
-              <div className="relative h-40 w-full cursor-pointer bg-gray-200" onClick={() => { setPreview(b.cover?.url ? `${BASE_URL}${b.cover.url}` : null); setModal("preview"); }}>
-                <img src={b.cover?.url ? `${BASE_URL}${b.cover.url}` : "/placeholder-book.jpg"} className="absolute inset-0 h-full w-full object-cover" />
+              <div
+                className="relative h-40 w-full cursor-pointer bg-gray-200"
+                onClick={() => {
+                  setPreview(b.cover?.url ? `${BASE_URL}${b.cover.url}` : null);
+                  setModal("preview");
+                }}
+              >
+                <img
+                  src={b.cover?.url ? `${BASE_URL}${b.cover.url}` : "/placeholder-book.jpg"}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
               </div>
 
               <div className="flex flex-col gap-1 p-3">
                 <h3 className="line-clamp-2 text-sm font-semibold text-purple-700">{b.title}</h3>
                 <div className="flex flex-wrap gap-1">
                   {b.categories?.map((c: any) => (
-                    <span key={c.id} className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-purple-700">{c.name}</span>
+                    <span key={c.id} className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-purple-700">
+                      {c.name}
+                    </span>
                   ))}
                 </div>
                 <p className="line-clamp-1 text-xs text-gray-600">Penulis: {b.writer}</p>
@@ -234,12 +251,69 @@ const BukuPage = () => {
               </div>
 
               <div className="mt-auto grid grid-cols-2 gap-1 p-3 pt-0">
-                <button onClick={() => { setSelected(b); setForm({ title: b.title, writer: b.writer, publisher: b.publisher, published_year: b.published_year, stock: String(b.stock) }); setSelectedCategory(b.categories?.[0]?.id || ""); setPreview(b.cover?.url ? `${BASE_URL}${b.cover.url}` : null); setModal("edit"); }} className="rounded-md bg-purple-600 py-1.5 text-xs text-white">Edit</button>
-                <button onClick={() => { setSelected(b); setModal("delete"); }} className="rounded-md bg-red-500 py-1.5 text-xs text-white">Hapus</button>
+                <button
+                  onClick={() => {
+                    setSelected(b);
+                    setForm({
+                      title: b.title,
+                      writer: b.writer,
+                      publisher: b.publisher,
+                      published_year: b.published_year,
+                      stock: String(b.stock),
+                    });
+                    setSelectedCategory(b.categories?.[0]?.id || "");
+                    setPreview(b.cover?.url ? `${BASE_URL}${b.cover.url}` : null);
+                    setModal("edit");
+                  }}
+                  className="rounded-md bg-purple-600 py-1.5 text-xs text-white"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => {
+                    setSelected(b);
+                    setModal("delete");
+                  }}
+                  className="rounded-md bg-red-500 py-1.5 text-xs text-white"
+                >
+                  Hapus
+                </button>
               </div>
             </div>
           ))}
         </div>
+
+        {totalPages > 1 && (
+          <div className="mt-8 flex justify-center gap-2">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage((p) => p - 1)}
+              className="rounded-md border px-3 py-1 text-sm disabled:opacity-40"
+            >
+              Prev
+            </button>
+
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setPage(i + 1)}
+                className={`rounded-md px-3 py-1 text-sm ${
+                  page === i + 1 ? "bg-purple-700 text-white" : "border"
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+
+            <button
+              disabled={page === totalPages}
+              onClick={() => setPage((p) => p + 1)}
+              className="rounded-md border px-3 py-1 text-sm disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </main>
 
       {modal === "preview" && preview && (
@@ -259,7 +333,9 @@ const BukuPage = () => {
               <input name="published_year" onChange={handleChange} placeholder="Tahun" className="w-full rounded-lg border p-2 text-sm" />
               <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full rounded-lg border p-2 text-sm">
                 <option value="">Pilih Kategori</option>
-                {categories.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
               </select>
               <input name="stock" type="number" onChange={handleChange} placeholder="Stok" className="w-full rounded-lg border p-2 text-sm" />
               <input type="file" onChange={handleImage} />
@@ -284,7 +360,9 @@ const BukuPage = () => {
               <input name="published_year" value={form.published_year} onChange={handleChange} className="w-full rounded-lg border p-2 text-sm" />
               <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full rounded-lg border p-2 text-sm">
                 <option value="">Pilih Kategori</option>
-                {categories.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
               </select>
               <input name="stock" type="number" value={form.stock} onChange={handleChange} className="w-full rounded-lg border p-2 text-sm" />
               <input type="file" onChange={handleImage} />
