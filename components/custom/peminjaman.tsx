@@ -41,7 +41,7 @@ const borrowList = [
   },
   {
     id: 3,
-    title: " A Smart Bunny",
+    title: "A Smart Bunny",
     borrower: "i gede satria jati wibawa",
     borrowDate: "01/03/2026",
     returnDate: "01/10/2026",
@@ -142,30 +142,33 @@ export default function PeminjamanPage() {
           </div>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="flex flex-col gap-4">
           {filtered.map((item) => (
             <div
               key={item.id}
-              className="rounded-2xl bg-white border border-purple-200 p-5 shadow-sm"
+              className="flex items-center justify-between gap-6 rounded-2xl bg-white border border-purple-200 p-5 shadow-sm"
             >
-              <h3 className="text-lg font-bold text-purple-700">
-                {item.title}
-              </h3>
-              <p className="text-sm text-gray-600">
-                Peminjam: {item.borrower}
-              </p>
-              <p className="text-sm text-gray-600">
-                Pinjam: {item.borrowDate}
-              </p>
-              <p className="text-sm text-gray-600">
-                Kembali: {item.returnDate}
-              </p>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-purple-700">
+                  {item.title}
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Peminjam: {item.borrower}
+                </p>
+                <p className="text-sm text-gray-600">
+                  Pinjam: {item.borrowDate}
+                </p>
+                <p className="text-sm text-gray-600">
+                  Kembali: {item.returnDate}
+                </p>
+              </div>
+
               <button
                 onClick={() => {
                   setSelectedBorrow(item);
                   setShowConfirm(true);
                 }}
-                className="mt-4 w-full rounded-lg bg-green-600 py-2 text-sm text-white"
+                className="shrink-0 rounded-lg bg-green-600 px-6 py-2 text-sm text-white"
               >
                 Kembalikan
               </button>
@@ -247,7 +250,6 @@ export default function PeminjamanPage() {
           render={(m: any) => (
             <>
               <p className="font-semibold text-purple-700">{m.name}</p>
-              <p className="text-sm">{m.nis}</p>
               <p className="text-sm">{m.email}</p>
             </>
           )}
@@ -299,7 +301,7 @@ function Popup({ title, data, onClose, onSelect, render }: any) {
           {data.map((item: any) => (
             <div
               key={item.id}
-              className="flex justify-between rounded-lg border border-purple-200 p-4"
+              className="flex justify-between items-center rounded-lg border border-purple-200 p-4"
             >
               <div className="text-sm">{render(item)}</div>
               <button

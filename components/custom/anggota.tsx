@@ -11,7 +11,7 @@ const nav_items = [
   { name: "Pengembalian", href: "/pengembalian" },
 ];
 
-const members = [
+const initialMembers = [
   {
     id: 1,
     name: "agatha celine jjavorka",
@@ -31,27 +31,12 @@ const members = [
     borrowed: [{ title: "Useful Tree", date: "2025-01-18" }],
     returned: [],
   },
-   {
-    id: 3,
-    name: "i gede satria jati wibawa",
-    address: "Jl. Tabanan",
-    email: "sajajaja08@gmail.com",
-    borrowed: [{ title: "Useful Tree", date: "2025-01-18" }],
-    returned: [],
-  },
-   {
-    id: 4,
-    name: "lionel jastive mouel",
-    address: "Jl. Manado",
-    email: "jastive35@gmail.com",
-    borrowed: [{ title: "Useful Tree", date: "2025-01-18" }],
-    returned: [],
-  },
 ];
 
 export default function AnggotaPage() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [members, setMembers] = useState(initialMembers);
   const [selected, setSelected] = useState<any>(null);
   const [modal, setModal] =
     useState<"view" | "add" | "edit" | "delete" | null>(null);
@@ -65,31 +50,24 @@ export default function AnggotaPage() {
     setSelected(null);
   };
 
+  const handleDeleteMember = () => {
+    if (!selected) return;
+    setMembers((prev) => prev.filter((m) => m.id !== selected.id));
+    closeModal();
+  };
+  
   return (
     <div className="flex min-h-screen bg-[#f6f5fb] text-[#2b2540]">
-      <aside
-        className={`fixed top-0 left-0 z-40 h-screen w-64 bg-[#2b2540] text-white border-r border-purple-800/40 p-6 transition-transform duration-300 ${
-          open ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0`}
-      >
-        <button
-          onClick={() => setOpen(false)}
-          className="absolute right-4 top-4 text-2xl md:hidden"
-        >
-          ✕
-        </button>
-
-        <h1 className="mb-10 text-3xl font-extrabold tracking-wide text-purple-300">
+      <aside className="fixed left-0 top-0 h-screen w-64 bg-[#2b2540] text-white p-6">
+        <h1 className="mb-10 text-3xl font-extrabold text-purple-300">
           LIBRAVA
         </h1>
-
         <nav className="flex flex-col gap-2">
           {nav_items.map((item) => (
             <Link
               key={item.name}
               href={item.href}
-              onClick={() => setOpen(false)}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+              className={`rounded-lg px-4 py-2 text-sm ${
                 item.name === "Anggota"
                   ? "bg-purple-700/40"
                   : "hover:bg-purple-700/40"
@@ -101,79 +79,61 @@ export default function AnggotaPage() {
         </nav>
       </aside>
 
-      {open && (
-        <div
-          onClick={() => setOpen(false)}
-          className="fixed inset-0 z-30 bg-black/40 md:hidden"
-        />
-      )}
-
-      <main className="ml-0 md:ml-64 w-full p-4 sm:p-6">
-        <div className="mb-5 flex justify-between md:hidden">
-          <button
-            onClick={() => setOpen(true)}
-            className="rounded-lg bg-purple-700 px-4 py-2 text-white font-semibold"
-          >
-            ☰
-          </button>
-        </div>
-
-        <div className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <main className="ml-64 w-full p-6">
+        <div className="mb-6 flex justify-between items-center">
           <h2 className="text-3xl font-bold">Data Anggota</h2>
-
-          <div className="flex gap-3 w-full sm:w-auto">
+          <div className="flex gap-3">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Cari anggota..."
-              className="w-full sm:w-72 rounded-full border border-purple-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-500"
+              className="rounded-full border px-4 py-2 text-sm"
             />
             <button
               onClick={() => setModal("add")}
-              className="rounded-full bg-purple-700 px-6 py-2 text-white font-semibold"
+              className="rounded-full bg-purple-700 px-6 py-2 text-white"
             >
               + Tambah
             </button>
           </div>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredMembers.map((item) => (
+        <div className="flex flex-col gap-4">
+          {filteredMembers.map((m) => (
             <div
-              key={item.id}
-              className="rounded-2xl bg-white border border-purple-200 p-5 shadow-sm"
+              key={m.id}
+              className="flex justify-between items-center bg-white p-5 rounded-2xl border"
             >
-              <h3 className="text-lg font-bold text-purple-700">
-                {item.name}
-              </h3>
-              <p className="text-sm text-gray-600">Alamat: {item.address}</p>
-              <p className="text-sm text-gray-600">Email: {item.email}</p>
-
-              <div className="mt-5 grid grid-cols-3 gap-2">
+              <div>
+                <h3 className="font-bold text-purple-700">{m.name}</h3>
+                <p className="text-sm">{m.address}</p>
+                <p className="text-sm">{m.email}</p>
+              </div>
+              <div className="flex gap-2">
                 <button
                   onClick={() => {
-                    setSelected(item);
+                    setSelected(m);
                     setModal("view");
                   }}
-                  className="rounded-lg border border-purple-300 py-2 text-sm hover:bg-purple-100"
+                  className="border px-4 py-2 rounded-lg"
                 >
                   Lihat
                 </button>
                 <button
                   onClick={() => {
-                    setSelected(item);
+                    setSelected(m);
                     setModal("edit");
                   }}
-                  className="rounded-lg bg-purple-600 py-2 text-sm text-white"
+                  className="bg-purple-600 text-white px-4 py-2 rounded-lg"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => {
-                    setSelected(item);
+                    setSelected(m);
                     setModal("delete");
                   }}
-                  className="rounded-lg bg-red-500 py-2 text-sm text-white"
+                  className="bg-red-500 text-white px-4 py-2 rounded-lg"
                 >
                   Hapus
                 </button>
@@ -184,53 +144,31 @@ export default function AnggotaPage() {
       </main>
 
       {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 border border-purple-300">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-2xl w-full max-w-md">
             {modal === "view" && selected && (
               <>
-                <h2 className="mb-4 text-xl font-bold text-purple-700">
-                  Riwayat Peminjaman
-                </h2>
-
-                <div className="mb-4">
-                  <p className="font-semibold text-purple-600 mb-2">Dipinjam</p>
+                <h2 className="font-bold text-lg mb-4">Riwayat</h2>
+                <div className="mb-3">
+                  <p className="font-semibold">Dipinjam</p>
                   {selected.borrowed.length ? (
-                    <ul className="space-y-1 text-sm">
-                      {selected.borrowed.map((b: any, i: number) => (
-                        <li
-                          key={i}
-                          className="rounded-lg bg-purple-50 px-3 py-2"
-                        >
-                          {b.title}
-                          <span className="ml-1 text-gray-500">
-                            ({b.date})
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
+                    selected.borrowed.map((b: any, i: number) => (
+                      <p key={i} className="text-sm">
+                        {b.title} ({b.date})
+                      </p>
+                    ))
                   ) : (
                     <p className="text-sm text-gray-500">Tidak ada</p>
                   )}
                 </div>
-
                 <div>
-                  <p className="font-semibold text-purple-600 mb-2">
-                    Dikembalikan
-                  </p>
+                  <p className="font-semibold">Dikembalikan</p>
                   {selected.returned.length ? (
-                    <ul className="space-y-1 text-sm">
-                      {selected.returned.map((b: any, i: number) => (
-                        <li
-                          key={i}
-                          className="rounded-lg bg-purple-50 px-3 py-2"
-                        >
-                          {b.title}
-                          <span className="ml-1 text-gray-500">
-                            ({b.date})
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
+                    selected.returned.map((b: any, i: number) => (
+                      <p key={i} className="text-sm">
+                        {b.title} ({b.date})
+                      </p>
+                    ))
                   ) : (
                     <p className="text-sm text-gray-500">Tidak ada</p>
                   )}
@@ -240,57 +178,43 @@ export default function AnggotaPage() {
 
             {(modal === "add" || modal === "edit") && (
               <>
-                <h2 className="mb-4 text-xl font-bold text-purple-700">
+                <h2 className="font-bold mb-4">
                   {modal === "add" ? "Tambah Anggota" : "Edit Anggota"}
                 </h2>
                 <div className="space-y-3">
-                  <input className="w-full rounded-lg border border-purple-300 p-3 text-sm" placeholder="Nama" />
-                  <input className="w-full rounded-lg border border-purple-300 p-3 text-sm" placeholder="Nomor" />
-                  <input className="w-full rounded-lg border border-purple-300 p-3 text-sm" placeholder="Alamat" />
-                  <input className="w-full rounded-lg border border-purple-300 p-3 text-sm" placeholder="Email" />
+                  <input className="w-full border p-3 rounded-lg" placeholder="Nama" />
+                  <input className="w-full border p-3 rounded-lg" placeholder="Alamat" />
+                  <input className="w-full border p-3 rounded-lg" placeholder="Email" />
                 </div>
               </>
             )}
 
             {modal === "delete" && (
-              <h2 className="text-center text-lg font-semibold text-red-600">
+              <h2 className="text-center text-red-600 font-semibold">
                 Yakin ingin menghapus anggota ini?
               </h2>
             )}
 
-            {modal === "delete" ? (
-              <div className="mt-6 flex justify-center gap-4">
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={closeModal}
+                className="border px-4 py-2 rounded-lg"
+              >
+                Batal
+              </button>
+              {modal === "delete" ? (
                 <button
-                  onClick={closeModal}
-                  className="rounded-lg border border-purple-300 px-6 py-2"
-                >
-                  Tidak
-                </button>
-                <button
-                  onClick={closeModal}
-                  className="rounded-lg bg-red-500 px-6 py-2 text-white"
+                  onClick={handleDeleteMember}
+                  className="bg-red-500 text-white px-4 py-2 rounded-lg"
                 >
                   Hapus
                 </button>
-              </div>
-            ) : (
-              <div className="mt-6 flex justify-end gap-3">
-                <button
-                  onClick={closeModal}
-                  className="rounded-lg border border-purple-300 px-4 py-2"
-                >
-                  Batal
+              ) : modal !== "view" ? (
+                <button className="bg-purple-600 text-white px-4 py-2 rounded-lg">
+                  Simpan
                 </button>
-                {modal !== "view" && (
-                  <button
-                    onClick={closeModal}
-                    className="rounded-lg bg-purple-600 px-4 py-2 text-white"
-                  >
-                    Simpan
-                  </button>
-                )}
-              </div>
-            )}
+              ) : null}
+            </div>
           </div>
         </div>
       )}

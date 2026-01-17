@@ -17,7 +17,7 @@ const borrowList = [
     title: "As Green as a Leaf",
     borrower: "agatha celine jjavorka",
     borrowDate: "01/03/2026",
-    returnDate: "01/10/2026", 
+    returnDate: "01/10/2026",
   },
   {
     id: 2,
@@ -27,11 +27,11 @@ const borrowList = [
     returnDate: "01/27/2026",
   },
   {
-    id: 3, 
+    id: 3,
     title: "Calm Clouds",
     borrower: "anak agung aldebaran",
     borrowDate: "01/10/2026",
-    returnDate: "01/17/2026  ",
+    returnDate: "01/17/2026",
   },
 ];
 
@@ -117,44 +117,45 @@ export default function PengembalianPage() {
           />
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="flex flex-col gap-4">
           {filtered.map((item) => {
             const lateDays = getLateDays(item.returnDate);
 
             return (
               <div
                 key={item.id}
-                className="rounded-2xl bg-white border border-purple-200 p-6 shadow-sm"
+                className="flex items-center justify-between gap-6 rounded-2xl bg-white border border-purple-200 p-6 shadow-sm"
               >
-                <h3 className="text-lg font-bold text-purple-700">
-                  {item.title}
-                </h3>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-purple-700">
+                    {item.title}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Peminjam: {item.borrower}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Pinjam: {item.borrowDate}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Jatuh Tempo: {item.returnDate}
+                  </p>
 
-                <p className="text-sm text-gray-600">
-                  Peminjam: {item.borrower}
-                </p>
-                <p className="text-sm text-gray-600">
-                  Pinjam: {item.borrowDate}
-                </p>
-                <p className="text-sm text-gray-600">
-                  Jatuh Tempo: {item.returnDate}
-                </p>
-
-                {lateDays > 0 ? (
-                  <span className="mt-3 inline-block rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-600">
-                    Terlambat {lateDays} hari
-                  </span>
-                ) : (
-                  <span className="mt-3 inline-block rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-600">
-                    Tepat Waktu
-                  </span>
-                )}
+                  {lateDays > 0 ? (
+                    <span className="mt-2 inline-block rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-600">
+                      Terlambat {lateDays} hari
+                    </span>
+                  ) : (
+                    <span className="mt-2 inline-block rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-600">
+                      Tepat Waktu
+                    </span>
+                  )}
+                </div>
 
                 <button
                   onClick={() => setSelected(item)}
-                  className="mt-4 w-full rounded-lg bg-purple-600 py-2 text-sm font-semibold text-white hover:bg-purple-700"
+                  className="shrink-0 rounded-lg bg-purple-600 px-6 py-2 text-sm font-semibold text-white hover:bg-purple-700"
                 >
-                  Konfirmasi Pengembalian
+                  Konfirmasi
                 </button>
               </div>
             );
