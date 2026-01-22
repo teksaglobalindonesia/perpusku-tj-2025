@@ -1,15 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-
-const nav_items = [
-  { name: "Dashboard", href: "/" },
-  { name: "Buku", href: "/buku" },
-  { name: "Anggota", href: "/anggota" },
-  { name: "Peminjaman", href: "/peminjaman" },
-  { name: "Pengembalian", href: "/pengembalian" },
-];
 
 const initialMembers = [
   {
@@ -34,7 +25,6 @@ const initialMembers = [
 ];
 
 export default function AnggotaPage() {
-  const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [members, setMembers] = useState(initialMembers);
   const [selected, setSelected] = useState<any>(null);
@@ -55,39 +45,19 @@ export default function AnggotaPage() {
     setMembers((prev) => prev.filter((m) => m.id !== selected.id));
     closeModal();
   };
-  
-  return (
-    <div className="flex min-h-screen bg-[#f6f5fb] text-[#2b2540]">
-      <aside className="fixed left-0 top-0 h-screen w-64 bg-[#2b2540] text-white p-6">
-        <h1 className="mb-10 text-3xl font-extrabold text-purple-300">
-          LIBRAVA
-        </h1>
-        <nav className="flex flex-col gap-2">
-          {nav_items.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`rounded-lg px-4 py-2 text-sm ${
-                item.name === "Anggota"
-                  ? "bg-purple-700/40"
-                  : "hover:bg-purple-700/40"
-              }`}
-            >
-              {item.name}
-            </Link>
-          ))}
-        </nav>
-      </aside>
 
-      <main className="ml-64 w-full p-6">
-        <div className="mb-6 flex justify-between items-center">
+  return (
+    <div className="min-h-screen bg-[#f6f5fb] text-[#2b2540]">
+      <main className="mx-auto max-w-7xl p-6">
+        <div className="mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
           <h2 className="text-3xl font-bold">Data Anggota</h2>
-          <div className="flex gap-3">
+
+          <div className="flex gap-3 w-full sm:w-auto">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Cari anggota..."
-              className="rounded-full border px-4 py-2 text-sm"
+              className="w-full sm:w-64 rounded-full border px-4 py-2 text-sm"
             />
             <button
               onClick={() => setModal("add")}
@@ -102,13 +72,14 @@ export default function AnggotaPage() {
           {filteredMembers.map((m) => (
             <div
               key={m.id}
-              className="flex justify-between items-center bg-white p-5 rounded-2xl border"
+              className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border"
             >
               <div>
                 <h3 className="font-bold text-purple-700">{m.name}</h3>
                 <p className="text-sm">{m.address}</p>
                 <p className="text-sm">{m.email}</p>
               </div>
+
               <div className="flex gap-2">
                 <button
                   onClick={() => {
@@ -144,11 +115,12 @@ export default function AnggotaPage() {
       </main>
 
       {modal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4">
           <div className="bg-white p-6 rounded-2xl w-full max-w-md">
             {modal === "view" && selected && (
               <>
                 <h2 className="font-bold text-lg mb-4">Riwayat</h2>
+
                 <div className="mb-3">
                   <p className="font-semibold">Dipinjam</p>
                   {selected.borrowed.length ? (
@@ -161,6 +133,7 @@ export default function AnggotaPage() {
                     <p className="text-sm text-gray-500">Tidak ada</p>
                   )}
                 </div>
+
                 <div>
                   <p className="font-semibold">Dikembalikan</p>
                   {selected.returned.length ? (
@@ -202,6 +175,7 @@ export default function AnggotaPage() {
               >
                 Batal
               </button>
+
               {modal === "delete" ? (
                 <button
                   onClick={handleDeleteMember}

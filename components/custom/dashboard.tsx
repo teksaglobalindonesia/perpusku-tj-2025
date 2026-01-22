@@ -1,213 +1,155 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import Navbar from "../custom/navbar";
 
-const nav_items = [
-  { name: "Dashboard", href: "/" },
-  { name: "Buku", href: "/buku" },
-  { name: "Anggota", href: "/anggota" },
-  { name: "Peminjaman", href: "/peminjaman" },
-  { name: "Pengembalian", href: "/pengembalian" },
-];
+
+const ITEMS_PER_PAGE = 3;
 
 const booksData = [
-  { id: 1, title: "A Smart Bunny", stock: 12, image: "/img/foto1.jpg" },
-  { id: 2, title: "The Clever Bee", stock: 8, image: "/img/foto2.jpg" },
-  { id: 3, title: "As Green as a Leaf", stock: 0, image: "/img/foto3.jpg" },
-  { id: 4, title: "Delicious Mushroom", stock: 10, image: "/img/foto4.jpg" },
-  { id: 5, title: "Calm Clouds", stock: 7, image: "/img/foto5.jpg" },
-  { id: 6, title: "Useful Tree", stock: 4, image: "/img/foto6.jpg" },
+  { id: 1, title: "Harry Potter", genre: "Fantasy", author: "J.K. Rowling", stock: 12, image: "/img/novel 1.jpeg" },
+  { id: 2, title: "The Hunger Games", genre: "Dystopia", author: "Suzanne Collins", stock: 0, image: "/img/novel 2.jpeg" },
+  { id: 3, title: "Aku Ini Binatang Jalang", genre: "Puisi", author: "Chairil Anwar", stock: 5, image: "/img/puisi 1.jpeg" },
+  { id: 4, title: "Milk and Honey", genre: "Puisi", author: "Rupi Kaur", stock: 7, image: "/img/puisi 2.jpeg" },
+  { id: 5, title: "Perahu Kertas", genre: "Novel", author: "Dewi Lestari", stock: 0, image: "/img/sol 1.jpeg" },
 ];
 
-const borrowData = [
-  { name: "Sunghoon", book: "A Smart Bunny" },
-  { name: "Minggyu", book: "The Clever Bee" },
-  { name: "DK", book: "Delicious Mushroom" },
+const borrowToday = [
+  { id: 1, title: "Harry Potter", name: "Areksa", borrow: "10 Jan 2026", return: "15 Jan 2026" },
+  { id: 2, title: "The Hunger Games", name: "Alena", borrow: "10 Jan 2026", return: "14 Jan 2026" },
+  { id: 3, title: "Milk and Honey", name: "Angkasa", borrow: "10 Jan 2026", return: "13 Jan 2026" },
+  { id: 4, title: "Perahu Kertas", name: "Sadewa", borrow: "10 Jan 2026", return: "16 Jan 2026" },
 ];
 
-const returnData = [
-  { name: "Kimberly", book: "Delicious Mushroom" },
-  { name: "Sheyln", book: "Calm Clouds" },
-  { name: "Joshua", book: "Useful Tree" },
+const returnToday = [
+  { id: 1, title: "Milk and Honey", name: "Sadewa", borrow: "5 Jan 2026", return: "10 Jan 2026", status: "Dikembalikan" },
+  { id: 2, title: "Perahu Kertas", name: "Sheyln", borrow: "6 Jan 2026", return: "10 Jan 2026", status: "Terlambat" },
+  { id: 3, title: "Norwegian Wood", name: "Alica", borrow: "7 Jan 2026", return: "10 Jan 2026", status: "Dikembalikan" },
+  { id: 4, title: "Harry Potter", name: "Raka", borrow: "4 Jan 2026", return: "10 Jan 2026", status: "Dikembalikan" },
 ];
+
+const paginate = (data: any[], page: number) =>
+  data.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+const totalPage = (data: any[]) =>
+  Math.ceil(data.length / ITEMS_PER_PAGE);
 
 export default function Dashboard() {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [fade, setFade] = useState(false);
+  const [searchBook, setSearchBook] = useState("");
+  const [searchBorrow, setSearchBorrow] = useState("");
+  const [searchReturn, setSearchReturn] = useState("");
 
-  const filteredBooks = booksData.filter((b) =>
-    b.title.toLowerCase().includes(search.toLowerCase())
+  const [bookPage, setBookPage] = useState(1);
+  const [borrowPage, setBorrowPage] = useState(1);
+  const [returnPage, setReturnPage] = useState(1);
+
+  const books = booksData.filter(b =>
+    b.title.toLowerCase().includes(searchBook.toLowerCase())
   );
 
-  useEffect(() => {
-    setFade(false);
-    const t = setTimeout(() => setFade(true), 120);
-    return () => clearTimeout(t);
-  }, [search]);
+  const borrows = borrowToday.filter(b =>
+    b.title.toLowerCase().includes(searchBorrow.toLowerCase())
+  );
+
+  const returns = returnToday.filter(r =>
+    r.title.toLowerCase().includes(searchReturn.toLowerCase())
+  );
 
   return (
-    <div className="flex min-h-screen bg-[#f6f5fb] text-[#2b2540]">
+    <div className="min-h-screen bg-[#f6f5fb] text-[#2b2540]">
+      <main className="mx-auto max-w-7xl px-6 py-10 space-y-14">
 
-      <aside
-        className={`fixed top-0 left-0 z-40 h-screen w-64 bg-[#2b2540] text-white
-        border-r border-purple-800/40 p-6 transition-transform duration-300
-        ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
-      >
-        <button
-          onClick={() => setOpen(false)}
-          className="absolute right-4 top-4 text-2xl md:hidden"
-        >
-          ✕
-        </button>
+        <section>
+          <div className="flex justify-between mb-4">
+            <h2 className="text-2xl font-bold">Stok Buku</h2>
+            <input value={searchBook} onChange={e => {setSearchBook(e.target.value); setBookPage(1);}} placeholder="Cari buku..." className="rounded-full border px-4 py-2 text-sm"/>
+          </div>
 
-        <h1 className="mb-10 text-3xl font-extrabold tracking-wide text-purple-300">
-          LIBRAVA
-        </h1>
-
-        <nav className="flex flex-col gap-2">
-          {nav_items.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              onClick={() => setOpen(false)}
-              className="rounded-lg px-4 py-2 text-sm font-medium hover:bg-purple-700/40 transition"
-            >
-              {item.name}
-            </Link>
-          ))}
-        </nav>
-      </aside>
-
-      {open && (
-        <div
-          onClick={() => setOpen(false)}
-          className="fixed inset-0 bg-black/40 md:hidden z-30"
-        />
-      )}
-
-      <main className="ml-0 md:ml-64 w-full p-4 sm:p-6">
-
-        <div className="mb-5 flex items-center justify-between md:hidden">
-          <button
-            onClick={() => setOpen(true)}
-            className="rounded-lg bg-purple-700 px-4 py-2 text-white font-semibold"
-          >
-            ☰
-          </button>
-        </div>
-
-        <div className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <h2 className="text-3xl font-bold text-[#2b2540]">Dashboard</h2>
-
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari buku..."
-            className="w-full sm:w-80 rounded-full border border-purple-300 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
-          />
-        </div>
-
-        <section className="mb-8">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[
-              { label: "Total Buku", value: 125 },
-              { label: "Buku Tersedia", value: 85 },
-              { label: "Dipinjam Hari Ini", value: 52 },
-              { label: "Pengembalian Hari Ini", value: 35 },
-            ].map((s, i) => (
-              <div
-                key={i}
-                className="rounded-2xl bg-white p-4 shadow-sm border border-purple-200 text-center"
-              >
-                <p className="text-3xl font-extrabold text-purple-700">
-                  {s.value}
+          <div className="grid sm:grid-cols-3 gap-5">
+            {paginate(books, bookPage).map(b => (
+              <div key={b.id} className="bg-white rounded-2xl p-4 border">
+                <img src={b.image} className="h-40 w-full object-cover rounded-xl mb-3"/>
+                <h3 className="font-bold text-purple-700">{b.title}</h3>
+                <p className="text-sm">{b.genre}</p>
+                <p className="text-sm">{b.author}</p>
+                <p className={`mt-2 font-semibold ${b.stock > 0 ? "text-green-600" : "text-red-500"}`}>
+                  {b.stock > 0 ? "Tersedia" : "Habis"}
                 </p>
-                <p className="text-sm text-gray-600">{s.label}</p>
               </div>
             ))}
           </div>
+
+          <div className="flex justify-center items-center gap-2 mt-4">
+            <button onClick={() => setBookPage(p => Math.max(p - 1, 1))} className="px-3 py-1 border rounded">&lt;</button>
+            {Array.from({ length: totalPage(books) }).map((_, i) => (
+              <button key={i} onClick={() => setBookPage(i + 1)} className={`h-8 w-8 rounded-full ${bookPage === i + 1 ? "bg-purple-700 text-white" : "border"}`}>
+                {i + 1}
+              </button>
+            ))}
+            <button onClick={() => setBookPage(p => Math.min(p + 1, totalPage(books)))} className="px-3 py-1 border rounded">&gt;</button>
+          </div>
         </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-          <div className="space-y-6">
-            <div className="rounded-2xl bg-white p-4 border border-purple-200">
-              <h3 className="mb-3 text-lg font-bold text-purple-700">
-                Data Peminjaman
-              </h3>
-              <table className="w-full text-sm">
-                <tbody>
-                  {borrowData.map((b, i) => (
-                    <tr key={i} className="border-b last:border-0">
-                      <td className="py-2 font-medium">{b.name}</td>
-                      <td className="py-2 text-gray-600">{b.book}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="rounded-2xl bg-white p-4 border border-purple-200">
-              <h3 className="mb-3 text-lg font-bold text-purple-700">
-                Data Pengembalian
-              </h3>
-              <table className="w-full text-sm">
-                <tbody>
-                  {returnData.map((r, i) => (
-                    <tr key={i} className="border-b last:border-0">
-                      <td className="py-2 font-medium">{r.name}</td>
-                      <td className="py-2 text-gray-600">{r.book}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        <section>
+          <div className="flex justify-between mb-4">
+            <h2 className="text-2xl font-bold">Peminjaman Hari Ini</h2>
+            <input value={searchBorrow} onChange={e => {setSearchBorrow(e.target.value); setBorrowPage(1);}} placeholder="Cari buku..." className="rounded-full border px-4 py-2 text-sm"/>
           </div>
 
-          <div className="lg:col-span-2">
-            <h3 className="mb-4 text-xl font-bold text-[#2b2540]">
-              Koleksi Buku
-            </h3>
-
-            <div
-              className={`grid grid-cols-2 lg:grid-cols-3 gap-5 transition-opacity duration-200 ${
-                fade ? "opacity-100" : "opacity-0"
-              }`}
-            >
-              {filteredBooks.map((b) => (
-                <div
-                  key={b.id}
-                  className="rounded-2xl bg-white border border-purple-200 p-4 shadow-sm"
-                >
-                  <img
-                    src={b.image}
-                    className="h-40 w-full rounded-xl object-cover mb-3"
-                  />
-
-                  <h4 className="font-bold text-purple-700">{b.title}</h4>
-
-                  <p className="text-sm text-gray-600">Stok: {b.stock}</p>
-                  <p
-                    className={`text-sm font-semibold ${
-                      b.stock > 0 ? "text-green-600" : "text-red-500"
-                    }`}
-                  >
-                    {b.stock > 0 ? "Tersedia" : "Habis"}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            {filteredBooks.length === 0 && (
-              <p className="mt-6 text-center text-gray-500">
-                Buku tidak ditemukan
-              </p>
-            )}
+          <div className="grid sm:grid-cols-3 gap-5">
+            {paginate(borrows, borrowPage).map(b => (
+              <div key={b.id} className="bg-white rounded-2xl p-4 border">
+                <h3 className="font-bold text-purple-700">{b.title}</h3>
+                <p className="text-sm">Peminjam: {b.name}</p>
+                <p className="text-sm">Pinjam: {b.borrow}</p>
+                <p className="text-sm">Kembali: {b.return}</p>
+              </div>
+            ))}
           </div>
 
-        </div>
+          <div className="flex justify-center items-center gap-2 mt-4">
+            <button onClick={() => setBorrowPage(p => Math.max(p - 1, 1))} className="px-3 py-1 border rounded">&lt;</button>
+            {Array.from({ length: totalPage(borrows) }).map((_, i) => (
+              <button key={i} onClick={() => setBorrowPage(i + 1)} className={`h-8 w-8 rounded-full ${borrowPage === i + 1 ? "bg-purple-700 text-white" : "border"}`}>
+                {i + 1}
+              </button>
+            ))}
+            <button onClick={() => setBorrowPage(p => Math.min(p + 1, totalPage(borrows)))} className="px-3 py-1 border rounded">&gt;</button>
+          </div>
+        </section>
+
+        <section>
+          <div className="flex justify-between mb-4">
+            <h2 className="text-2xl font-bold">Pengembalian Hari Ini</h2>
+            <input value={searchReturn} onChange={e => {setSearchReturn(e.target.value); setReturnPage(1);}} placeholder="Cari buku..." className="rounded-full border px-4 py-2 text-sm"/>
+          </div>
+
+          <div className="grid sm:grid-cols-3 gap-5">
+            {paginate(returns, returnPage).map(r => (
+              <div key={r.id} className="bg-white rounded-2xl p-4 border">
+                <h3 className="font-bold text-purple-700">{r.title}</h3>
+                <p className="text-sm">Peminjam: {r.name}</p>
+                <p className="text-sm">Pinjam: {r.borrow}</p>
+                <p className="text-sm">Kembali: {r.return}</p>
+                <p className={`mt-2 font-semibold ${r.status === "Dikembalikan" ? "text-green-600" : "text-red-500"}`}>
+                  {r.status}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-center items-center gap-2 mt-4">
+            <button onClick={() => setReturnPage(p => Math.max(p - 1, 1))} className="px-3 py-1 border rounded">&lt;</button>
+            {Array.from({ length: totalPage(returns) }).map((_, i) => (
+              <button key={i} onClick={() => setReturnPage(i + 1)} className={`h-8 w-8 rounded-full ${returnPage === i + 1 ? "bg-purple-700 text-white" : "border"}`}>
+                {i + 1}
+              </button>
+            ))}
+            <button onClick={() => setReturnPage(p => Math.min(p + 1, totalPage(returns)))} className="px-3 py-1 border rounded">&gt;</button>
+          </div>
+        </section>
+
       </main>
     </div>
   );

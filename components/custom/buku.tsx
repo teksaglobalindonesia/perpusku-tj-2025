@@ -4,14 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BASE_URL, TOKEN, MEMBER_NAME } from "../../lib/constant";
 
-const nav_items = [
-  { name: "Dashboard", href: "/" },
-  { name: "Buku", href: "/buku" },
-  { name: "Anggota", href: "/anggota" },
-  { name: "Peminjaman", href: "/peminjaman" },
-  { name: "Pengembalian", href: "/pengembalian" },
-];
-
 const ITEMS_PER_PAGE = 8;
 
 const BukuPage = () => {
@@ -116,7 +108,7 @@ const BukuPage = () => {
     const json = await res.json();
     if (!res.ok) return;
 
-    setBooks((prev) => [json.data, ...prev]);
+    setBooks((prev) => [json, ...prev]);
     closeModal();
   };
 
@@ -153,7 +145,7 @@ const BukuPage = () => {
     if (!res.ok) return;
 
     setBooks((prev) =>
-      prev.map((b) => (b.documentId === selected.documentId ? json.data : b))
+      prev.map((b) => (b.documentId === selected.documentId ? json : b))
     );
 
     closeModal();
@@ -188,18 +180,7 @@ const BukuPage = () => {
 
   return (
     <div className="flex min-h-screen bg-[#f6f5fb] text-[#2b2540]">
-      <aside className="fixed left-0 top-0 h-screen w-64 bg-[#2b2540] p-6 text-white">
-        <h1 className="mb-10 text-3xl font-extrabold text-purple-300">LIBRAVA</h1>
-        <nav className="flex flex-col gap-2">
-          {nav_items.map((item) => (
-            <Link key={item.name} href={item.href} className="rounded-lg px-4 py-2 text-sm hover:bg-purple-700/40">
-              {item.name}
-            </Link>
-          ))}
-        </nav>
-      </aside>
-
-      <main className="ml-64 w-full p-8">
+     <main className="mx-auto max-w-7xl px-6 py-8">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold">Data Buku</h2>
           <div className="flex gap-3">
@@ -218,70 +199,103 @@ const BukuPage = () => {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {paginatedBooks.map((b) => (
-            <div key={b.documentId} className="flex flex-col overflow-hidden rounded-xl border bg-white">
-              <div
-                className="relative h-40 w-full cursor-pointer bg-gray-200"
-                onClick={() => {
-                  setPreview(b.cover?.url ? `${BASE_URL}${b.cover.url}` : null);
-                  setModal("preview");
-                }}
-              >
-                <img
-                  src={b.cover?.url ? `${BASE_URL}${b.cover.url}` : "/placeholder-book.jpg"}
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              </div>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+  {paginatedBooks.map((b) => (
+    <div
+      key={b.documentId}
+      className="flex h-full flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:shadow-md"
+    >
+      {/* COVER */}
+      <div
+        className="relative h-44 w-full cursor-pointer bg-gray-100"
+        onClick={() => {
+          setPreview(b.cover?.url ? `${BASE_URL}${b.cover.url}` : null);
+          setModal("preview");
+        }}
+      >
+        <img
+          src={
+            b.cover?.url
+              ? `${BASE_URL}${b.cover.url}`
+              : "/placeholder-book.jpg"
+          }
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      </div>
 
-              <div className="flex flex-col gap-1 p-3">
-                <h3 className="line-clamp-2 text-sm font-semibold text-purple-700">{b.title}</h3>
-                <div className="flex flex-wrap gap-1">
-                  {b.categories?.map((c: any) => (
-                    <span key={c.id} className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-purple-700">
-                      {c.name}
-                    </span>
-                  ))}
-                </div>
-                <p className="line-clamp-1 text-xs text-gray-600">Penulis: {b.writer}</p>
-                <p className="text-xs text-gray-600">Tahun: {b.published_year}</p>
-                <p className="text-xs">
-                  Stok: <span className={b.stock > 0 ? "text-green-600" : "text-red-500"}>{b.stock}</span>
-                </p>
-              </div>
+      {/* CONTENT */}
+      <div className="flex flex-1 flex-col gap-1.5 p-4">
+        <h3 className="line-clamp-2 text-sm font-semibold text-purple-700">
+          {b.title}
+        </h3>
 
-              <div className="mt-auto grid grid-cols-2 gap-1 p-3 pt-0">
-                <button
-                  onClick={() => {
-                    setSelected(b);
-                    setForm({
-                      title: b.title,
-                      writer: b.writer,
-                      publisher: b.publisher,
-                      published_year: b.published_year,
-                      stock: String(b.stock),
-                    });
-                    setSelectedCategory(b.categories?.[0]?.id || "");
-                    setPreview(b.cover?.url ? `${BASE_URL}${b.cover.url}` : null);
-                    setModal("edit");
-                  }}
-                  className="rounded-md bg-purple-600 py-1.5 text-xs text-white"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => {
-                    setSelected(b);
-                    setModal("delete");
-                  }}
-                  className="rounded-md bg-red-500 py-1.5 text-xs text-white"
-                >
-                  Hapus
-                </button>
-              </div>
-            </div>
+        <p className="text-xs text-gray-600">
+          <span className="font-medium">Penulis:</span> {b.writer}
+        </p>
+
+        <p className="text-xs text-gray-600">
+          <span className="font-medium">Tahun:</span> {b.published_year}
+        </p>
+
+        {/* CATEGORY */}
+        <div className="mt-1 flex flex-wrap gap-1">
+          {b.categories?.map((c: any) => (
+            <span
+              key={c.id}
+              className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-purple-700"
+            >
+              {c.name}
+            </span>
           ))}
         </div>
+
+        <div className="mt-auto pt-2 text-xs">
+          Stok:{" "}
+          <span
+            className={`font-semibold ${
+              b.stock > 0 ? "text-green-600" : "text-red-500"
+            }`}
+          >
+            {b.stock}
+          </span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 border-t p-3">
+        <button
+          onClick={() => {
+            setSelected(b);
+            setForm({
+              title: b.title,
+              writer: b.writer,
+              publisher: b.publisher,
+              published_year: b.published_year,
+              stock: String(b.stock),
+            });
+            setSelectedCategory(b.categories?.[0]?.id || "");
+            setPreview(
+              b.cover?.url ? `${BASE_URL}${b.cover.url}` : null
+            );
+            setModal("edit");
+          }}
+          className="rounded-lg bg-purple-600 py-1.5 text-xs font-medium text-white hover:bg-purple-700"
+        >
+          Edit
+        </button>
+
+        <button
+          onClick={() => {
+            setSelected(b);
+            setModal("delete");
+          }}
+          className="rounded-lg bg-red-500 py-1.5 text-xs font-medium text-white hover:bg-red-600"
+        >
+          Hapus
+        </button>
+      </div>
+    </div>
+  ))}
+</div>
 
         {totalPages > 1 && (
           <div className="mt-8 flex justify-center gap-2">

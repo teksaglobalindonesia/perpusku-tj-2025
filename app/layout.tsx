@@ -1,14 +1,11 @@
 import { Toaster } from '@/components/ui/sonner';
 import type { Metadata } from 'next';
-import {
-  Roboto,
-  Bebas_Neue,
-  Urbanist,
-} from 'next/font/google';
+import { Roboto, Bebas_Neue, Urbanist } from 'next/font/google';
 import NextTopLoader from 'nextjs-toploader';
 import './globals.css';
-import "animate.css/animate.compat.css";
+import 'animate.css/animate.compat.css';
 import { ReactQueryClientProvider } from '@/providers/ReactQueryClientProvider';
+import Navbar from '../components/custom/navbar';
 
 export const metadata: Metadata = {
   title: 'Teksa Web Starter',
@@ -48,6 +45,7 @@ export default async function RootLayout({
         <body>
           <NextTopLoader showSpinner={false} height={4} />
           <Toaster />
+          <Navbar />
           {children}
         </body>
       </html>
