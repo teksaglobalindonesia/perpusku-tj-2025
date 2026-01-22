@@ -34,28 +34,32 @@ const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [books, setBooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-
-const fetchCategories = async () => {
-  try {
-    const res = await fetch(`${BASE_URL}/api/book-category/list`, {
-      headers: {
-        Authorization: TOKEN,
-        "x-member-name": MEMBER_NAME,
-      },
-      cache: "no-store",
-    });
-
-    const json = await res.json();
-    const data = json?.data || [];
-    setCategories(data);
-    return data;
-  } catch (err) {
-    console.error("Gagal ambil category:", err);
-    return [];
-  }
-};
+  const [totalBooks, setTotalBooks] = useState(0);
 
 
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch(
+        `${BASE_URL}/api/book-category/list?page=1&page_size=1000`,
+        {
+          headers: {
+            Authorization: TOKEN,
+            "x-member-name": MEMBER_NAME,
+          },
+          cache: "no-store",
+        }
+      );
+  
+      const json = await res.json();
+      setCategories(json?.data || []);
+      return json?.data || [];
+    } catch (err) {
+      console.error("Gagal ambil category:", err);
+      return [];
+    }
+  };
+  
 
 const handleAddCategory = async () => {
   if (!categoryName.trim()) {
@@ -175,8 +179,12 @@ const closeModal = () => {
     const json = await res.json();
      console.log("FULL RESPONSE", json);
 
-    setBooks(json?.data || []);
-    setTotal(json?.meta?.pagination?.total || 0);
+     setBooks(json?.data || []);
+
+     const totalFromAPI = json?.meta?.pagination?.total || 0;
+     setTotal(totalFromAPI);       // ← pagination
+     setTotalBooks(totalFromAPI);  // ← statistik
+     
   } catch (err) {
     console.error("Gagal fetch buku:", err);
   } finally {
@@ -375,48 +383,52 @@ const handleDestroy = async () => {
                 >
                 <FiPlus /> Add Category
                </button>
-        <button
-         type= "button"
-          onClick={() => {
-            setSelectedBook(null);
-            setForm({
-              title: "",
-              writer: "",
-              publisher: "",
-              published_year: "",
-              categories: "",
-              stock: "",
-              cover: null,
-              loans: ""
-            });
-            setActiveModal("add");
-          }}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl"
-        >
-          <FiPlus /> Add Book
-        </button>
+              <button
+              type= "button"
+                onClick={() => {
+                  setSelectedBook(null);
+                  setForm({
+                    title: "",
+                    writer: "",
+                    publisher: "",
+                    published_year: "",
+                    categories: "",
+                    stock: "",
+                    cover: null,
+                    loans: ""
+                  });
+                  setActiveModal("add");
+                }}
+                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl"
+              >
+                <FiPlus /> Add Book
+              </button>
+          </div>
         </div>
-      </div>
-
       {/* Search */}
       <div className="bg-white p-3 rounded-xl shadow mb-6 flex items-center gap-3">
         <FiSearch className="text-gray-400" />
-<input
-  type="text"
-  placeholder="Search by title..."
-  value={search}
-  onChange={(e) => {
-    setSearch(e.target.value);
-    setPage(1);
-  }}
-  className="w-full outline-none text-sm"
-/>
-
+          <input
+            type="text"
+            placeholder="Search by title..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="w-full outline-none text-sm"
+          />
       </div>
-
+      <div className="bg-white rounded-xl shadow-sm p-4 mb-6 flex items-center justify-between">
+        <div>
+          <p className="text-xs text-gray-500">Total Books</p>
+          <h3 className="text-2xl font-bold text-gray-800">
+            {totalBooks}
+          </h3>
+        </div>
+      </div>
       {/* Loading */}
       {loading && <p className="text-center text-sm text-gray-500">Loading...</p>}
-
       {/* Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {books.map((book) => (
@@ -453,364 +465,356 @@ const handleDestroy = async () => {
       </div>
 
       {/* Modal Add */}
-{activeModal === "add" && (
-  <Modal onClose={() => setActiveModal(null)}>
-    {/* Modal */}
-    <div
-      className="bg-white w-full max-w-lg rounded-xl p-6 relative animate-scale-in"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <h2 className="font-semibold text-lg mb-4">Add Book</h2>
+      {activeModal === "add" && (
+        <Modal onClose={() => setActiveModal(null)}>
+          {/* Modal */}
+          <div
+            className="bg-white w-full max-w-lg rounded-xl p-6 relative animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="font-semibold text-lg mb-4">Add Book</h2>
 
-      <div className="space-y-3">
-        <input
-          type="text"
-          placeholder="Title"
-          value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
-          className="w-full border p-2 rounded"
-        />
+            <div className="space-y-3">
+              <input
+                type="text"
+                placeholder="Title"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                className="w-full border p-2 rounded"
+              />
 
-        <input
-          type="text"
-          placeholder="Writer"
-          value={form.writer}
-          onChange={(e) => setForm({ ...form, writer: e.target.value })}
-          className="w-full border p-2 rounded"
-        />
+              <input
+                type="text"
+                placeholder="Writer"
+                value={form.writer}
+                onChange={(e) => setForm({ ...form, writer: e.target.value })}
+                className="w-full border p-2 rounded"
+              />
 
-        <input
-          type="text"
-          placeholder="Publisher"
-          value={form.publisher}
-          onChange={(e) => setForm({ ...form, publisher: e.target.value })}
-          className="w-full border p-2 rounded"
-        />
+              <input
+                type="text"
+                placeholder="Publisher"
+                value={form.publisher}
+                onChange={(e) => setForm({ ...form, publisher: e.target.value })}
+                className="w-full border p-2 rounded"
+              />
 
-        <input
-          type="number"
-          placeholder="Published year"
-          value={form.published_year}
-          onChange={(e) =>
-            setForm({ ...form, published_year: e.target.value })
-          }
-          className="w-full border p-2 rounded"
-        />
+              <input
+                type="number"
+                placeholder="Published year"
+                value={form.published_year}
+                onChange={(e) =>
+                  setForm({ ...form, published_year: e.target.value })
+                }
+                className="w-full border p-2 rounded"
+              />
 
-        <select
-          value={form.categories}
-          onChange={(e) => setForm({ ...form, categories: e.target.value })}
-          className="w-full border p-2 rounded"
-        >
-          <option value="">Select Category</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
+              <select
+                value={form.categories}
+                onChange={(e) => setForm({ ...form, categories: e.target.value })}
+                className="w-full border p-2 rounded"
+              >
+                <option value="">Select Category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
 
-        <input
-          type="number"
-          placeholder="Stock"
-          value={form.stock}
-          onChange={(e) => setForm({ ...form, stock: e.target.value })}
-          className="w-full border p-2 rounded"
-        />
+              <input
+                type="number"
+                placeholder="Stock"
+                value={form.stock}
+                onChange={(e) => setForm({ ...form, stock: e.target.value })}
+                className="w-full border p-2 rounded"
+              />
 
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) =>
-            setForm({
-              ...form,
-              cover: e.target.files ? e.target.files[0] : null,
-            })
-          }
-          className="w-full border p-2 rounded"
-        />
-      </div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    cover: e.target.files ? e.target.files[0] : null,
+                  })
+                }
+                className="w-full border p-2 rounded"
+              />
+            </div>
 
-      <div className="flex justify-end gap-2 mt-4">
-        <button
-          type="button"
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                type="button"
+                onClick={() => setActiveModal(null)}
+                className="px-4 py-2 rounded border"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCreate}
+                className="bg-blue-600 text-white px-4 py-2 rounded"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+      {activeModal === "preview" && previewImage && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4"
           onClick={() => setActiveModal(null)}
-          className="px-4 py-2 rounded border"
         >
-          Cancel
-        </button>
+          <div
+            className="relative max-w-4xl w-full animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close */}
+            <button
+              onClick={() => setActiveModal(null)}
+              className="absolute -top-10 right-0 text-white text-2xl font-bold"
+            >
+              ✕
+            </button>
 
-        <button
-          type="button"
-          onClick={handleCreate}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          Save
-        </button>
-      </div>
-    </div>
-  </Modal>
-)}
-
-{activeModal === "preview" && previewImage && (
-  <div
-    className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4"
-    onClick={() => setActiveModal(null)}
-  >
-    <div
-      className="relative max-w-4xl w-full animate-scale-in"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {/* Close */}
-      <button
-        onClick={() => setActiveModal(null)}
-        className="absolute -top-10 right-0 text-white text-2xl font-bold"
-      >
-        ✕
-      </button>
-
-      <img
-        src={previewImage}
-        alt="Preview Cover"
-        className="w-full max-h-[80vh] object-contain rounded-lg shadow-lg"
-      />
-    </div>
-  </div>
-)}
-
-
-      {/* Modal Edit */}
-{activeModal === "edit" && selectedBook && (
-  <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-    {/* Backdrop */}
-    <div
-      className="absolute inset-0 bg-black/50"
-      onClick={() => setActiveModal(null)}
-    />
-
-    {/* Modal */}
-    <div
-      className="bg-white w-full max-w-lg rounded-xl p-6 relative z-10 animate-scale-in "
-      onClick={(e) => e.stopPropagation()}
-    >
-      <h2 className="font-semibold text-lg mb-4">Edit Buku</h2>
-
-      <div className="space-y-3">
-        <input
-          type="text"
-          placeholder="Title"
-          value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
-          className="w-full border p-2 rounded"
-        />
-
-        <input
-          type="text"
-          placeholder="Writer"
-          value={form.writer}
-          onChange={(e) => setForm({ ...form, writer: e.target.value })}
-          className="w-full border p-2 rounded"
-        />
-
-        <input
-          type="text"
-          placeholder="Publisher"
-          value={form.publisher}
-          onChange={(e) => setForm({ ...form, publisher: e.target.value })}
-          className="w-full border p-2 rounded"
-        />
-
-        <input
-          type="number"
-          placeholder="Published year"
-          value={form.published_year}
-          onChange={(e) =>
-            setForm({ ...form, published_year: e.target.value })
-          }
-          className="w-full border p-2 rounded"
-        />
-
-        <select
-          value={form.categories}
-          onChange={(e) => setForm({ ...form, categories: e.target.value })}
-          className="w-full border p-2 rounded"
-        >
-          <option value="">Select Category</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
-
-        <input
-          type="number"
-          placeholder="Stock"
-          value={form.stock}
-          onChange={(e) => setForm({ ...form, stock: e.target.value })}
-          className="w-full border p-2 rounded"
-        />
-
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-            setForm({ ...form, cover: file });
-          }}
-          className="w-full border p-2 rounded"
-        />
-      </div>
-
-      <div className="flex justify-end gap-8 mt-4">
-        <button
-          type="button"
-          onClick={() => setActiveModal(null)}
-          className="px-4 py-2 rounded border"
-        >
-          Cancel
-        </button>
-
-<button
-  type="button"
-  onClick={handleUpdate}
-  className="bg-blue-600 text-white px-4 py-2 rounded"
->
-  Update
-</button>
-
-      </div>
-    </div>
-  </div>
-)}
-
-{activeModal === "delete" && selectedBook && (
-  <Modal onClose={closeModal}>
-    <div className="w-full max-w-sm animate-scale-in">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-4 ">
-        <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-          <span className="text-red-600 text-xl font-bold">!</span>
+            <img
+              src={previewImage}
+              alt="Preview Cover"
+              className="w-full max-h-[80vh] object-contain rounded-lg shadow-lg"
+            />
+          </div>
         </div>
-        <h2 className="text-lg font-semibold text-gray-800">
-          Delete Book
-        </h2>
-      </div>
+      )}
+      {/* Modal Edit */}
+        {activeModal === "edit" && selectedBook && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/50"
+              onClick={() => setActiveModal(null)}
+            />
 
-      {/* Content */}
-      <p className="text-sm text-gray-600 mb-6">
-        Are you sure you want to delete the
-        <span className="font-semibold text-gray-800">
-          {" "}
-          “{selectedBook.title}”
-          {" "} 
-        </span>
-          book?
-        <br />
-        This action can&apos;t be undone.
-      </p>
+            {/* Modal */}
+            <div
+              className="bg-white w-full max-w-lg rounded-xl p-6 relative z-10 animate-scale-in "
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="font-semibold text-lg mb-4">Edit Buku</h2>
 
-      {/* Actions */}
-      <div className="flex justify-end gap-3">
-        <button
-          type="button"
-          onClick={closeModal}
-          className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
-        >
-          Cancel
-        </button>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Title"
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  className="w-full border p-2 rounded"
+                />
 
-        <button
-          type="button"
-          onClick={handleDestroy}
-          disabled={isDeleting}
-          className="
-            px-4 py-2 text-sm rounded-lg
-            bg-red-600 text-white
-            hover:bg-red-700
-            disabled:opacity-50 disabled:cursor-not-allowed
-            transition
-          "
-        >
-          {isDeleting ? "Menghapus..." : "Delete"}
-        </button>
-      </div>
-    </div>
-  </Modal>
-)}
-{/* Pagination */}
-{totalPages > 1 && (
-  <div className="flex justify-center items-center gap-2 mt-8">
-    <button
-      disabled={page === 1}
-      onClick={() => setPage(page - 1)}
-      className="px-3 py-1 text-sm rounded border disabled:opacity-50"
-    >
-      Prev
-    </button>
+                <input
+                  type="text"
+                  placeholder="Writer"
+                  value={form.writer}
+                  onChange={(e) => setForm({ ...form, writer: e.target.value })}
+                  className="w-full border p-2 rounded"
+                />
 
-    {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-      <button
-        key={p}
-        onClick={() => setPage(p)}
-        className={`px-3 py-1 text-sm rounded border ${
-          p === page
-            ? "bg-blue-600 text-white"
-            : "hover:bg-gray-100"
-        }`}
-      >
-        {p}
-      </button>
-    ))}
+                <input
+                  type="text"
+                  placeholder="Publisher"
+                  value={form.publisher}
+                  onChange={(e) => setForm({ ...form, publisher: e.target.value })}
+                  className="w-full border p-2 rounded"
+                />
 
-    <button
-      disabled={page === totalPages}
-      onClick={() => setPage(page + 1)}
-      className="px-3 py-1 text-sm rounded border disabled:opacity-50"
-    >
-      Next
-    </button>
-  </div>
-)}
+                <input
+                  type="number"
+                  placeholder="Published year"
+                  value={form.published_year}
+                  onChange={(e) =>
+                    setForm({ ...form, published_year: e.target.value })
+                  }
+                  className="w-full border p-2 rounded"
+                />
 
-{activeModal === "add-category" && (
-  <Modal onClose={() => setActiveModal(null)}>
-    <div className="w-full max-w-sm">
-      <h2 className="text-lg font-semibold mb-4 text-gray-800">
-        Add Book Category
-      </h2>
+                <select
+                  value={form.categories}
+                  onChange={(e) => setForm({ ...form, categories: e.target.value })}
+                  className="w-full border p-2 rounded"
+                >
+                  <option value="">Select Category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
 
-      <input
-        type="text"
-        placeholder="Category name"
-        value={categoryName}
-        onChange={(e) => setCategoryName(e.target.value)}
-        className="w-full border rounded-lg p-2 text-sm"
-      />
+                <input
+                  type="number"
+                  placeholder="Stock"
+                  value={form.stock}
+                  onChange={(e) => setForm({ ...form, stock: e.target.value })}
+                  className="w-full border p-2 rounded"
+                />
 
-      <div className="flex justify-end gap-3 mt-6">
-        <button
-          type="button"
-          onClick={() => setActiveModal(null)}
-          className="px-4 py-2 text-sm rounded-lg border"
-        >
-          Cancel
-        </button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setForm({ ...form, cover: file });
+                  }}
+                  className="w-full border p-2 rounded"
+                />
+              </div>
 
-        <button
-          type="button"
-          onClick={handleAddCategory}
-          disabled={isAddingCategory}
-          className="px-4 py-2 text-sm rounded-lg bg-green-600 text-white disabled:opacity-50"
-        >
-          {isAddingCategory ? "Saving..." : "Save"}
-        </button>
-      </div>
-    </div>
-  </Modal>
-)}
+              <div className="flex justify-end gap-8 mt-4">
+                <button
+                  type="button"
+                  onClick={() => setActiveModal(null)}
+                  className="px-4 py-2 rounded border"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUpdate}
+                  className="bg-blue-600 text-white px-4 py-2 rounded"
+                >
+                  Update
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      {/* Modal Delete*/}
+      {activeModal === "delete" && selectedBook && (
+        <Modal onClose={closeModal}>
+          <div className="w-full max-w-sm animate-scale-in">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-4 ">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <span className="text-red-600 text-xl font-bold">!</span>
+              </div>
+              <h2 className="text-lg font-semibold text-gray-800">
+                Delete Book
+              </h2>
+            </div>
 
+            {/* Content */}
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to delete the
+              <span className="font-semibold text-gray-800">
+                {" "}
+                “{selectedBook.title}”
+                {" "} 
+              </span>
+                book?
+              <br />
+              This action can&apos;t be undone.
+            </p>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDestroy}
+                disabled={isDeleting}
+                className="
+                  px-4 py-2 text-sm rounded-lg
+                  bg-red-600 text-white
+                  hover:bg-red-700
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                  transition
+                "
+              >
+                {isDeleting ? "Menghapus..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-8">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+            className="px-3 py-1 text-sm rounded border disabled:opacity-50"
+          >
+            Prev
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPage(p)}
+              className={`px-3 py-1 text-sm rounded border ${
+                p === page
+                  ? "bg-blue-600 text-white"
+                  : "hover:bg-gray-100"
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+          <button
+            disabled={page === totalPages}
+            onClick={() => setPage(page + 1)}
+            className="px-3 py-1 text-sm rounded border disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
+      {/* Modal Add Category*/}
+      {activeModal === "add-category" && (
+        <Modal onClose={() => setActiveModal(null)}>
+          <div className="w-full max-w-sm">
+            <h2 className="text-lg font-semibold mb-4 text-gray-800">
+              Add Book Category
+            </h2>
+
+            <input
+              type="text"
+              placeholder="Category name"
+              value={categoryName}
+              onChange={(e) => setCategoryName(e.target.value)}
+              className="w-full border rounded-lg p-2 text-sm"
+            />
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setActiveModal(null)}
+                className="px-4 py-2 text-sm rounded-lg border"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleAddCategory}
+                disabled={isAddingCategory}
+                className="px-4 py-2 text-sm rounded-lg bg-green-600 text-white disabled:opacity-50"
+              >
+                {isAddingCategory ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

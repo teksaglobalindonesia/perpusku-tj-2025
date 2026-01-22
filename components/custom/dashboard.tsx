@@ -52,10 +52,11 @@ useEffect(() => {
       };
 
       const [bookRes, loanRes, returnRes] = await Promise.all([
-        fetch(`${BASE_URL}/api/book/list`, { headers, cache: "no-store" }),
-        fetch(`${BASE_URL}/api/loan/list`, { headers, cache: "no-store" }),
-        fetch(`${BASE_URL}/api/return/list`, { headers, cache: "no-store" }),
+        fetch(`${BASE_URL}/api/book/list?page=1&page_size=1000`, { headers, cache: "no-store" }),
+        fetch(`${BASE_URL}/api/loan/list?page=1&page_size=1000`, { headers, cache: "no-store" }),
+        fetch(`${BASE_URL}/api/return/list?page=1&page_size=1000`, { headers, cache: "no-store" }),
       ]);
+      
 
 const bookJson = await bookRes.json();
 console.log("BOOK RESPONSE:", bookJson);
@@ -260,7 +261,6 @@ return (
               )}
             </div>
           </div>
-
         </div>
       </section>
     </main>

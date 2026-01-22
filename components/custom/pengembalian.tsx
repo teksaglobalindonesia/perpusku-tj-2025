@@ -51,11 +51,20 @@ const paginatedReturns = filteredReturns.slice(
 );
 
   // Cek keterlambatan
-const isLate = (estimated: string, actual: string) => {
-  return new Date(actual) > new Date(estimated);
-};
-
-
+  const isLate = (estimated: string, actual: string) => {
+    if (!estimated || !actual) return false;
+  
+    const estimatedDate = new Date(estimated);
+    const actualDate = new Date(actual);
+  
+    // hitung selisih hari
+    const diffTime = actualDate.getTime() - estimatedDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  
+    // late kalau lebih dari 1 hari
+    return diffDays > 1;
+  };
+  
   return (
     <div className="min-h-screen bg-gray-50 px-4 sm:px-6 lg:px-10 py-6 sm:py-8">
       {/* Header */}
@@ -64,7 +73,6 @@ const isLate = (estimated: string, actual: string) => {
           Return Data
         </h1>
       </div>
-
       {/* Search */}
       <div className="bg-white p-3 sm:p-4 rounded-2xl shadow mb-6 sm:mb-8 flex items-center gap-3">
         <FiSearch className="text-gray-400" />
@@ -76,14 +84,13 @@ const isLate = (estimated: string, actual: string) => {
           className="w-full outline-none text-sm text-gray-700"
         />
       </div>
-
       {/* List Data */}
       <div className="space-y-3 sm:space-y-4">
         {paginatedReturns.map((item) => {
-          const late = isLate(
-            item.estimatedReturnDate,
-            item.actualReturnDate
-          );
+            const late = isLate(
+              item.return_date,
+              item.return?.actual_return_date
+            );
 
           return (
             <div
@@ -107,9 +114,9 @@ const isLate = (estimated: string, actual: string) => {
                 </div>
 
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {late && (
+                {late && (
                     <span className="px-2 py-0.5 text-[10px] sm:text-[11px] font-medium rounded-full bg-red-100 text-red-600">
-                      Late
+                      Late Return
                     </span>
                   )}
                 </div>
@@ -118,7 +125,6 @@ const isLate = (estimated: string, actual: string) => {
           );
         })}
       </div>
-
       {/* Empty State */}
       {filteredReturns.length === 0 && (
         <div className="text-center text-gray-500 mt-12 text-sm">
@@ -126,40 +132,39 @@ const isLate = (estimated: string, actual: string) => {
         </div>
       )}
       {/* Pagination */}
-{totalPages > 1 && (
-  <div className="flex justify-center items-center gap-2 mt-8">
-    <button
-      onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-      disabled={currentPage === 1}
-      className="px-3 py-1 rounded bg-gray-100 text-sm disabled:opacity-50"
-    >
-      Prev
-    </button>
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-8">
+          <button
+            onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 rounded bg-gray-100 text-sm disabled:opacity-50"
+          >
+            Prev
+          </button>
 
-    {Array.from({ length: totalPages }).map((_, i) => (
-      <button
-        key={i}
-        onClick={() => setCurrentPage(i + 1)}
-        className={`px-3 py-1 rounded text-sm ${
-          currentPage === i + 1
-            ? "bg-blue-600 text-white"
-            : "bg-gray-100 text-gray-700"
-        }`}
-      >
-        {i + 1}
-      </button>
-    ))}
+          {Array.from({ length: totalPages }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`px-3 py-1 rounded text-sm ${
+                currentPage === i + 1
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-700"
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
 
-    <button
-      onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-      disabled={currentPage === totalPages}
-      className="px-3 py-1 rounded bg-gray-100 text-sm disabled:opacity-50"
-    >
-      Next
-    </button>
-  </div>
-)}
-
+          <button
+            onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 rounded bg-gray-100 text-sm disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 };

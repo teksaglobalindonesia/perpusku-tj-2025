@@ -23,6 +23,17 @@ const [loans, setLoans] = useState<any[]>([]);
 const [books, setBooks] = useState<any[]>([]);
 const [members, setMembers] = useState<any[]>([]);
 
+const [bookSearch, setBookSearch] = useState("");
+const filteredBooks = books.filter((b) =>
+  b.title?.toLowerCase().includes(bookSearch.toLowerCase())
+);
+
+const [memberSearch, setMemberSearch] = useState("");
+const filteredMembers = members.filter((m) => 
+  m.name?.toLowerCase().includes(memberSearch.toLowerCase()) ||
+  m.id_member?.toLowerCase().includes(memberSearch.toLowerCase())
+ );
+
 const ITEMS_PER_PAGE = 4;
 const [currentPage, setCurrentPage] = useState(1);
 
@@ -37,20 +48,24 @@ useEffect(() => {
 
   (async () => {
     try {
+      const PAGE_SIZE = 1000;
       const [bookRes, memberRes] = await Promise.all([
-        fetch(`${BASE_URL}/api/book/list`, {
+        fetch(`${BASE_URL}/api/book/list?page=1&page_size=${PAGE_SIZE}`, {
           headers: {
             Authorization: TOKEN,
             "x-member-name": MEMBER_NAME,
           },
+          cache: "no-store",
         }),
-        fetch(`${BASE_URL}/api/member/list`, {
+        fetch(`${BASE_URL}/api/member/list?page=1&page_size=${PAGE_SIZE}`, {
           headers: {
             Authorization: TOKEN,
             "x-member-name": MEMBER_NAME,
           },
+          cache: "no-store",
         }),
       ]);
+      
 
       const bookJson = await bookRes.json();
       const memberJson = await memberRes.json();
@@ -218,10 +233,18 @@ const handleConfirmReturn = async () => {
     }
 
     setLoans(prev =>
-      prev.filter(l => l.documentId !== selectedLoan.documentId)
+      prev.map(l =>
+        l.documentId === selectedLoan.documentId
+          ? {
+              ...l,
+              return: {
+                actual_return_date: today,
+              },
+            }
+          : l
+      )
     );
 
-    // reset modal
     setShowReturnModal(false);
     setSelectedLoan(null);
 
@@ -229,27 +252,79 @@ const handleConfirmReturn = async () => {
     console.error("RETURN FAILED:", err);
   }
 };
+
 const isReturned = (loan: any) => {
   return !!loan.return;
 };
 
 
+const normalizeDate = (date: Date) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+const getLoanStatus = (loan: any) => {
+  const today = normalizeDate(new Date());
+  const loanDate = normalizeDate(new Date(loan.loan_date));
+  const returnDate = loan.return_date
+    ? normalizeDate(new Date(loan.return_date))
+    : null;
+
+  // Sudah dikembalikan
+  if (loan.return) {
+    return {
+      label: "Returned",
+      className: "bg-green-100 text-green-700",
+      isReserved: false,
+    };
+  }
+
+  // Reserved (belum mulai)
+  if (loanDate > today) {
+    return {
+      label: "Reserved",
+      className: "bg-blue-100 text-blue-700",
+      isReserved: true,
+    };
+  }
+
+  // Late → H+2
+  if (returnDate) {
+    const diffTime = today.getTime() - returnDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 1) {
+      return {
+        label: "Late",
+        className: "bg-red-100 text-red-600",
+        isReserved: false,
+      };
+    }
+  }
+
+  // Sedang dipinjam
+  return {
+    label: "Borrowed",
+    className: "bg-yellow-100 text-yellow-700",
+    isReserved: false,
+  };
+};
+
+
+
   return (
     <div className="min-h-screen bg-gray-50 px-4 sm:px-6 lg:px-10 py-6 sm:py-8">
       {/* Header */}
-<div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6 sm:mb-8">
-  <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
-    Loan Data
-  </h1>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
+          Loan Data
+        </h1>
 
-  <button
-    onClick={() => setShowAddModal(true)}
-    className="px-4 py-2 text-sm rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition"
-  >
-    + Add Loan
-  </button>
-</div>
-
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="px-4 py-2 text-sm rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition"
+        >
+          + Add Loan
+        </button>
+      </div>
       {/* Search */}
       <div className="bg-white p-3 sm:p-4 rounded-2xl shadow mb-6 sm:mb-8 flex items-center gap-3">
         <FiSearch className="text-gray-400" />
@@ -270,6 +345,7 @@ const isReturned = (loan: any) => {
           console.log("COVER URL:", getCoverUrl(loan.book?.cover));
           const late = isLate(loan.return_date);
           const book = findBook(loan.book);
+          const status = getLoanStatus(loan);
           return (
             <div
               key={loan.id}
@@ -288,38 +364,33 @@ const isReturned = (loan: any) => {
                  <span>Estimated Return Date: {loan.return_date}</span>
                </div>
                <div className="flex flex-row gap-2">
-               {isReturned(loan) ? (
-                 <span className="mt-1 inline-block w-fit px-2 py-0.5 text-[10px] font-medium rounded-full bg-green-100 text-green-700">
-                  Returned
-                 </span>
-                 
-                 ) 
-                  : null}
-                 {late && (
-                  <span className="mt-1 inline-block w-fit px-2 py-0.5 text-[10px] font-medium rounded-full bg-red-100 text-red-600">
-                  Late
-                  </span>
-                 )}
-                 {isReturned(loan) && (
+               <span
+                  className={`mt-1 inline-block w-fit px-2 py-0.5 text-[10px] font-medium rounded-full ${status.className}`}
+                >
+                  {status.label}
+                </span>
+
+                {status.label === "Returned" && (
                   <p className="text-[11px] text-gray-500">
                     Returned at: {loan.return.actual_return_date}
                   </p>
-                 )}
+                )}
                 </div>
                </div>
               </div>
               {/* Action */}
               <div className="flex gap-2 justify-end sm:justify-start">
-               <button
-                  disabled={isReturned(loan)}
-                  onClick={() => handleReturn(loan)}
-                  className={`text-[11px] sm:text-xs px-4 py-1.5 rounded-lg transition ${
-                  isReturned(loan)
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                 }`}>
-                 Return
-               </button>
+              <button
+                disabled={isReturned(loan) || status.isReserved}
+                onClick={() => handleReturn(loan)}
+                className={`text-[11px] sm:text-xs px-4 py-1.5 rounded-lg transition ${
+                  isReturned(loan) || status.isReserved
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                }`}
+              >
+                Return
+              </button>
               </div>
             </div>
           );
@@ -340,7 +411,6 @@ const isReturned = (loan: any) => {
             <h2 className="text-lg font-semibold mb-4">
               Return Confirmation
             </h2>
-
             <p className="text-sm text-gray-600 mb-6">
               Are you sure you want to return the{" "}
               <span className="font-semibold text-gray-800">
@@ -352,7 +422,6 @@ const isReturned = (loan: any) => {
               </span>
               ?
             </p>
-
             <div className="flex justify-center gap-3">
               <button
                 onClick={() => setShowReturnModal(false)}
@@ -370,229 +439,244 @@ const isReturned = (loan: any) => {
         </div>
       )}
 
-{/* Modal Tambah Peminjaman */}
-{showAddModal && (
-  <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
-    <div className="bg-white w-full max-w-md rounded-2xl p-6 animate-scale-in">
-      <h2 className="text-lg font-semibold mb-4">Add Loans</h2>
+      {/* Modal Tambah Peminjaman */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl p-6 animate-scale-in">
+            <h2 className="text-lg font-semibold mb-4">Add Loans</h2>
 
-      <div className="space-y-4">
-        {/* Pilih Buku */}
-        <div>
-          <label className="text-xs text-gray-500">Book</label>
-          <button
-            type="button"
-            onClick={() => setShowBookModal(true)}
-            className="w-full mt-1 px-3 py-2 text-sm rounded-lg border text-left hover:bg-gray-50"
-          >
-            {selectedBook ? selectedBook.title : "Select Book"}
-          </button>
-        </div>
+            <div className="space-y-4">
+              {/* Pilih Buku */}
+              <div>
+                <label className="text-xs text-gray-500">Book</label>
+                <button
+                  type="button"
+                  onClick={() => setShowBookModal(true)}
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-lg border text-left hover:bg-gray-50"
+                >
+                  {selectedBook ? selectedBook.title : "Select Book"}
+                </button>
+              </div>
 
-        {/* Pilih Anggota */}
-        <div>
-          <label className="text-xs text-gray-500">Member</label>
-          <button
-            type="button"
-            onClick={() => setShowMemberModal(true)}
-            className="w-full mt-1 px-3 py-2 text-sm rounded-lg border text-left hover:bg-gray-50"
-          >
-            {selectedMember ? selectedMember.name : "Select Member"}
-          </button>
-        </div>
+              {/* Pilih Anggota */}
+              <div>
+                <label className="text-xs text-gray-500">Member</label>
+                <button
+                  type="button"
+                  onClick={() => setShowMemberModal(true)}
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-lg border text-left hover:bg-gray-50"
+                >
+                  {selectedMember ? selectedMember.name : "Select Member"}
+                </button>
+              </div>
 
-        {/* Tanggal Pinjam */}
-        <div>
-          <label className="text-xs text-gray-500">Borrowing Date</label>
-          <input
-            type="date"
-            value={newLoanDate}
-            onChange={(e) => setNewLoanDate(e.target.value)}
-            className="w-full mt-1 px-3 py-2 text-sm rounded-lg border outline-none"
-          />
-        </div>
-
-        {/* Tanggal Kembali */}
-        <div>
-          <label className="text-xs text-gray-500">Return Date</label>
-          <input
-            type="date"
-            value={newReturnDate}
-            onChange={(e) => setNewReturnDate(e.target.value)}
-            className="w-full mt-1 px-3 py-2 text-sm rounded-lg border outline-none"
-          />
-        </div>
-      </div>
-
-      <div className="flex justify-end gap-3 mt-6">
-        <button
-          onClick={() => setShowAddModal(false)}
-          className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleCreateLoan}
-          className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700">
-          Save
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-{/* Modal Pilih Buku */}
-{showBookModal && (
-  <div className="fixed inset-0 z-[10000] bg-black/50 flex items-center justify-center p-4">
-    <div className="bg-white w-full max-w-lg rounded-2xl p-5 animate-scale-in">
-      <h3 className="text-sm font-semibold mb-4">Select Book</h3>
-
-      <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
-        {books.map((book) =>{
-         console.log("BOOK:", book);
-         console.log("BOOK COVER:", book.cover);
-         return (
-          <button
-            key={book.id}
-            onClick={() => {
-              setSelectedBook(book);
-              setShowBookModal(false);
-            }}
-            className="w-full text-left p-3 rounded-xl border hover:bg-blue-50 transition flex gap-4"
-          >
-            
-            {/* Cover */}
-            <div className="w-12 h-16 bg-gray-100 rounded overflow-hidden flex-shrink-0">
-               <img
-               src={`${BASE_URL}${book.cover.url}`}
-               alt={book.title}
-               className="w-full h-full object-cover"
+              {/* Tanggal Pinjam */}
+              <div>
+                <label className="text-xs text-gray-500">Borrowing Date</label>
+                <input
+                  type="date"
+                  value={newLoanDate}
+                  onChange={(e) => setNewLoanDate(e.target.value)}
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-lg border outline-none"
                 />
+              </div>
+
+              {/* Tanggal Kembali */}
+              <div>
+                <label className="text-xs text-gray-500">Return Date</label>
+                <input
+                  type="date"
+                  value={newReturnDate}
+                  onChange={(e) => setNewReturnDate(e.target.value)}
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-lg border outline-none"
+                />
+              </div>
             </div>
 
-            {/* Info */}
-            <div className="flex flex-col gap-1">
-              <p className="text-sm font-semibold text-gray-800">
-                {book.title}
-              </p>
-              <p className="text-[11px] text-gray-500">
-                Writer: {book.writer}
-              </p>
-              <p className="text-[11px] text-gray-500">
-                Publisher: {book.publisher}
-              </p>
-              <p className="text-[11px] text-gray-500">
-                Published Year: {book.published_year}
-              </p>
-              <p className="text-[11px] text-gray-500">
-                Category: {book.categories?.[0]?.name ?? "-"}
-              </p>
-
-              {/* Stok */}
-              <span
-                className={`mt-1 inline-block w-fit px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                  book.stock > 0
-                    ? "bg-green-100 text-green-600"
-                    : "bg-red-100 text-red-600"
-                }`}>
-                {book.stock > 0 ? `Stok: ${book.stock}` : "Stok Habis"}
-              </span>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateLoan}
+                className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700">
+                Save
+              </button>
             </div>
-          </button>
-        )})}
-      </div>
+          </div>
+        </div>
+      )}
+      {/* Modal Pilih Buku */}
+      {showBookModal && (
+        <div className="fixed inset-0 z-[10000] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-2xl p-5 animate-scale-in">
+            <h3 className="text-sm font-semibold mb-4">Select Book</h3>
+            <input
+              type="text"
+              placeholder="Search book title..."
+              value={bookSearch}
+              onChange={(e) => setBookSearch(e.target.value)}
+              className="w-full mb-3 px-3 py-2 text-sm border rounded-lg outline-none"
+            />
 
-      <div className="flex justify-end mt-4">
-        <button
-          onClick={() => setShowBookModal(false)}
-          className="text-xs px-3 py-1.5 rounded-lg bg-gray-100"
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+            <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+            {filteredBooks.map((book) => {
+              const coverUrl = book.cover?.url
+                ? `${BASE_URL}${book.cover.url}`
+                : "/no-cover.png"; // fallback
+              console.log("BOOK:", book);
+              console.log("BOOK COVER:", book.cover);
+              return (
+                
+                <button
+                  key={book.id}
+                  onClick={() => {
+                    setSelectedBook(book);
+                    setShowBookModal(false);
+                  }}
+                  className="w-full text-left p-3 rounded-xl border hover:bg-blue-50 transition flex gap-4"
+                >
+                  
+                  {/* Cover */}
+                  <div className="w-12 h-16 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                    <img
+                    src={`${BASE_URL}${book.cover.url}`}
+                    alt={book.title}
+                    className="w-full h-full object-cover"
+                      />
+                  </div>
 
-{/* Modal Pilih Anggota */}
-{showMemberModal && (
-  <div className="fixed inset-0 z-[10000] bg-black/50 flex items-center justify-center p-4">
-    <div className="bg-white w-full max-w-lg rounded-2xl p-5 animate-scale-in">
-      <h3 className="text-sm font-semibold mb-4">Select Member</h3>
+                  {/* Info */}
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-semibold text-gray-800">
+                      {book.title}
+                    </p>
+                    <p className="text-[11px] text-gray-500">
+                      Writer: {book.writer}
+                    </p>
+                    <p className="text-[11px] text-gray-500">
+                      Publisher: {book.publisher}
+                    </p>
+                    <p className="text-[11px] text-gray-500">
+                      Published Year: {book.published_year}
+                    </p>
+                    <p className="text-[11px] text-gray-500">
+                      Category: {book.categories?.[0]?.name ?? "-"}
+                    </p>
 
-      <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
-        {members.map((member) => (
+                    {/* Stok */}
+                    <span
+                      className={`mt-1 inline-block w-fit px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                        book.stock > 0
+                          ? "bg-green-100 text-green-600"
+                          : "bg-red-100 text-red-600"
+                      }`}>
+                      {book.stock > 0 ? `Stok: ${book.stock}` : "Stok Habis"}
+                    </span>
+                  </div>
+                </button>
+              )})}
+            </div>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => setShowBookModal(false)}
+                className="text-xs px-3 py-1.5 rounded-lg bg-gray-100"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Pilih Anggota */}
+      {showMemberModal && (
+        <div className="fixed inset-0 z-[10000] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-2xl p-5 animate-scale-in">
+            <h3 className="text-sm font-semibold mb-4">Select Member</h3>
+            <input
+              type="text"
+              placeholder="Search member name / ID..."
+              value={memberSearch}
+              onChange={(e) => setMemberSearch(e.target.value)}
+              className="w-full mb-3 px-3 py-2 text-sm border rounded-lg outline-none"
+            />
+            <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+              {filteredMembers.map((member) => (
+                <button
+                  key={member.id}
+                  onClick={() => {
+                    setSelectedMember(member);
+                    setShowMemberModal(false);
+                  }}
+                  className="w-full text-left p-3 rounded-xl border hover:bg-blue-50 transition"
+                >
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-semibold text-gray-800">
+                      {member.name}
+                    </p>
+                    <p className="text-[11px] text-gray-500">
+                      Member ID: {member.id_member}
+                    </p>
+                    <p className="text-[11px] text-gray-500">
+                      Address: {member.address}
+                    </p>
+                    <p className="text-[11px] text-gray-500">
+                      Email: {member.email}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => setShowMemberModal(false)}
+                className="text-xs px-3 py-1.5 rounded-lg bg-gray-100"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-8">
           <button
-            key={member.id}
-            onClick={() => {
-              setSelectedMember(member);
-              setShowMemberModal(false);
-            }}
-            className="w-full text-left p-3 rounded-xl border hover:bg-blue-50 transition"
+            onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 rounded bg-gray-100 text-sm disabled:opacity-50"
           >
-            <div className="flex flex-col gap-1">
-              <p className="text-sm font-semibold text-gray-800">
-                {member.name}
-              </p>
-              <p className="text-[11px] text-gray-500">
-                Member ID: {member.id_member}
-              </p>
-              <p className="text-[11px] text-gray-500">
-                Address: {member.address}
-              </p>
-              <p className="text-[11px] text-gray-500">
-                Email: {member.email}
-              </p>
-            </div>
+            Prev
           </button>
-        ))}
-      </div>
 
-      <div className="flex justify-end mt-4">
-        <button
-          onClick={() => setShowMemberModal(false)}
-          className="text-xs px-3 py-1.5 rounded-lg bg-gray-100"
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-{/* Pagination */}
-{totalPages > 1 && (
-  <div className="flex justify-center items-center gap-2 mt-8">
-    <button
-      onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-      disabled={currentPage === 1}
-      className="px-3 py-1 rounded bg-gray-100 text-sm disabled:opacity-50"
-    >
-      Prev
-    </button>
+          {Array.from({ length: totalPages }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`px-3 py-1 rounded text-sm ${
+                currentPage === i + 1
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-700"
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
 
-    {Array.from({ length: totalPages }).map((_, i) => (
-      <button
-        key={i}
-        onClick={() => setCurrentPage(i + 1)}
-        className={`px-3 py-1 rounded text-sm ${
-          currentPage === i + 1
-            ? "bg-blue-600 text-white"
-            : "bg-gray-100 text-gray-700"
-        }`}
-      >
-        {i + 1}
-      </button>
-    ))}
-
-    <button
-      onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-      disabled={currentPage === totalPages}
-      className="px-3 py-1 rounded bg-gray-100 text-sm disabled:opacity-50"
-    >
-      Next
-    </button>
-  </div>
-)}
-
+          <button
+            onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 rounded bg-gray-100 text-sm disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 };
