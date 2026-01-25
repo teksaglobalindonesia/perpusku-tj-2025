@@ -168,22 +168,28 @@ const isLate = (returnDate: string) => {
 useEffect(() => {
   (async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/loan/list`, {
-        headers: {
-          Authorization: TOKEN,
-          "x-member-name": MEMBER_NAME,
-        },
-        cache: "no-store",
-      });
+      const PAGE_SIZE = 1000;
+
+      const res = await fetch(
+        `${BASE_URL}/api/loan/list?page=1&page_size=${PAGE_SIZE}`,
+        {
+          headers: {
+            Authorization: TOKEN,
+            "x-member-name": MEMBER_NAME,
+          },
+          cache: "no-store",
+        }
+      );
 
       const json = await res.json();
-      console.log("LOANS:", json.data);
       setLoans(json?.data ?? []);
     } catch (err) {
       console.error("Gagal fetch loan:", err);
     }
   })();
 }, []);
+
+
 useEffect(() => {
   (async () => {
     const res = await fetch(

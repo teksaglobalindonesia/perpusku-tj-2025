@@ -29,7 +29,10 @@ const [editForm, setEditForm] = useState({
 const totalMembers = members.length;
 
  //Label Status Loan
- const getLoanStatus = (loan: any) => {
+const normalizeDate = (date: Date) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+const getLoanStatus = (loan: any) => {
   // sudah dikembalikan
   if (loan.return) {
     return {
@@ -38,13 +41,13 @@ const totalMembers = members.length;
     };
   }
 
-  const today = new Date();
-  const loanDate = new Date(loan.loan_date);
+  const today = normalizeDate(new Date());
+  const loanDate = normalizeDate(new Date(loan.loan_date));
   const returnDate = loan.return_date
-    ? new Date(loan.return_date)
+    ? normalizeDate(new Date(loan.return_date))
     : null;
 
-  //   BELUM WAKTUNYA DIPINJAM
+  // Reserved (belum mulai)
   if (loanDate > today) {
     return {
       label: "Reserved",
@@ -52,15 +55,20 @@ const totalMembers = members.length;
     };
   }
 
-  //  TELAT
-  if (returnDate && today > returnDate) {
-    return {
-      label: "Late",
-      className: "bg-red-100 text-red-600",
-    };
+  // Late → lewat H+1
+  if (returnDate) {
+    const diffTime = today.getTime() - returnDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 1) {
+      return {
+        label: "Late",
+        className: "bg-red-100 text-red-600",
+      };
+    }
   }
 
-  //  SEDANG DIPINJAM
+  // Borrowed
   return {
     label: "Borrowed",
     className: "bg-yellow-100 text-yellow-700",
@@ -69,19 +77,24 @@ const totalMembers = members.length;
 
 
 
+
  // GET DATA
 useEffect(() => {
   (async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/member/list`, {
-        method: "GET",
-        headers: {
-          Authorization: TOKEN,
-          "x-member-name": MEMBER_NAME,
-        },
-        cache: "no-store",
-      });
+        const PAGE_SIZE = 1000;
 
+        const res = await fetch(
+          `${BASE_URL}/api/member/list?page=1&page_size=${PAGE_SIZE}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: TOKEN,
+              "x-member-name": MEMBER_NAME,
+            },
+            cache: "no-store",
+          }
+        );
       const json = await res.json();
       setMembers(json?.data ?? []);
     } catch (err) {

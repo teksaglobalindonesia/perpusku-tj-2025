@@ -90,10 +90,8 @@ const handleAddCategory = async () => {
       return;
     }
 
-    // 🔥 fetch ulang category
     const updatedCategories = await fetchCategories();
 
-    // 🔥 ambil category terakhir
     const lastCategory = updatedCategories[updatedCategories.length - 1];
 
     if (lastCategory?.id) {
