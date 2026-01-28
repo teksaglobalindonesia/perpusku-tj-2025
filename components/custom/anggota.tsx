@@ -1,63 +1,147 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { BASE_URL, MEMBER_NAME, TOKEN } from "../../lib/constant";
 
-const initialMembers = [
-  {
-    id: 1,
-    name: "agatha celine jjavorka",
-    address: "Jl. Jakarta",
-    email: "agathavorka2@gmail.com",
-    borrowed: [
-      { title: "A Smart Bunny", date: "2025-01-10" },
-      { title: "The Clever Bee", date: "2025-01-15" },
-    ],
-    returned: [{ title: "Calm Clouds", date: "2025-01-05" }],
-  },
-  {
-    id: 2,
-    name: "anak agung aldebaran",
-    address: "Jl. Busan",
-    email: "aldebaranagung@gmail.com",
-    borrowed: [{ title: "Useful Tree", date: "2025-01-18" }],
-    returned: [],
-  },
-];
+const ITEMS_PER_PAGE = 5;
 
 export default function AnggotaPage() {
+  const [members, setMembers] = useState<any[]>([]);
   const [search, setSearch] = useState("");
-  const [members, setMembers] = useState(initialMembers);
+  const [page, setPage] = useState(1);
+  const [modal, setModal] = useState<"add" | "edit" | "delete" | null>(null);
   const [selected, setSelected] = useState<any>(null);
-  const [modal, setModal] =
-    useState<"view" | "add" | "edit" | "delete" | null>(null);
+  const [form, setForm] = useState({
+    id_member: "",
+    name: "",
+    email: "",
+    address: "",
+  });
+
+  const closeModal = () => {
+    setModal(null);
+    setSelected(null);
+    setForm({
+      id_member: "",
+      name: "",
+      email: "",
+      address: "",
+    });
+  };
+
+  const fetchMembers = async () => {
+    const res = await fetch(`${BASE_URL}/api/member/list`, {
+      headers: {
+        Authorization: TOKEN,
+        "x-member-name": MEMBER_NAME,
+      },
+      cache: "no-store",
+    });
+    const json = await res.json();
+    setMembers(json?.data || []);
+  };
+
+  useEffect(() => {
+    fetchMembers();
+  }, []);
+
+  const validateForm = () => {
+    if (!form.id_member || !form.name || !form.email || !form.address) {
+      alert("mohon diisi dengan lengkap");
+      return false;
+    }
+    if (!form.email.endsWith("@gmail.com")) {
+      alert("mohon diisi dengan benar");
+      return false;
+    }
+    return true;
+  };
+
+  const handleCreateMember = async () => {
+    if (!validateForm()) return;
+
+    const res = await fetch(`${BASE_URL}/api/member/add`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: TOKEN,
+        "x-member-name": MEMBER_NAME,
+      },
+      body: JSON.stringify({ data: form }),
+    });
+
+    if (res.ok) {
+      await fetchMembers();
+      closeModal();
+    }
+  };
+
+  const handleUpdateMember = async () => {
+    if (!validateForm()) return;
+
+    const res = await fetch(`${BASE_URL}/api/member/edit`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: TOKEN,
+        "x-member-name": MEMBER_NAME,
+      },
+      body: JSON.stringify({
+        documentId: selected.documentId,
+        data: form,
+      }),
+    });
+
+    if (res.ok) {
+      await fetchMembers();
+      closeModal();
+    }
+  };
+
+  const handleDeleteMember = async () => {
+    const res = await fetch(`${BASE_URL}/api/member/delete`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: TOKEN,
+        "x-member-name": MEMBER_NAME,
+      },
+      body: JSON.stringify({
+        documentId: selected.documentId,
+      }),
+    });
+
+    if (res.ok) {
+      await fetchMembers();
+      closeModal();
+    }
+  };
 
   const filteredMembers = members.filter((m) =>
     m.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const closeModal = () => {
-    setModal(null);
-    setSelected(null);
-  };
+  const totalPages = Math.ceil(filteredMembers.length / ITEMS_PER_PAGE);
 
-  const handleDeleteMember = () => {
-    if (!selected) return;
-    setMembers((prev) => prev.filter((m) => m.id !== selected.id));
-    closeModal();
-  };
+  const paginatedMembers = filteredMembers.slice(
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE
+  );
 
   return (
-    <div className="min-h-screen bg-[#f6f5fb] text-[#2b2540]">
-      <main className="mx-auto max-w-7xl p-6">
-        <div className="mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <h2 className="text-3xl font-bold">Data Anggota</h2>
-
-          <div className="flex gap-3 w-full sm:w-auto">
+    <div className="min-h-screen bg-[#f6f5fb] px-8 py-6">
+      <div className="w-full">
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Data Anggota</h1>
+          <div className="flex gap-3">
             <input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               placeholder="Cari anggota..."
-              className="w-full sm:w-64 rounded-full border px-4 py-2 text-sm"
+              className="w-80 rounded-full border px-4 py-2 text-sm"
             />
             <button
               onClick={() => setModal("add")}
@@ -68,34 +152,32 @@ export default function AnggotaPage() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-4">
-          {filteredMembers.map((m) => (
+        <div className="space-y-4">
+          {paginatedMembers.map((m) => (
             <div
-              key={m.id}
-              className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border"
+              key={m.documentId}
+              className="flex w-full items-center justify-between rounded-2xl border bg-white px-8 py-6"
             >
-              <div>
-                <h3 className="font-bold text-purple-700">{m.name}</h3>
-                <p className="text-sm">{m.address}</p>
+              <div className="flex flex-col gap-1">
+                <p className="text-sm text-gray-500">ID: {m.id_member}</p>
+                <h3 className="text-lg font-bold text-purple-700">{m.name}</h3>
                 <p className="text-sm">{m.email}</p>
+                <p className="text-sm">{m.address}</p>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex w-[220px] gap-3">
                 <button
                   onClick={() => {
                     setSelected(m);
-                    setModal("view");
-                  }}
-                  className="border px-4 py-2 rounded-lg"
-                >
-                  Lihat
-                </button>
-                <button
-                  onClick={() => {
-                    setSelected(m);
+                    setForm({
+                      id_member: m.id_member,
+                      name: m.name,
+                      email: m.email,
+                      address: m.address,
+                    });
                     setModal("edit");
                   }}
-                  className="bg-purple-600 text-white px-4 py-2 rounded-lg"
+                  className="flex-1 rounded-lg border py-2"
                 >
                   Edit
                 </button>
@@ -104,7 +186,7 @@ export default function AnggotaPage() {
                     setSelected(m);
                     setModal("delete");
                   }}
-                  className="bg-red-500 text-white px-4 py-2 rounded-lg"
+                  className="flex-1 rounded-lg bg-red-500 py-2 text-white"
                 >
                   Hapus
                 </button>
@@ -112,83 +194,101 @@ export default function AnggotaPage() {
             </div>
           ))}
         </div>
-      </main>
+
+        {totalPages > 1 && (
+          <div className="mt-8 flex justify-center gap-2">
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setPage(i + 1)}
+                className={`h-9 w-9 rounded-full text-sm ${
+                  page === i + 1
+                    ? "bg-purple-700 text-white"
+                    : "border bg-white"
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       {modal && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4">
-          <div className="bg-white p-6 rounded-2xl w-full max-w-md">
-            {modal === "view" && selected && (
-              <>
-                <h2 className="font-bold text-lg mb-4">Riwayat</h2>
-
-                <div className="mb-3">
-                  <p className="font-semibold">Dipinjam</p>
-                  {selected.borrowed.length ? (
-                    selected.borrowed.map((b: any, i: number) => (
-                      <p key={i} className="text-sm">
-                        {b.title} ({b.date})
-                      </p>
-                    ))
-                  ) : (
-                    <p className="text-sm text-gray-500">Tidak ada</p>
-                  )}
-                </div>
-
-                <div>
-                  <p className="font-semibold">Dikembalikan</p>
-                  {selected.returned.length ? (
-                    selected.returned.map((b: any, i: number) => (
-                      <p key={i} className="text-sm">
-                        {b.title} ({b.date})
-                      </p>
-                    ))
-                  ) : (
-                    <p className="text-sm text-gray-500">Tidak ada</p>
-                  )}
-                </div>
-              </>
-            )}
-
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-8">
             {(modal === "add" || modal === "edit") && (
               <>
-                <h2 className="font-bold mb-4">
+                <h2 className="mb-6 text-center text-lg font-bold">
                   {modal === "add" ? "Tambah Anggota" : "Edit Anggota"}
                 </h2>
                 <div className="space-y-3">
-                  <input className="w-full border p-3 rounded-lg" placeholder="Nama" />
-                  <input className="w-full border p-3 rounded-lg" placeholder="Alamat" />
-                  <input className="w-full border p-3 rounded-lg" placeholder="Email" />
+                  <input
+                    value={form.id_member}
+                    onChange={(e) => setForm({ ...form, id_member: e.target.value })}
+                    placeholder="Nomor Anggota"
+                    className="w-full rounded-lg border p-3"
+                  />
+                  <input
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    placeholder="Nama Anggota"
+                    className="w-full rounded-lg border p-3"
+                  />
+                  <input
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    placeholder="Email"
+                    className="w-full rounded-lg border p-3"
+                  />
+                  <input
+                    value={form.address}
+                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                    placeholder="Alamat"
+                    className="w-full rounded-lg border p-3"
+                  />
                 </div>
               </>
             )}
 
             {modal === "delete" && (
-              <h2 className="text-center text-red-600 font-semibold">
-                Yakin ingin menghapus anggota ini?
-              </h2>
+              <div className="space-y-6 text-center">
+                <h2 className="text-lg font-semibold text-red-600">
+                  Yakin ingin menghapus anggota ini?
+                </h2>
+                <div className="flex justify-center gap-4">
+                  <button
+                    onClick={closeModal}
+                    className="rounded-lg border px-8 py-2"
+                  >
+                    Tidak
+                  </button>
+                  <button
+                    onClick={handleDeleteMember}
+                    className="rounded-lg bg-red-500 px-8 py-2 text-white"
+                  >
+                    Ya
+                  </button>
+                </div>
+              </div>
             )}
 
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={closeModal}
-                className="border px-4 py-2 rounded-lg"
-              >
-                Batal
-              </button>
-
-              {modal === "delete" ? (
+            {(modal === "add" || modal === "edit") && (
+              <div className="mt-6 flex justify-end gap-3">
                 <button
-                  onClick={handleDeleteMember}
-                  className="bg-red-500 text-white px-4 py-2 rounded-lg"
+                  onClick={closeModal}
+                  className="rounded-lg border px-4 py-2"
                 >
-                  Hapus
+                  Batal
                 </button>
-              ) : modal !== "view" ? (
-                <button className="bg-purple-600 text-white px-4 py-2 rounded-lg">
+                <button
+                  onClick={modal === "add" ? handleCreateMember : handleUpdateMember}
+                  className="rounded-lg bg-purple-600 px-6 py-2 text-white"
+                >
                   Simpan
                 </button>
-              ) : null}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}

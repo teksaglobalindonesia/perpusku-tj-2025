@@ -58,8 +58,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-[#f6f5fb] text-[#2b2540]">
-      <main className="mx-auto max-w-7xl px-6 py-10 space-y-14">
-
+      <main className="w-full px-6 py-8">
         <section>
           <div className="flex justify-between mb-4">
             <h2 className="text-2xl font-bold">Stok Buku</h2>

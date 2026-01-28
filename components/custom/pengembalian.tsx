@@ -16,10 +16,10 @@ const members = [
 ];
 
 const borrowList = [
-  { id: 1, title: "Delicious Mushroom", borrower: "i gede satria jati wibawa", borrowDate: "01/17/2026", returnDate: "01/24/2026" },
-  { id: 2, title: "As Green as a Leaf", borrower: "agatha celine jjavorka", borrowDate: "01/03/2026", returnDate: "01/10/2026" },
-  { id: 3, title: "A Smart Bunny", borrower: "i gede satria jati wibawa", borrowDate: "01/03/2026", returnDate: "01/10/2026" },
-  { id: 4, title: "Calm Clouds", borrower: "anak agung aldebaran", borrowDate: "01/10/2026", returnDate: "01/17/2026" },
+  { id: 1, title: "Delicious Mushroom", borrower: "i gede satria jati wibawa", borrowDate: "01/17/2026", returnDate: "01/24/2026", status: "Dipinjam" },
+  { id: 2, title: "As Green as a Leaf", borrower: "agatha celine jjavorka", borrowDate: "01/03/2026", returnDate: "01/10/2026", status: "Dipinjam" },
+  { id: 3, title: "A Smart Bunny", borrower: "i gede satria jati wibawa", borrowDate: "01/03/2026", returnDate: "01/10/2026", status: "Dipinjam" },
+  { id: 4, title: "Calm Clouds", borrower: "anak agung aldebaran", borrowDate: "01/10/2026", returnDate: "01/17/2026", status: "Dipinjam" },
 ];
 
 export default function PeminjamanPage() {
@@ -38,18 +38,15 @@ export default function PeminjamanPage() {
 
   return (
     <div className="min-h-screen bg-[#f6f5fb] text-[#2b2540]">
-      <main className="mx-auto max-w-7xl px-6 py-10">
-
-        {/* HEADER */}
+      <main className="w-full px-8 py-10">
         <div className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <h1 className="text-3xl font-extrabold text-purple-800">Peminjaman</h1>
-
           <div className="flex gap-3 w-full sm:w-auto">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Cari judul buku..."
-              className="w-full sm:w-72 rounded-full border px-4 py-2 text-sm"
+              className="w-full sm:w-96 rounded-full border px-4 py-2 text-sm"
             />
             <button
               onClick={() => setShowAdd(true)}
@@ -60,18 +57,26 @@ export default function PeminjamanPage() {
           </div>
         </div>
 
-        {/* LIST */}
         <div className="space-y-4">
           {filtered.map((item) => (
             <div
               key={item.id}
-              className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl bg-white p-5 border shadow-sm"
+              className="flex w-full items-center justify-between rounded-2xl bg-white px-10 py-6 border shadow-sm"
             >
-              <div>
-                <h3 className="text-lg font-bold text-purple-700">{item.title}</h3>
-                <p className="text-sm">Peminjam: {item.borrower}</p>
-                <p className="text-sm">Pinjam: {item.borrowDate}</p>
-                <p className="text-sm">Kembali: {item.returnDate}</p>
+              <div className="flex items-center gap-10">
+                <span className="rounded-full bg-yellow-100 px-5 py-1.5 text-sm font-semibold text-yellow-700">
+                  {item.status}
+                </span>
+
+                <div>
+                  <h3 className="text-lg font-bold text-purple-700">{item.title}</h3>
+                  <p className="text-sm">Peminjam: {item.borrower}</p>
+                </div>
+
+                <div className="text-sm">
+                  <p>Pinjam: {item.borrowDate}</p>
+                  <p>Kembali: {item.returnDate}</p>
+                </div>
               </div>
 
               <button
@@ -79,7 +84,7 @@ export default function PeminjamanPage() {
                   setSelectedBorrow(item);
                   setShowConfirm(true);
                 }}
-                className="self-start sm:self-center rounded-lg bg-green-600 px-6 py-2 text-sm text-white"
+                className="rounded-lg bg-green-600 px-8 py-2.5 text-sm text-white"
               >
                 Kembalikan
               </button>
@@ -88,7 +93,6 @@ export default function PeminjamanPage() {
         </div>
       </main>
 
-      {/* MODAL TAMBAH */}
       {showAdd && (
         <Modal title="Tambah Peminjaman" onClose={() => setShowAdd(false)}>
           <div className="space-y-3">
