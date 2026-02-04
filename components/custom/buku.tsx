@@ -12,6 +12,9 @@ const BukuPage = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [categories, setCategories] = useState<any[]>([]);
   const [books, setBooks] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 6;
+  const [totalPages, setTotalPages] = useState(1);
 
   const [form, setForm] = useState({
     title: '',
@@ -31,56 +34,77 @@ const BukuPage = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await fetch(`${BASE_URL}/api/book-category/list`, {
-          method: 'GET',
-          headers: {
-            Authorization: TOKEN,
-            'x-member-name': MEMBER_NAME
-          },
-          cache: 'no-store'
-        });
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/book-category/list`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: TOKEN,
+          'x-member-name': MEMBER_NAME
+        },
+        cache: 'no-store'
+      });
 
-        const json = await res.json();
+      const json = await res.json();
 
-        if (!res.ok || !Array.isArray(json?.data)) {
-          console.error('Invalid category response:', json);
-          setCategories([]);
-          return;
-        }
-
-        setCategories(json.data);
-      } catch (error) {
-        console.error('Gagal fetch kategori:', error);
+      if (!res.ok || !Array.isArray(json?.data)) {
         setCategories([]);
+        return;
       }
-    };
 
+      setCategories(json.data);
+    } catch (error) {
+      console.error('Gagal fetch kategori:', error);
+      setCategories([]);
+    }
+  };
+
+  useEffect(() => {
     fetchCategories();
   }, []);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch(`${BASE_URL}/api/book-category/list`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: TOKEN,
-            'x-member-name': MEMBER_NAME
-          },
-          cache: 'no-store'
-        });
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [categoryName, setCategoryName] = useState('');
 
-        const json = await res.json();
-        setCategories(json?.data || []);
-      } catch (err) {
-        console.error('Gagal ambil category:', err);
+  const handleCreateCategory = async () => {
+    if (!categoryName.trim()) {
+      alert('Nama kategori wajib diisi');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${BASE_URL}/api/book-category/add`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: TOKEN,
+          'x-member-name': MEMBER_NAME
+        },
+        body: JSON.stringify({
+          data: {
+            name: categoryName
+          }
+        })
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        console.error(json);
+        alert(json?.error?.message || 'Gagal tambah kategori');
+        return;
       }
-    })();
-  }, []);
+
+      setCategoryName('');
+      setShowCategoryModal(false);
+
+      await fetchCategories();
+    } catch (err) {
+      console.error('CREATE CATEGORY ERROR:', err);
+      alert('Terjadi kesalahan');
+    }
+  };
 
   const handleCreateBook = async () => {
     if (!selectedCategory) {
@@ -129,7 +153,7 @@ const BukuPage = () => {
         return;
       }
 
-      setBooks((prev) => [json.data, ...prev]);
+      await fetchBooks();
       closeModal();
     } catch (err) {
       console.error('CREATE BOOK ERROR:', err);
@@ -158,43 +182,88 @@ const BukuPage = () => {
     });
   };
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch(`${BASE_URL}/api/book/list`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: TOKEN,
-            'x-member-name': MEMBER_NAME
-          },
-          cache: 'no-store'
-        });
-
-        const json = await res.json();
-        setBooks(json?.data || []);
-      } catch (err) {
-        console.error('Gagal ambil buku:', err);
-      }
-    })();
-  }, []);
-
-  const filteredBooks = books.filter(
-    (b) =>
-      b &&
-      typeof b.title === 'string' &&
-      b.title.toLowerCase().includes(search.toLowerCase())
-  );
-
   // EDIT MODAL
   const [showEditModal, setShowEditModal] = useState(false);
   const [editData, setEditData] = useState<any>(null);
   const [previewEditCover, setPreviewEditCover] = useState<string | null>(null);
+  const [editCoverFile, setEditCoverFile] = useState<File | null>(null);
 
   const openEditModal = (book: any) => {
-    setEditData({ ...book });
-    setPreviewEditCover(book.cover);
+    setEditData({
+      ...book,
+      categories: book.categories?.[0]?.documentId || ''
+    });
+
+    setPreviewEditCover(
+      book.cover?.url ? `${BASE_URL}${book.cover.url}` : null
+    );
+
+    setEditCoverFile(null);
     setShowEditModal(true);
+  };
+
+  const handleEditImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setEditCoverFile(file);
+      setPreviewEditCover(URL.createObjectURL(file));
+    }
+  };
+
+  const handleUpdateBook = async () => {
+    if (!editData?.documentId) return;
+
+    if (!editData.title || !editData.writer || !editData.publisher) {
+      alert('Semua field wajib diisi');
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+
+      if (editCoverFile) {
+        formData.append('cover', editCoverFile);
+      }
+
+      formData.append('documentId', editData.documentId);
+
+      formData.append(
+        'data',
+        JSON.stringify({
+          title: editData.title,
+          writer: editData.writer,
+          publisher: editData.publisher,
+          published_year: editData.published_year,
+          stock: Number(editData.stock),
+          categories: [editData.categories]
+        })
+      );
+
+      const res = await fetch(`${BASE_URL}/api/book/edit`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: TOKEN,
+          'x-member-name': MEMBER_NAME
+        },
+        body: formData
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        console.error(json);
+        alert(json?.error?.message || 'Gagal update buku');
+        return;
+      }
+
+      await fetchBooks();
+      closeEditModal();
+
+      closeEditModal();
+    } catch (err) {
+      console.error('UPDATE BOOK ERROR:', err);
+      alert('Terjadi kesalahan');
+    }
   };
 
   const closeEditModal = () => {
@@ -227,10 +296,7 @@ const BukuPage = () => {
         return;
       }
 
-      setBooks((prev) =>
-        prev.filter((b) => b.documentId !== selected.documentId)
-      );
-
+      await fetchBooks();
       closeModal();
     } catch (err) {
       console.error('Error delete:', err);
@@ -239,19 +305,63 @@ const BukuPage = () => {
   };
 
   const fetchBooks = async () => {
-    const res = await fetch(`${BASE_URL}/api/book/list`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: TOKEN,
-        'x-member-name': MEMBER_NAME
-      },
-      cache: 'no-store'
-    });
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        page_size: String(PAGE_SIZE),
+        search: search
+      });
 
-    const json = await res.json();
-    setBooks(json?.data || []);
+      const res = await fetch(
+        `${BASE_URL}/api/book/list?${params.toString()}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: TOKEN,
+            'x-member-name': MEMBER_NAME
+          },
+          cache: 'no-store'
+        }
+      );
+
+      const json = await res.json();
+
+      console.log('BOOK LIST RESPONSE:', json);
+
+      setBooks(json?.data || []);
+
+      if (json?.meta?.pagination?.page_count) {
+        setTotalPages(json?.meta?.pagination?.page_count || 1);
+      }
+    } catch (err) {
+      console.error('Gagal ambil buku:', err);
+    }
   };
+
+  useEffect(() => {
+    fetchBooks();
+  }, [page, search]);
+
+  const renderPagination = () => {
+    return Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+      <button
+        key={p}
+        onClick={() => setPage(p)}
+        className={`rounded-lg px-4 py-2 text-sm ${
+          page === p
+            ? 'bg-green-600 text-white'
+            : 'bg-gray-200 hover:bg-gray-300'
+        }`}
+      >
+        {p}
+      </button>
+    ));
+  };
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   const openDeleteModal = (book: any) => {
     setSelected(book);
@@ -275,7 +385,7 @@ const BukuPage = () => {
         </h1>
       </div>
 
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <input
           type="text"
           placeholder="Cari judul buku..."
@@ -284,19 +394,28 @@ const BukuPage = () => {
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        <button
-          onClick={openModal}
-          className="w-full rounded-full bg-green-600 px-5 py-3 text-white shadow hover:bg-green-700 sm:w-auto"
-        >
-          Tambah Buku
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowCategoryModal(true)}
+            className="rounded-full bg-green-400 px-5 py-3 text-white shadow hover:bg-green-300"
+          >
+            + Kategori
+          </button>
+
+          <button
+            onClick={openModal}
+            className="rounded-full bg-green-600 px-5 py-3 text-white shadow hover:bg-green-700"
+          >
+            Tambah Buku
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-6">
-        {filteredBooks.map((b) => (
+        {books.map((b) => (
           <div
             key={b.documentId}
-            className="flex items-center justify-between gap-6 rounded-lg border border-[#c48a5a] bg-white p-4 shadow-sm"
+            className="flex items-center justify-between gap-6 rounded-lg border border-[#c48a5a] bg-white p-5 shadow-md transition hover:shadow-lg"
           >
             <img
               src={
@@ -360,9 +479,28 @@ const BukuPage = () => {
             </div>
           </div>
         ))}
+        <div className="mt-8 flex justify-center gap-2">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="rounded-lg bg-gray-200 px-3 py-2 text-sm disabled:opacity-50"
+          >
+            Prev
+          </button>
+
+          {renderPagination()}
+
+          <button
+            disabled={page === totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="rounded-lg bg-gray-200 px-3 py-2 text-sm disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
       </div>
 
-      {filteredBooks.length === 0 && (
+      {books.length === 0 && (
         <p className="mt-10 text-center text-gray-600">Buku tidak ditemukan.</p>
       )}
 
@@ -527,19 +665,19 @@ const BukuPage = () => {
 
                 <div>
                   <select
-                    placeholder="Kategori"
-                    value={editData.categories}
+                    value={editData.categories || ''}
                     onChange={(e) =>
                       setEditData({ ...editData, categories: e.target.value })
                     }
-                    className="w-full rounded-lg border p-2 text-gray-700"
+                    className="w-full rounded-lg border p-2"
                   >
-                    <option>Family Fiction</option>
-                    <option>Romance</option>
-                    <option>Historical Fiction</option>
-                    <option>Fiksi</option>
-                    <option>Fantasy</option>
-                    <option>Thriller</option>
+                    <option value="">Pilih Kategori</option>
+
+                    {categories.map((cat) => (
+                      <option key={cat.documentId} value={cat.documentId}>
+                        {cat.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -561,8 +699,8 @@ const BukuPage = () => {
                 <div>
                   <input
                     type="file"
-                    placeholder="Cover"
                     accept="image/*"
+                    onChange={handleEditImage}
                     className="w-full rounded-lg border p-2"
                   />
                 </div>
@@ -576,7 +714,10 @@ const BukuPage = () => {
               >
                 Batal
               </button>
-              <button className="rounded-lg bg-green-600 px-4 py-1.5 text-sm text-white">
+              <button
+                onClick={handleUpdateBook}
+                className="rounded-lg bg-green-600 px-4 py-1.5 text-sm text-white"
+              >
                 Simpan
               </button>
             </div>
@@ -608,6 +749,42 @@ const BukuPage = () => {
                 className="rounded-lg bg-red-600 px-4 py-1.5 text-sm text-white"
               >
                 Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCategoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-[380px] rounded-xl bg-white shadow-lg">
+            <div className="border-b px-5 py-3">
+              <h2 className="text-base font-semibold text-gray-800">
+                Tambah Kategori
+              </h2>
+            </div>
+
+            <div className="px-5 py-4">
+              <input
+                type="text"
+                value={categoryName}
+                onChange={(e) => setCategoryName(e.target.value)}
+                className="w-full rounded-lg border p-2"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 border-t px-5 py-3">
+              <button
+                onClick={() => setShowCategoryModal(false)}
+                className="rounded-lg bg-gray-200 px-4 py-1.5 text-sm"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleCreateCategory}
+                className="rounded-lg bg-green-600 px-4 py-1.5 text-sm text-white"
+              >
+                Simpan
               </button>
             </div>
           </div>

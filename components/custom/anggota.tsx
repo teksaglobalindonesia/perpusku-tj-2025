@@ -10,6 +10,10 @@ const AnggotaPage = () => {
   const [showDelete, setShowDelete] = useState(false);
   const [showPeminjaman, setShowPeminjaman] = useState(false);
   const [members, setMembers] = useState<any[]>([]);
+  const [loans, setLoans] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 6;
+  const [totalPages, setTotalPages] = useState(1);
 
   const [newAnggota, setNewAnggota] = useState({
     name: '',
@@ -20,11 +24,19 @@ const AnggotaPage = () => {
 
   const [selectedAnggota, setSelectedAnggota] = useState<any>(null);
   const [anggotaToDelete, setAnggotaToDelete] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch(`${BASE_URL}/api/member/list`, {
+  const fetchMembers = async () => {
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        page_size: String(PAGE_SIZE),
+        search: search
+      });
+
+      const res = await fetch(
+        `${BASE_URL}/api/member/list?${params.toString()}`,
+        {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -32,79 +44,248 @@ const AnggotaPage = () => {
             'x-member-name': MEMBER_NAME
           },
           cache: 'no-store'
-        });
+        }
+      );
 
-        const json = await res.json();
-        setMembers(json?.data || []);
-      } catch (err) {
-        console.error('Gagal ambil anggota:', err);
+      const json = await res.json();
+
+      setMembers(json?.data || []);
+
+      if (json?.meta?.pagination?.page_count) {
+        setTotalPages(json.meta.pagination.page_count);
       }
-    })();
+    } catch (err) {
+      console.error('Gagal ambil anggota:', err);
+    }
+  };
+
+  const renderPagination = () => {
+    return Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+      <button
+        key={p}
+        onClick={() => setPage(p)}
+        className={`rounded-lg px-4 py-2 text-sm ${
+          page === p
+            ? 'bg-green-600 text-white'
+            : 'bg-gray-200 hover:bg-gray-300'
+        }`}
+      >
+        {p}
+      </button>
+    ));
+  };
+
+  const handleCreateAnggota = async () => {
+    if (
+      !newAnggota.name ||
+      !newAnggota.id_member ||
+      !newAnggota.address ||
+      !newAnggota.email
+    ) {
+      alert('Semua field wajib diisi');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const res = await fetch(`${BASE_URL}/api/member/add`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: TOKEN,
+          'x-member-name': MEMBER_NAME
+        },
+        body: JSON.stringify({
+          data: newAnggota
+        })
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        alert(json?.error?.message || 'Gagal tambah anggota');
+        return;
+      }
+
+      await fetchMembers();
+      setShowAdd(false);
+
+      setNewAnggota({
+        name: '',
+        id_member: '',
+        address: '',
+        email: ''
+      });
+    } catch (err) {
+      console.error(err);
+      alert('Terjadi kesalahan');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateAnggota = async () => {
+    if (!selectedAnggota?.documentId) return;
+
+    if (
+      !selectedAnggota.name ||
+      !selectedAnggota.id_member ||
+      !selectedAnggota.address ||
+      !selectedAnggota.email
+    ) {
+      alert('Semua field wajib diisi');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const res = await fetch(`${BASE_URL}/api/member/edit`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: TOKEN,
+          'x-member-name': MEMBER_NAME
+        },
+        body: JSON.stringify({
+          documentId: selectedAnggota.documentId,
+          data: {
+            name: selectedAnggota.name,
+            id_member: selectedAnggota.id_member,
+            address: selectedAnggota.address,
+            email: selectedAnggota.email
+          }
+        })
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        alert(json?.error?.message || 'Gagal update anggota');
+        return;
+      }
+
+      await fetchMembers();
+      setShowEdit(false);
+      setSelectedAnggota(null);
+    } catch (err) {
+      console.error(err);
+      alert('Terjadi kesalahan');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAnggota = async () => {
+    if (!anggotaToDelete?.documentId) return;
+
+    try {
+      setLoading(true);
+
+      const res = await fetch(`${BASE_URL}/api/member/delete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: TOKEN,
+          'x-member-name': MEMBER_NAME
+        },
+        body: JSON.stringify({
+          documentId: anggotaToDelete.documentId
+        })
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        alert(json?.error?.message || 'Gagal hapus anggota');
+        return;
+      }
+
+      await fetchMembers();
+      setShowDelete(false);
+      setAnggotaToDelete(null);
+    } catch (err) {
+      console.error(err);
+      alert('Terjadi kesalahan');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMembers();
+  }, [page, search]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
+  const fetchLoans = async () => {
+    const res = await fetch(`${BASE_URL}/api/loan/list`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: TOKEN,
+        'x-member-name': MEMBER_NAME
+      },
+      cache: 'no-store'
+    });
+
+    const json = await res.json();
+    setLoans(json?.data || []);
+  };
+
+  useEffect(() => {
+    fetchLoans();
   }, []);
 
-  const filtered = members.filter(
-    (a) => a.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const isLate = (returnDate?: string, actualReturnDate?: string) => {
+    if (!returnDate || !actualReturnDate) return false;
 
-  const peminjamanData: Record<number, any[]> = {
-    1: [
-      {
-        id: 1,
-        judul: 'Laut Bercerita',
-        penulis: 'Leila S. Chudori',
-        kategori: 'Historical Fiction',
-        pinjam: '2025-12-01',
-        kembali: '-',
-        status: 'dipinjam'
-      },
-      {
-        id: 2,
-        judul: 'Narasi Perihal Ayah',
-        penulis: 'Jaquenza Eden',
-        kategori: 'Family Fiction',
-        pinjam: '2025-11-20',
-        kembali: '2025-11-25',
-        status: 'dikembalikan'
-      }
-    ],
-    2: [
-      {
-        id: 1,
-        judul: 'Laut Bercerita',
-        penulis: 'Leila S. Chudori',
-        kategori: 'Historical Fiction',
-        pinjam: '2025-11-25',
-        kembali: '-',
-        status: 'terlambat'
-      }
-    ],
-    3: [
-      {
-        id: 1,
-        judul: 'Narasi Perihal Ayah',
-        penulis: 'Jaquenza Eden',
-        kategori: 'Family Fiction',
-        pinjam: '2025-11-15',
-        kembali: '-',
-        status: 'terlambat'
-      },
-      {
-        id: 2,
-        judul: 'Laut Bercerita',
-        penulis: 'Leila S. Chudori',
-        kategori: 'Historical Fiction',
-        pinjam: '2025-11-10',
-        kembali: '2025-11-17',
-        status: 'dikembalikan'
-      }
-    ]
+    const due = new Date(returnDate);
+    const actual = new Date(actualReturnDate);
+
+    due.setHours(0, 0, 0, 0);
+    actual.setHours(0, 0, 0, 0);
+
+    return actual > due;
   };
+
+  const getLoanStatus = (loan: any) => {
+    const actualReturn =
+      loan.actual_return_date ||
+      loan.return?.actual_return_date ||
+      loan.actualReturnDate ||
+      null;
+
+    if (!actualReturn) {
+      return isPastDue(loan.return_date) ? 'TERLAMBAT' : 'DIPINJAM';
+    }
+
+    return isLate(loan.return_date, actualReturn)
+      ? 'TERLAMBAT'
+      : 'DIKEMBALIKAN';
+  };
+
+  const isPastDue = (returnDate?: string) => {
+    if (!returnDate) return false;
+
+    const today = new Date();
+    const due = new Date(returnDate);
+
+    today.setHours(0, 0, 0, 0);
+    due.setHours(0, 0, 0, 0);
+
+    return today > due;
+  };
+
+  const filteredLoans = loans.filter(
+    (loan) => loan.member?.documentId === selectedAnggota?.documentId
+  );
 
   return (
     <div className="mx-auto max-w-6xl p-6">
       <h1 className="mb-6 text-3xl font-bold text-green-700">Data Anggota</h1>
-
-      {/* SEARCH + ADD */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
         <input
           type="text"
@@ -122,19 +303,18 @@ const AnggotaPage = () => {
         </button>
       </div>
 
-      {/* CARD LIST */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {filtered.map((item) => (
+        {members.map((item) => (
           <div
-            key={item.id}
-            className="flex flex-col rounded-xl border bg-white p-4 shadow-sm"
+            key={item.documentId}
+            className="flex flex-col rounded-xl border bg-white p-5 shadow-md transition hover:shadow-lg"
           >
             <h2 className="mb-1 text-xl font-bold text-green-800">
               {item.name}
             </h2>
-            <p className="text-gray-500">Nomor Anggota: {item.id_member}</p>
-            <p className="text-gray-500">Alamat: {item.address}</p>
-            <p className="mb-4 text-gray-500">Email: {item.email}</p>
+            <p className="text-gray-600">Alamat: {item.address}</p>
+            <p className="text-gray-600">{item.email}</p>
+            <p className="mb-4 text-gray-500">ID Anggota: {item.id_member}</p>
 
             <div className="mt-auto flex flex-wrap gap-2 sm:flex-nowrap">
               <button
@@ -144,7 +324,7 @@ const AnggotaPage = () => {
                 }}
                 className="rounded-lg bg-[#CFE8FF] px-3 py-2 text-sm font-medium text-[#1E4A7B]"
               >
-                Lihat Peminjaman
+                Peminjaman
               </button>
               <button
                 onClick={() => {
@@ -169,8 +349,28 @@ const AnggotaPage = () => {
         ))}
       </div>
 
+      <div className="mt-8 flex justify-center gap-2">
+        <button
+          disabled={page === 1}
+          onClick={() => setPage((p) => p - 1)}
+          className="rounded-lg bg-gray-200 px-3 py-2 text-sm disabled:opacity-50"
+        >
+          Prev
+        </button>
+
+        {renderPagination()}
+
+        <button
+          disabled={page === totalPages}
+          onClick={() => setPage((p) => p + 1)}
+          className="rounded-lg bg-gray-200 px-3 py-2 text-sm disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
+
       {/* DATA KOSONG */}
-      {filtered.length === 0 && (
+      {members.length === 0 && (
         <p className="mt-10 text-center text-gray-600">
           Anggota tidak ditemukan.
         </p>
@@ -249,7 +449,10 @@ const AnggotaPage = () => {
                 Batal
               </button>
 
-              <button className="rounded-lg bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700">
+              <button
+                onClick={handleCreateAnggota}
+                className="rounded-lg bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700"
+              >
                 Simpan
               </button>
             </div>
@@ -258,7 +461,7 @@ const AnggotaPage = () => {
       )}
 
       {/* POPUP EDIT */}
-      {showEdit && (
+      {showEdit && selectedAnggota && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="flex max-h-[90vh] w-full max-w-[430px] flex-col overflow-y-auto rounded-xl bg-white shadow-lg md:max-w-[500px]">
             <div className="border-b px-5 py-3">
@@ -271,7 +474,7 @@ const AnggotaPage = () => {
               </label>
               <input
                 className="mb-3 w-full rounded-lg border p-2 focus:outline-green-600"
-                value={selectedAnggota.name}
+                value={selectedAnggota?.name || ''}
                 onChange={(e) =>
                   setSelectedAnggota({
                     ...selectedAnggota,
@@ -285,7 +488,7 @@ const AnggotaPage = () => {
               </label>
               <input
                 className="mb-3 w-full rounded-lg border p-2 focus:outline-green-600"
-                value={selectedAnggota.id_member}
+                value={selectedAnggota?.id_member || ''}
                 onChange={(e) =>
                   setSelectedAnggota({
                     ...selectedAnggota,
@@ -299,7 +502,7 @@ const AnggotaPage = () => {
               </label>
               <input
                 className="mb-3 w-full rounded-lg border p-2 focus:outline-green-600"
-                value={selectedAnggota.address}
+                value={selectedAnggota?.address || ''}
                 onChange={(e) =>
                   setSelectedAnggota({
                     ...selectedAnggota,
@@ -313,7 +516,7 @@ const AnggotaPage = () => {
               </label>
               <input
                 className="mb-2 w-full rounded-lg border p-2 focus:outline-green-600"
-                value={selectedAnggota.email}
+                value={selectedAnggota?.email || ''}
                 onChange={(e) =>
                   setSelectedAnggota({
                     ...selectedAnggota,
@@ -340,7 +543,10 @@ const AnggotaPage = () => {
                 Batal
               </button>
 
-              <button className="rounded-lg bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700">
+              <button
+                onClick={handleUpdateAnggota}
+                className="rounded-lg bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700"
+              >
                 Simpan
               </button>
             </div>
@@ -370,9 +576,7 @@ const AnggotaPage = () => {
               </button>
 
               <button
-                onClick={() => {
-                  setShowDelete(false);
-                }}
+                onClick={handleDeleteAnggota}
                 className="rounded-lg bg-red-600 px-4 py-1.5 text-sm text-white"
               >
                 Hapus
@@ -397,37 +601,43 @@ const AnggotaPage = () => {
             </div>
 
             <div className="space-y-4 px-6 py-5">
-              {(peminjamanData[selectedAnggota.id] || []).length === 0 ? (
+              {filteredLoans.length === 0 ? (
                 <p className="text-center text-sm text-gray-500">
                   Belum ada data peminjaman
                 </p>
               ) : (
-                peminjamanData[selectedAnggota.id].map((item) => (
-                  <div key={item.id} className="rounded-lg border p-4">
-                    <h3 className="font-semibold">{item.title}</h3>
-                    <p className="text-sm text-gray-600">
-                      {item.writer} • {item.categories}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Pinjam: {item.pinjam}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Kembali: {item.kembali}
-                    </p>
+                filteredLoans.map((loan) => {
+                  const status = getLoanStatus(loan);
 
-                    <span
-                      className={`mt-2 inline-block rounded px-3 py-1 text-xs font-semibold ${
-                        item.status === 'dikembalikan'
-                          ? 'bg-[#DFF3E3] text-[#1E6B3A]'
-                          : item.status === 'dipinjam'
-                          ? 'bg-[#E0ECFF] text-[#1E4A7B]'
-                          : 'bg-[#FFD6D6] text-[#7A1F1F]'
-                      }`}
+                  return (
+                    <div
+                      key={loan.documentId}
+                      className="rounded-lg border p-4"
                     >
-                      {item.status.toUpperCase()}
-                    </span>
-                  </div>
-                ))
+                      <h3 className="font-semibold">{loan.book?.title}</h3>
+
+                      <p className="text-sm text-gray-600">
+                        Tanggal Pinjam: {loan.loan_date}
+                      </p>
+
+                      <p className="text-sm text-gray-600">
+                        Tanggal Kembali: {loan.return_date}
+                      </p>
+
+                      <span
+                        className={`mt-2 inline-block rounded px-3 py-1 text-xs font-semibold ${
+                          status === 'DIKEMBALIKAN'
+                            ? 'bg-[#DFF3E3] text-[#1E6B3A]'
+                            : status === 'DIPINJAM'
+                            ? 'bg-[#E0ECFF] text-[#1E4A7B]'
+                            : 'bg-[#FFD6D6] text-[#7A1F1F]'
+                        }`}
+                      >
+                        {status}
+                      </span>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
