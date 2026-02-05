@@ -29,15 +29,23 @@ const PeminjamanPage = () => {
 
   const fetchMembers = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/member/list`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: TOKEN,
-          'x-member-name': MEMBER_NAME
-        },
-        cache: 'no-store'
+      const params = new URLSearchParams({
+        page: '1',
+        page_size: '500'
       });
+
+      const res = await fetch(
+        `${BASE_URL}/api/member/list?${params.toString()}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: TOKEN,
+            'x-member-name': MEMBER_NAME
+          },
+          cache: 'no-store'
+        }
+      );
 
       const json = await res.json();
       setMembers(json?.data || []);
@@ -48,15 +56,23 @@ const PeminjamanPage = () => {
 
   const fetchBooks = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/book/list`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: TOKEN,
-          'x-member-name': MEMBER_NAME
-        },
-        cache: 'no-store'
+      const params = new URLSearchParams({
+        page: '1',
+        page_size: '500'
       });
+
+      const res = await fetch(
+        `${BASE_URL}/api/book/list?${params.toString()}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: TOKEN,
+            'x-member-name': MEMBER_NAME
+          },
+          cache: 'no-store'
+        }
+      );
 
       const json = await res.json();
       setBooks(json?.data || []);
@@ -331,6 +347,7 @@ const PeminjamanPage = () => {
         ))}
       </div>
 
+      {/*PAGINATION*/}
       <div className="mt-8 flex justify-center gap-2">
         <button
           disabled={page === 1}
@@ -357,7 +374,7 @@ const PeminjamanPage = () => {
         </p>
       )}
 
-      {/* POPUP TAMBAH PEMINJAMAN */}
+      {/* MODAL TAMBAH PEMINJAMAN */}
       {showTambah && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="flex w-full max-w-[430px] flex-col rounded-xl bg-white shadow-lg md:max-w-[500px]">
@@ -366,8 +383,6 @@ const PeminjamanPage = () => {
                 Tambah Peminjaman
               </h2>
             </div>
-
-            {/* BODY */}
             <div className="space-y-3 px-5 py-4 text-sm">
               <div>
                 <label className="mb-1 block font-medium text-gray-700">
@@ -444,7 +459,6 @@ const PeminjamanPage = () => {
       {showPilihBuku && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-[520px] rounded-xl bg-white shadow-lg">
-            {/* HEADER */}
             <div className="border-b px-5 py-3">
               <h3 className="text-lg font-bold text-green-700">Pilih Buku</h3>
             </div>
@@ -455,7 +469,6 @@ const PeminjamanPage = () => {
               value={searchBook}
               onChange={(e) => setSearchBook(e.target.value)}
             />
-            {/* LIST BUKU */}
             <div className="max-h-[60vh] space-y-4 overflow-y-auto px-5 py-4">
               {books
                 .filter(
@@ -513,8 +526,6 @@ const PeminjamanPage = () => {
                   </button>
                 ))}
             </div>
-
-            {/* FOOTER */}
             <div className="flex justify-end border-t px-5 py-3">
               <button
                 onClick={() => setShowPilihBuku(false)}
@@ -530,7 +541,6 @@ const PeminjamanPage = () => {
       {showPilihAnggota && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-[520px] rounded-xl bg-white shadow-lg">
-            {/* HEADER */}
             <div className="border-b px-5 py-3">
               <h3 className="text-lg font-bold text-green-700">
                 Pilih Anggota
@@ -543,7 +553,6 @@ const PeminjamanPage = () => {
               value={searchMember}
               onChange={(e) => setSearchMember(e.target.value)}
             />
-            {/* LIST ANGGOTA */}
             <div className="max-h-[60vh] space-y-3 overflow-y-auto px-5 py-4">
               {members
                 .filter(
@@ -573,8 +582,6 @@ const PeminjamanPage = () => {
                   </button>
                 ))}
             </div>
-
-            {/* FOOTER */}
             <div className="flex justify-end border-t px-5 py-3">
               <button
                 onClick={() => setShowPilihAnggota(false)}
@@ -587,18 +594,15 @@ const PeminjamanPage = () => {
         </div>
       )}
 
-      {/* POPUP KEMBALIKAN */}
+      {/* MODAL KEMBALIKAN */}
       {showKembalikan && selectedPeminjaman && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-[380px] rounded-xl bg-white shadow-lg">
-            {/* HEADER */}
             <div className="border-b px-4 py-3 sm:px-5">
               <h3 className="text-lg font-bold text-green-700">
                 Konfirmasi Pengembalian
               </h3>
             </div>
-
-            {/* BODY */}
             <div className="space-y-2 px-4 py-4 text-sm sm:px-5">
               <p className="text-gray-700">
                 Apakah buku berikut ingin dikembalikan?
@@ -616,8 +620,6 @@ const PeminjamanPage = () => {
                 </p>
               </div>
             </div>
-
-            {/* FOOTER */}
             <div className="flex flex-col gap-2 border-t px-4 py-3 sm:flex-row sm:justify-end sm:px-5">
               <button
                 onClick={() => {

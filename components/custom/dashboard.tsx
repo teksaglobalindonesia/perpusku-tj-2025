@@ -8,6 +8,7 @@ const DashboardContent = () => {
   const [books, setBooks] = useState<any[]>([]);
   const [loans, setLoans] = useState<any[]>([]);
   const [returns, setReturns] = useState<any[]>([]);
+  const [totalBooks, setTotalBooks] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -28,6 +29,7 @@ const DashboardContent = () => {
         const returnJson = await returnRes.json();
 
         setBooks(bookJson?.data ?? []);
+        setTotalBooks(bookJson?.meta?.pagination?.total ?? 0);
         setLoans(loanJson?.data ?? []);
         setReturns(returnJson?.data ?? []);
       } catch (err) {
@@ -38,7 +40,6 @@ const DashboardContent = () => {
 
   const today = new Date().toISOString().split('T')[0];
 
-  const totalBooks = books.length;
   const availableBooks = books.reduce(
     (total, b) => total + (b.stock > 0 ? b.stock : 0),
     0
@@ -57,7 +58,6 @@ const DashboardContent = () => {
 
   return (
     <main className="min-h-screen bg-gray-50 p-4 md:p-8">
-      {/* BOX SUMMARY */}
       <div className="mb-10 grid w-full grid-cols-2 gap-4 md:grid-cols-4">
         <div className="rounded bg-white p-5 text-center shadow-md transition hover:shadow-lg">
           <p className="text-sm text-gray-600">Total Buku</p>

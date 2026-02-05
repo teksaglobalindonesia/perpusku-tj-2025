@@ -36,15 +36,23 @@ const BukuPage = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/book-category/list`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: TOKEN,
-          'x-member-name': MEMBER_NAME
-        },
-        cache: 'no-store'
+      const params = new URLSearchParams({
+        page: '1',
+        page_size: '100'
       });
+
+      const res = await fetch(
+        `${BASE_URL}/api/book-category/list?${params.toString()}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: TOKEN,
+            'x-member-name': MEMBER_NAME
+          },
+          cache: 'no-store'
+        }
+      );
 
       const json = await res.json();
 
@@ -479,6 +487,8 @@ const BukuPage = () => {
             </div>
           </div>
         ))}
+
+        {/*PAGINATION*/}
         <div className="mt-8 flex justify-center gap-2">
           <button
             disabled={page === 1}
@@ -597,7 +607,7 @@ const BukuPage = () => {
         </div>
       )}
 
-      {/* POPUP EDIT BUKU */}
+      {/* MODAL EDIT BUKU */}
       {showEditModal && editData?.title && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="flex max-h-[85vh] w-full max-w-[430px] flex-col rounded-xl bg-white shadow-lg md:max-w-[500px]">
@@ -725,7 +735,7 @@ const BukuPage = () => {
         </div>
       )}
 
-      {/* POPUP HAPUS */}
+      {/* MODAL HAPUS */}
       {modal === 'delete' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-[380px] rounded-xl bg-white p-5 shadow-lg">

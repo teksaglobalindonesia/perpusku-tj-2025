@@ -349,6 +349,7 @@ const AnggotaPage = () => {
         ))}
       </div>
 
+      {/*PAGINATION*/}
       <div className="mt-8 flex justify-center gap-2">
         <button
           disabled={page === 1}
@@ -369,14 +370,13 @@ const AnggotaPage = () => {
         </button>
       </div>
 
-      {/* DATA KOSONG */}
       {members.length === 0 && (
         <p className="mt-10 text-center text-gray-600">
           Anggota tidak ditemukan.
         </p>
       )}
 
-      {/* POPUP TAMBAH */}
+      {/* MODAL TAMBAH */}
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="flex max-h-[90vh] w-full max-w-[430px] flex-col overflow-y-auto rounded-xl bg-white shadow-lg md:max-w-[500px]">
@@ -460,7 +460,7 @@ const AnggotaPage = () => {
         </div>
       )}
 
-      {/* POPUP EDIT */}
+      {/* MODAL EDIT */}
       {showEdit && selectedAnggota && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="flex max-h-[90vh] w-full max-w-[430px] flex-col overflow-y-auto rounded-xl bg-white shadow-lg md:max-w-[500px]">
@@ -554,7 +554,7 @@ const AnggotaPage = () => {
         </div>
       )}
 
-      {/* POPUP DELETE */}
+      {/* MODAL DELETE */}
       {showDelete && anggotaToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-[380px] rounded-xl bg-white p-5 shadow-lg">
@@ -586,7 +586,7 @@ const AnggotaPage = () => {
         </div>
       )}
 
-      {/* POPUP LIHAT PEMINJAMAN */}
+      {/* MODAL LIHAT PEMINJAMAN */}
       {showPeminjaman && selectedAnggota && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white shadow-lg">
