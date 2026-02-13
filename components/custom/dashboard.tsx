@@ -18,10 +18,24 @@ const DashboardContent = () => {
           'x-member-name': MEMBER_NAME
         };
 
+        const params = new URLSearchParams({
+          page: '1',
+          page_size: '5000'
+        });
+
         const [bookRes, loanRes, returnRes] = await Promise.all([
-          fetch(`${BASE_URL}/api/book/list`, { headers, cache: 'no-store' }),
-          fetch(`${BASE_URL}/api/loan/list`, { headers, cache: 'no-store' }),
-          fetch(`${BASE_URL}/api/return/list`, { headers, cache: 'no-store' })
+          fetch(`${BASE_URL}/api/book/list?${params}`, {
+            headers,
+            cache: 'no-store'
+          }),
+          fetch(`${BASE_URL}/api/loan/list?${params}`, {
+            headers,
+            cache: 'no-store'
+          }),
+          fetch(`${BASE_URL}/api/return/list?${params}`, {
+            headers,
+            cache: 'no-store'
+          })
         ]);
 
         const bookJson = await bookRes.json();
