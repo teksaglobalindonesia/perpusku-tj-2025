@@ -21,7 +21,7 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 w-full bg-[#2b2540] shadow-lg">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
         <h2 className="text-2xl font-extrabold text-white">
-          LIBRAVA
+          SIDU APP
         </h2>
 
         <button

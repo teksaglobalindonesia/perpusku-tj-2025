@@ -1,79 +1,163 @@
 "use client";
 
-import { useState } from "react";
-
-const books = [
-  {
-    id: 1,
-    title: "A Smart Bunny",
-    publisher: "Happy Kids",
-    year: 2022,
-    category: "Fabel",
-    stock: 2,
-    image: "https://via.placeholder.com/80x110",
-    description: "Cerita kelinci pintar yang penuh pesan moral",
-  },
-  {
-    id: 2,
-    title: "The Clever Bee",
-    publisher: "Story Land",
-    year: 2021,
-    category: "Fabel",
-    stock: 1,
-    image: "https://via.placeholder.com/80x110",
-    description: "Petualangan lebah cerdas di taman bunga",
-  },
-  {
-    id: 3,
-    title: "Little Red Fox",
-    publisher: "Kids World",
-    year: 2023,
-    category: "Fabel",
-    stock: 3,
-    image: "https://via.placeholder.com/80x110",
-    description: "Kisah rubah kecil yang berani dan cerdik",
-  },
-];
-
-const members = [
-  { id: 1, name: "agatha celine jjavorkai", email: "agathavorka2@gmail.com" },
-  { id: 2, name: "anak agung aldebaran", email: "aldebaranagung@gmail.com" },
-  { id: 3, name: "i gede satria jati wibawa", email: "sajajaja08@gmail.com" },
-  { id: 4, name: "lionel jastive mouel", email: "jastive35@gmail.com" },
-];
-
-const borrowList = [
-  { id: 1, title: "Delicious Mushroom", borrower: "i gede satria jati wibawa", borrowDate: "01/17/2026", returnDate: "01/24/2026" },
-  { id: 2, title: "As Green as a Leaf", borrower: "agatha celine jjavorka", borrowDate: "01/03/2026", returnDate: "01/10/2026" },
-  { id: 3, title: "A Smart Bunny", borrower: "i gede satria jati wibawa", borrowDate: "01/03/2026", returnDate: "01/10/2026" },
-  { id: 4, title: "Calm Clouds", borrower: "anak agung aldebaran", borrowDate: "01/10/2026", returnDate: "01/17/2026" },
-];
+import { useEffect, useState } from "react";
+import { BASE_URL, TOKEN, MEMBER_NAME } from "../../lib/constant";
 
 export default function PeminjamanPage() {
   const [search, setSearch] = useState("");
+  const [loans, setLoans] = useState<any[]>([]);
+  const [books, setBooks] = useState<any[]>([]);
+  const [members, setMembers] = useState<any[]>([]);
+
   const [showAdd, setShowAdd] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [showBook, setShowBook] = useState(false);
-  const [showMember, setShowMember] = useState(false);
-  const [selectedBook, setSelectedBook] = useState<any>(null);
-  const [selectedMember, setSelectedMember] = useState<any>(null);
-  const [selectedBorrow, setSelectedBorrow] = useState<any>(null);
+  const [selectedLoan, setSelectedLoan] = useState<any>(null);
 
-  const filtered = borrowList.filter((b) =>
-    b.title.toLowerCase().includes(search.toLowerCase())
+  const [showBookDropdown, setShowBookDropdown] = useState(false);
+  const [showMemberDropdown, setShowMemberDropdown] = useState(false);
+
+  const [bookSearch, setBookSearch] = useState("");
+  const [memberSearch, setMemberSearch] = useState("");
+
+  const [formData, setFormData] = useState({
+    bookId: "",
+    memberId: "",
+    borrowDate: "",
+    returnDate: "",
+  });
+
+  const fetchLoans = async () => {
+    const res = await fetch(`${BASE_URL}/api/loan/list`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: TOKEN,
+        "x-member-name": MEMBER_NAME,
+      },
+    });
+    const json = await res.json();
+    setLoans(json?.data || []);
+  };
+
+  const fetchBooks = async () => {
+    const res = await fetch(`${BASE_URL}/api/book/list`, {
+      headers: { Authorization: TOKEN, "x-member-name": MEMBER_NAME },
+    });
+    const json = await res.json();
+    setBooks(json?.data || []);
+  };
+
+  const fetchMembers = async () => {
+    const res = await fetch(`${BASE_URL}/api/member/list`, {
+      headers: { Authorization: TOKEN, "x-member-name": MEMBER_NAME },
+    });
+    const json = await res.json();
+    setMembers(json?.data || []);
+  };
+
+  useEffect(() => {
+    fetchLoans();
+    fetchBooks();
+    fetchMembers();
+  }, []);
+
+  const handleChange = (e: any) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async () => {
+    await fetch(`${BASE_URL}/api/loan/add`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: TOKEN,
+        "x-member-name": MEMBER_NAME,
+      },
+      body: JSON.stringify({
+        data: {
+          book: formData.bookId,
+          member: formData.memberId,
+          loan_date: formData.borrowDate,
+          return_date: formData.returnDate,
+        },
+      }),
+    });
+
+    setShowAdd(false);
+    setFormData({
+      bookId: "",
+      memberId: "",
+      borrowDate: "",
+      returnDate: "",
+    });
+    fetchLoans();
+  };
+
+  const handleReturn = async () => {
+    await fetch(`${BASE_URL}/api/return/add`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: TOKEN,
+        "x-member-name": MEMBER_NAME,
+      },
+      body: JSON.stringify({
+        data: {
+          loan: selectedLoan.documentId,
+          actual_return_date: new Date().toISOString().split("T")[0],
+        },
+      }),
+    });
+
+    setShowConfirm(false);
+    fetchLoans();
+  };
+
+  const getStatus = (loan: any) => {
+    if (!loan.return) return "DIPINJAM";
+    const planned = new Date(loan.return_date);
+    const actual = new Date(loan.return.actual_return_date);
+    if (actual > planned) return "TERLAMBAT";
+    return "DIKEMBALIKAN";
+  };
+
+  const getStatusStyle = (status: string) => {
+    if (status === "DIPINJAM") return "bg-blue-700 text-white";
+    if (status === "DIKEMBALIKAN") return "bg-green-600 text-white";
+    if (status === "TERLAMBAT") return "bg-red-600 text-white";
+    return "bg-gray-500 text-white";
+  };
+
+  const filtered = loans.filter((l) =>
+    l.book?.title?.toLowerCase().includes(search.toLowerCase())
   );
+
+  const filteredBooks = books.filter((b) =>
+    b.title?.toLowerCase().includes(bookSearch.toLowerCase())
+  );
+
+  const filteredMembers = members.filter(
+    (m) =>
+      m.name?.toLowerCase().includes(memberSearch.toLowerCase()) ||
+      m.email?.toLowerCase().includes(memberSearch.toLowerCase())
+  );
+
+  const selectedBook = books.find((b) => b.documentId === formData.bookId);
+  const selectedMember = members.find((m) => m.documentId === formData.memberId);
 
   return (
     <div className="min-h-screen bg-[#f6f5fb] text-[#2b2540]">
       <main className="mx-auto max-w-full px-8 py-10">
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-3xl font-extrabold text-purple-800">Peminjaman</h1>
+        <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-3xl font-extrabold text-purple-800">
+            Peminjaman
+          </h1>
           <div className="flex w-full gap-3 sm:w-auto">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Cari judul buku..."
-              className="w-full rounded-full border px-4 py-2 text-sm sm:w-80"
+              className="w-full rounded-full border px-5 py-2 text-sm sm:w-80"
             />
             <button
               onClick={() => setShowAdd(true)}
@@ -84,114 +168,142 @@ export default function PeminjamanPage() {
           </div>
         </div>
 
-        <div className="space-y-4">
-          {filtered.map((item) => (
-            <div
-              key={item.id}
-              className="flex flex-col gap-4 rounded-2xl border bg-white p-6 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="flex-1 space-y-1">
-                <h3 className="text-lg font-bold text-purple-700">
-                  {item.title}
-                </h3>
-                <p className="text-sm">Peminjam: {item.borrower}</p>
-                <div className="flex flex-wrap gap-6 text-sm text-gray-600">
-                  <div>Pinjam: {item.borrowDate}</div>
-                  <div>Kembali: {item.returnDate}</div>
-                </div>
-              </div>
+        <div className="space-y-6">
+          {filtered.map((loan) => {
+            const status = getStatus(loan);
+            return (
+              <div key={loan.documentId} className="rounded-2xl border bg-white p-6 shadow-sm">
+                <div className="flex items-start justify-between gap-6">
+                  <div className="flex-1 space-y-2">
+                    <h3 className="text-lg font-bold text-purple-700">
+                      {loan.book?.title}
+                    </h3>
+                    <p className="text-sm">
+                      Peminjam: {loan.member?.name}
+                    </p>
+                    <div className="flex gap-8 text-sm text-gray-600">
+                      <div>Pinjam: {loan.loan_date}</div>
+                      <div>Kembali: {loan.return_date}</div>
+                    </div>
+                  </div>
 
-              <button
-                onClick={() => {
-                  setSelectedBorrow(item);
-                  setShowConfirm(true);
-                }}
-                className="rounded-lg bg-green-600 px-8 py-2 text-sm text-white"
-              >
-                Kembalikan
-              </button>
-            </div>
-          ))}
+                  <span className={`min-w-[120px] text-center rounded-full px-4 py-2 text-sm font-semibold shadow ${getStatusStyle(status)}`}>
+                    {status}
+                  </span>
+                </div>
+
+                {!loan.return && (
+                  <div className="mt-5">
+                    <button
+                      onClick={() => {
+                        setSelectedLoan(loan);
+                        setShowConfirm(true);
+                      }}
+                      className="rounded-lg bg-green-600 px-7 py-2 text-sm font-semibold text-white"
+                    >
+                      Kembalikan
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </main>
 
       {showAdd && (
         <Modal title="Tambah Peminjaman" onClose={() => setShowAdd(false)}>
-          <div className="space-y-3">
-            <SelectButton
-              label={selectedBook ? selectedBook.title : "Pilih Buku"}
-              onClick={() => setShowBook(true)}
-            />
-            <SelectButton
-              label={selectedMember ? selectedMember.name : "Pilih Anggota"}
-              onClick={() => setShowMember(true)}
-            />
-            <input type="date" className="w-full rounded-lg border p-3 text-sm" />
-            <input type="date" className="w-full rounded-lg border p-3 text-sm" />
-            <button className="w-full rounded-lg bg-purple-700 py-2 text-sm font-semibold text-white">
+          <div className="space-y-4 relative">
+
+            <div className="relative">
+              <div onClick={() => setShowBookDropdown(!showBookDropdown)} className="w-full cursor-pointer rounded-lg border px-4 py-2 text-sm bg-white">
+                {selectedBook ? selectedBook.title : "Pilih Buku"}
+              </div>
+
+              {showBookDropdown && (
+                <div className="absolute z-50 mt-2 w-full rounded-lg border bg-white shadow-lg">
+                  <input
+                    placeholder="Cari buku..."
+                    value={bookSearch}
+                    onChange={(e) => setBookSearch(e.target.value)}
+                    className="w-full border-b px-4 py-2 text-sm"
+                  />
+                  <div className="max-h-60 overflow-y-auto">
+                    {filteredBooks.map((b) => (
+                      <div
+                        key={b.documentId}
+                        onClick={() => {
+                          setFormData({ ...formData, bookId: b.documentId });
+                          setShowBookDropdown(false);
+                          setBookSearch("");
+                        }}
+                        className="p-4 hover:bg-purple-50 cursor-pointer border-b text-sm"
+                      >
+                        {b.title}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="relative">
+              <div onClick={() => setShowMemberDropdown(!showMemberDropdown)} className="w-full cursor-pointer rounded-lg border px-4 py-2 text-sm bg-white">
+                {selectedMember ? selectedMember.name : "Pilih Member"}
+              </div>
+
+              {showMemberDropdown && (
+                <div className="absolute z-50 mt-2 w-full rounded-lg border bg-white shadow-lg">
+                  <input
+                    placeholder="Cari member..."
+                    value={memberSearch}
+                    onChange={(e) => setMemberSearch(e.target.value)}
+                    className="w-full border-b px-4 py-2 text-sm"
+                  />
+                  <div className="max-h-60 overflow-y-auto">
+                    {filteredMembers.map((m) => (
+                      <div
+                        key={m.documentId}
+                        onClick={() => {
+                          setFormData({ ...formData, memberId: m.documentId });
+                          setShowMemberDropdown(false);
+                          setMemberSearch("");
+                        }}
+                        className="p-4 hover:bg-purple-50 cursor-pointer border-b text-sm"
+                      >
+                        {m.name} - {m.email}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <input type="date" name="borrowDate" value={formData.borrowDate} onChange={handleChange} className="w-full rounded-lg border px-4 py-2 text-sm" />
+            <input type="date" name="returnDate" value={formData.returnDate} onChange={handleChange} className="w-full rounded-lg border px-4 py-2 text-sm" />
+
+            <button onClick={handleSubmit} className="w-full rounded-lg bg-purple-700 py-2 text-sm font-semibold text-white">
               Simpan
             </button>
           </div>
         </Modal>
       )}
 
-      {showBook && (
-        <Modal title="Pilih Buku" onClose={() => setShowBook(false)}>
-          <div className="space-y-4">
-            {books.map((b) => (
-              <div
-                key={b.id}
-                className="flex gap-4 rounded-xl border p-4"
-              >
-                <img
-                  src={b.image}
-                  className="h-[110px] w-[80px] rounded-md object-cover"
-                />
-                <div className="flex-1 space-y-1 text-sm">
-                  <p className="font-semibold text-purple-700">{b.title}</p>
-                  <p className="text-gray-600">{b.description}</p>
-                  <p>Penerbit: {b.publisher}</p>
-                  <p>Tahun: {b.year}</p>
-                  <p>Kategori: {b.category}</p>
-                  <p className="font-medium">Stok: {b.stock}</p>
-                </div>
-                <button
-                  onClick={() => {
-                    setSelectedBook(b);
-                    setShowBook(false);
-                  }}
-                  className="h-fit rounded-lg bg-green-600 px-4 py-2 text-sm text-white"
-                >
-                  Pilih
-                </button>
-              </div>
-            ))}
-          </div>
-        </Modal>
-      )}
-
-      {showMember && (
-        <Popup title="Pilih Anggota" data={members} onClose={() => setShowMember(false)} onSelect={setSelectedMember} />
-      )}
-
-      {showConfirm && selectedBorrow && (
+      {showConfirm && selectedLoan && (
         <Modal title="Konfirmasi Pengembalian" onClose={() => setShowConfirm(false)}>
           <p className="text-center text-sm">
             Yakin mengembalikan
             <br />
             <span className="font-semibold text-purple-700">
-              {selectedBorrow.title}
+              {selectedLoan.book?.title}
             </span>
             ?
           </p>
           <div className="mt-6 flex justify-center gap-4">
-            <button
-              onClick={() => setShowConfirm(false)}
-              className="rounded-lg border px-8 py-2 text-sm"
-            >
+            <button onClick={() => setShowConfirm(false)} className="rounded-lg border px-8 py-2 text-sm">
               Tidak
             </button>
-            <button className="rounded-lg bg-green-600 px-8 py-2 text-sm text-white">
+            <button onClick={handleReturn} className="rounded-lg bg-green-600 px-8 py-2 text-sm text-white">
               Kembalikan
             </button>
           </div>
@@ -204,8 +316,10 @@ export default function PeminjamanPage() {
 function Modal({ title, children, onClose }: any) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-2xl rounded-2xl bg-white p-6">
-        <h2 className="mb-4 text-xl font-bold text-purple-700">{title}</h2>
+      <div className="w-full max-w-md rounded-2xl bg-white p-6">
+        <h2 className="mb-4 text-xl font-bold text-purple-700 text-center">
+          {title}
+        </h2>
         {children}
         <div className="mt-6 text-center">
           <button onClick={onClose} className="rounded-lg border px-6 py-2 text-sm">
@@ -214,45 +328,5 @@ function Modal({ title, children, onClose }: any) {
         </div>
       </div>
     </div>
-  );
-}
-
-function Popup({ title, data, onClose, onSelect }: any) {
-  return (
-    <Modal title={title} onClose={onClose}>
-      <div className="space-y-3">
-        {data.map((item: any) => (
-          <div
-            key={item.id}
-            className="flex items-center justify-between rounded-lg border p-3"
-          >
-            <div className="text-sm">
-              {item.name}
-              <div className="text-xs text-gray-500">{item.email}</div>
-            </div>
-            <button
-              onClick={() => {
-                onSelect(item);
-                onClose();
-              }}
-              className="rounded-lg bg-green-600 px-4 py-1.5 text-sm text-white"
-            >
-              Pilih
-            </button>
-          </div>
-        ))}
-      </div>
-    </Modal>
-  );
-}
-
-function SelectButton({ label, onClick }: any) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-full rounded-lg border p-3 text-left text-sm"
-    >
-      {label}
-    </button>
   );
 }

@@ -1,155 +1,255 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import Navbar from "../custom/navbar";
+import { useEffect, useState } from "react";
+import { BASE_URL, TOKEN, MEMBER_NAME } from "../../lib/constant";
 
+const Dashboard = () => {
+  const [books, setBooks] = useState<any[]>([]);
+  const [loans, setLoans] = useState<any[]>([]);
+  const [returns, setReturns] = useState<any[]>([]);
+  const [summary, setSummary] = useState({
+    totalBuku: 0,
+    bukuTersedia: 0,
+    dipinjamHariIni: 0,
+    pengembalianHariIni: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
-const ITEMS_PER_PAGE = 3;
+  useEffect(() => {
+    fetchDashboard();
+  }, []);
 
-const booksData = [
-  { id: 1, title: "Harry Potter", genre: "Fantasy", author: "J.K. Rowling", stock: 12, image: "/img/novel 1.jpeg" },
-  { id: 2, title: "The Hunger Games", genre: "Dystopia", author: "Suzanne Collins", stock: 0, image: "/img/novel 2.jpeg" },
-  { id: 3, title: "Aku Ini Binatang Jalang", genre: "Puisi", author: "Chairil Anwar", stock: 5, image: "/img/puisi 1.jpeg" },
-  { id: 4, title: "Milk and Honey", genre: "Puisi", author: "Rupi Kaur", stock: 7, image: "/img/puisi 2.jpeg" },
-  { id: 5, title: "Perahu Kertas", genre: "Novel", author: "Dewi Lestari", stock: 0, image: "/img/sol 1.jpeg" },
-];
+  const fetchDashboard = async () => {
+    try {
+      setLoading(true);
 
-const borrowToday = [
-  { id: 1, title: "Harry Potter", name: "Areksa", borrow: "10 Jan 2026", return: "15 Jan 2026" },
-  { id: 2, title: "The Hunger Games", name: "Alena", borrow: "10 Jan 2026", return: "14 Jan 2026" },
-  { id: 3, title: "Milk and Honey", name: "Angkasa", borrow: "10 Jan 2026", return: "13 Jan 2026" },
-  { id: 4, title: "Perahu Kertas", name: "Sadewa", borrow: "10 Jan 2026", return: "16 Jan 2026" },
-];
+      const headers = {
+        Authorization: TOKEN,
+        "x-member-name": MEMBER_NAME,
+      };
 
-const returnToday = [
-  { id: 1, title: "Milk and Honey", name: "Sadewa", borrow: "5 Jan 2026", return: "10 Jan 2026", status: "Dikembalikan" },
-  { id: 2, title: "Perahu Kertas", name: "Sheyln", borrow: "6 Jan 2026", return: "10 Jan 2026", status: "Terlambat" },
-  { id: 3, title: "Norwegian Wood", name: "Alica", borrow: "7 Jan 2026", return: "10 Jan 2026", status: "Dikembalikan" },
-  { id: 4, title: "Harry Potter", name: "Raka", borrow: "4 Jan 2026", return: "10 Jan 2026", status: "Dikembalikan" },
-];
+      const params = new URLSearchParams({
+        page: "1",
+        page_size: "5000",
+      });
 
-const paginate = (data: any[], page: number) =>
-  data.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+      const [bookRes, loanRes, returnRes] = await Promise.all([
+        fetch(`${BASE_URL}/api/book/list?${params}`, {
+          headers,
+          cache: "no-store",
+        }),
+        fetch(`${BASE_URL}/api/loan/list?${params}`, {
+          headers,
+          cache: "no-store",
+        }),
+        fetch(`${BASE_URL}/api/return/list?${params}`, {
+          headers,
+          cache: "no-store",
+        }),
+      ]);
 
-const totalPage = (data: any[]) =>
-  Math.ceil(data.length / ITEMS_PER_PAGE);
+      const bookJson = await bookRes.json();
+      const loanJson = await loanRes.json();
+      const returnJson = await returnRes.json();
 
-export default function Dashboard() {
-  const [searchBook, setSearchBook] = useState("");
-  const [searchBorrow, setSearchBorrow] = useState("");
-  const [searchReturn, setSearchReturn] = useState("");
+      const bookList = bookJson?.data ?? [];
+      const loanList = loanJson?.data ?? [];
+      const returnList = returnJson?.data ?? [];
 
-  const [bookPage, setBookPage] = useState(1);
-  const [borrowPage, setBorrowPage] = useState(1);
-  const [returnPage, setReturnPage] = useState(1);
+      setBooks(bookList);
+      setLoans(loanList);
+      setReturns(returnList);
 
-  const books = booksData.filter(b =>
-    b.title.toLowerCase().includes(searchBook.toLowerCase())
+      const today = new Date().toISOString().split("T")[0];
+
+      const availableBooks = bookList.reduce(
+        (total: number, b: any) => total + (b.stock > 0 ? b.stock : 0),
+        0
+      );
+
+      const todayLoans = loanList.filter(
+        (l: any) => l.loan_date === today
+      );
+
+      const todayReturns = returnList.filter(
+        (r: any) => r.return?.actual_return_date === today
+      );
+
+      setSummary({
+        totalBuku: bookJson?.meta?.pagination?.total ?? bookList.length,
+        bukuTersedia: availableBooks,
+        dipinjamHariIni: todayLoans.length,
+        pengembalianHariIni: todayReturns.length,
+      });
+    } catch (err) {
+      console.error("Dashboard fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const MAX_DASHBOARD_BOOKS = 6;
+
+  const dashboardBooks = books
+    .filter((b) => b.stock > 0)
+    .slice(0, MAX_DASHBOARD_BOOKS);
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const todayLoans = loans.filter(
+    (l: any) => l.loan_date === today
   );
 
-  const borrows = borrowToday.filter(b =>
-    b.title.toLowerCase().includes(searchBorrow.toLowerCase())
-  );
-
-  const returns = returnToday.filter(r =>
-    r.title.toLowerCase().includes(searchReturn.toLowerCase())
+  const todayReturns = returns.filter(
+    (r: any) => r.return?.actual_return_date === today
   );
 
   return (
-    <div className="min-h-screen bg-[#f6f5fb] text-[#2b2540]">
-      <main className="w-full px-6 py-8">
-        <section>
-          <div className="flex justify-between mb-4">
-            <h2 className="text-2xl font-bold">Stok Buku</h2>
-            <input value={searchBook} onChange={e => {setSearchBook(e.target.value); setBookPage(1);}} placeholder="Cari buku..." className="rounded-full border px-4 py-2 text-sm"/>
+    <main className="min-h-screen w-full bg-[#f3efff] px-8 py-10">
+      <div className="w-full space-y-14">
+
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-4">
+          <div className="h-40 rounded-3xl bg-white p-8 shadow-lg border border-purple-200 flex flex-col justify-center items-center text-center">
+            <p className="text-base text-purple-500">Total Buku</p>
+            <p className="mt-3 text-4xl font-bold text-purple-700">
+              {loading ? "..." : summary.totalBuku}
+            </p>
           </div>
 
-          <div className="grid sm:grid-cols-3 gap-5">
-            {paginate(books, bookPage).map(b => (
-              <div key={b.id} className="bg-white rounded-2xl p-4 border">
-                <img src={b.image} className="h-40 w-full object-cover rounded-xl mb-3"/>
-                <h3 className="font-bold text-purple-700">{b.title}</h3>
-                <p className="text-sm">{b.genre}</p>
-                <p className="text-sm">{b.author}</p>
-                <p className={`mt-2 font-semibold ${b.stock > 0 ? "text-green-600" : "text-red-500"}`}>
-                  {b.stock > 0 ? "Tersedia" : "Habis"}
+          <div className="h-40 rounded-3xl bg-white p-8 shadow-lg border border-purple-200 flex flex-col justify-center items-center text-center">
+            <p className="text-base text-purple-500">Buku Tersedia</p>
+            <p className="mt-3 text-4xl font-bold text-purple-700">
+              {loading ? "..." : summary.bukuTersedia}
+            </p>
+          </div>
+
+          <div className="h-40 rounded-3xl bg-white p-8 shadow-lg border border-purple-200 flex flex-col justify-center items-center text-center">
+            <p className="text-base text-purple-500">Dipinjam Hari Ini</p>
+            <p className="mt-3 text-4xl font-bold text-purple-700">
+              {loading ? "..." : summary.dipinjamHariIni}
+            </p>
+          </div>
+
+          <div className="h-40 rounded-3xl bg-white p-8 shadow-lg border border-purple-200 flex flex-col justify-center items-center text-center">
+            <p className="text-base text-purple-500">Pengembalian Hari Ini</p>
+            <p className="mt-3 text-4xl font-bold text-purple-700">
+              {loading ? "..." : summary.pengembalianHariIni}
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-3xl bg-white p-10 shadow-lg border border-purple-200">
+          <div className="mb-8 flex items-center justify-between">
+            <h3 className="text-2xl font-bold text-purple-700">
+              Stok Buku
+            </h3>
+            <Link
+              href="/buku"
+              className="text-base text-purple-600 hover:text-purple-800 hover:underline"
+            >
+              Lihat Semua
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+            {dashboardBooks.map((b: any) => (
+              <div
+                key={b.id}
+                className="rounded-2xl border border-purple-200 bg-purple-50 p-6 shadow-md hover:shadow-lg transition"
+              >
+                <img
+                  src={
+                    b.cover?.url
+                      ? `${BASE_URL}${b.cover.url}`
+                      : "/placeholder-book.jpg"
+                  }
+                  className="h-48 w-full rounded-xl object-cover"
+                />
+                <p className="mt-4 text-base font-semibold text-purple-800 truncate">
+                  {b.title}
+                </p>
+                <p className="mt-2 text-sm text-purple-600">
+                  Stok: {b.stock}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid w-full gap-10 md:grid-cols-2">
+          <div className="rounded-3xl bg-white p-10 shadow-lg border border-purple-200">
+            <div className="mb-6 flex items-center justify-between">
+              <h3 className="text-2xl font-bold text-purple-700">
+                Peminjaman Hari Ini
+              </h3>
+              <Link
+                href="/peminjaman"
+                className="text-base text-purple-600 hover:text-purple-800 hover:underline"
+              >
+                Detail
+              </Link>
+            </div>
+
+            {todayLoans.length === 0 && (
+              <p className="text-base text-purple-400">
+                Tidak ada peminjaman hari ini
+              </p>
+            )}
+
+            {todayLoans.map((p: any) => (
+              <div key={p.id} className="mb-5 border-b border-purple-100 pb-4">
+                <p className="text-base font-semibold text-purple-800">
+                  {p.member?.name}
+                </p>
+                <p className="text-sm text-purple-600">
+                  {p.book?.title}
+                </p>
+                <p className="text-sm text-purple-400">
+                  {p.loan_date}
                 </p>
               </div>
             ))}
           </div>
 
-          <div className="flex justify-center items-center gap-2 mt-4">
-            <button onClick={() => setBookPage(p => Math.max(p - 1, 1))} className="px-3 py-1 border rounded">&lt;</button>
-            {Array.from({ length: totalPage(books) }).map((_, i) => (
-              <button key={i} onClick={() => setBookPage(i + 1)} className={`h-8 w-8 rounded-full ${bookPage === i + 1 ? "bg-purple-700 text-white" : "border"}`}>
-                {i + 1}
-              </button>
-            ))}
-            <button onClick={() => setBookPage(p => Math.min(p + 1, totalPage(books)))} className="px-3 py-1 border rounded">&gt;</button>
-          </div>
-        </section>
+          <div className="rounded-3xl bg-white p-10 shadow-lg border border-purple-200">
+            <div className="mb-6 flex items-center justify-between">
+              <h3 className="text-2xl font-bold text-purple-700">
+                Pengembalian Hari Ini
+              </h3>
+              <Link
+                href="/pengembalian"
+                className="text-base text-purple-600 hover:text-purple-800 hover:underline"
+              >
+                Detail
+              </Link>
+            </div>
 
-        <section>
-          <div className="flex justify-between mb-4">
-            <h2 className="text-2xl font-bold">Peminjaman Hari Ini</h2>
-            <input value={searchBorrow} onChange={e => {setSearchBorrow(e.target.value); setBorrowPage(1);}} placeholder="Cari buku..." className="rounded-full border px-4 py-2 text-sm"/>
-          </div>
+            {todayReturns.length === 0 && (
+              <p className="text-base text-purple-400">
+                Tidak ada pengembalian hari ini
+              </p>
+            )}
 
-          <div className="grid sm:grid-cols-3 gap-5">
-            {paginate(borrows, borrowPage).map(b => (
-              <div key={b.id} className="bg-white rounded-2xl p-4 border">
-                <h3 className="font-bold text-purple-700">{b.title}</h3>
-                <p className="text-sm">Peminjam: {b.name}</p>
-                <p className="text-sm">Pinjam: {b.borrow}</p>
-                <p className="text-sm">Kembali: {b.return}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex justify-center items-center gap-2 mt-4">
-            <button onClick={() => setBorrowPage(p => Math.max(p - 1, 1))} className="px-3 py-1 border rounded">&lt;</button>
-            {Array.from({ length: totalPage(borrows) }).map((_, i) => (
-              <button key={i} onClick={() => setBorrowPage(i + 1)} className={`h-8 w-8 rounded-full ${borrowPage === i + 1 ? "bg-purple-700 text-white" : "border"}`}>
-                {i + 1}
-              </button>
-            ))}
-            <button onClick={() => setBorrowPage(p => Math.min(p + 1, totalPage(borrows)))} className="px-3 py-1 border rounded">&gt;</button>
-          </div>
-        </section>
-
-        <section>
-          <div className="flex justify-between mb-4">
-            <h2 className="text-2xl font-bold">Pengembalian Hari Ini</h2>
-            <input value={searchReturn} onChange={e => {setSearchReturn(e.target.value); setReturnPage(1);}} placeholder="Cari buku..." className="rounded-full border px-4 py-2 text-sm"/>
-          </div>
-
-          <div className="grid sm:grid-cols-3 gap-5">
-            {paginate(returns, returnPage).map(r => (
-              <div key={r.id} className="bg-white rounded-2xl p-4 border">
-                <h3 className="font-bold text-purple-700">{r.title}</h3>
-                <p className="text-sm">Peminjam: {r.name}</p>
-                <p className="text-sm">Pinjam: {r.borrow}</p>
-                <p className="text-sm">Kembali: {r.return}</p>
-                <p className={`mt-2 font-semibold ${r.status === "Dikembalikan" ? "text-green-600" : "text-red-500"}`}>
-                  {r.status}
+            {todayReturns.map((p: any) => (
+              <div key={p.id} className="mb-5 border-b border-purple-100 pb-4">
+                <p className="text-base font-semibold text-purple-800">
+                  {p.member?.name}
+                </p>
+                <p className="text-sm text-purple-600">
+                  {p.book?.title}
+                </p>
+                <p className="text-sm text-purple-400">
+                  {p.return?.actual_return_date}
                 </p>
               </div>
             ))}
           </div>
+        </div>
 
-          <div className="flex justify-center items-center gap-2 mt-4">
-            <button onClick={() => setReturnPage(p => Math.max(p - 1, 1))} className="px-3 py-1 border rounded">&lt;</button>
-            {Array.from({ length: totalPage(returns) }).map((_, i) => (
-              <button key={i} onClick={() => setReturnPage(i + 1)} className={`h-8 w-8 rounded-full ${returnPage === i + 1 ? "bg-purple-700 text-white" : "border"}`}>
-                {i + 1}
-              </button>
-            ))}
-            <button onClick={() => setReturnPage(p => Math.min(p + 1, totalPage(returns)))} className="px-3 py-1 border rounded">&gt;</button>
-          </div>
-        </section>
-
-      </main>
-    </div>
+      </div>
+    </main>
   );
-}
+};
+
+export default Dashboard;
