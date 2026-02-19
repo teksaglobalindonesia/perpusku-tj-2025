@@ -281,8 +281,13 @@ const BukuPage = () => {
   };
 
   const handleDeleteBook = async () => {
-    if (!selected?.documentId) return;
-    console.log('DELETE URL:', `${BASE_URL}/api/book/delete`);
+    if (!selected?.documentId) {
+      alert('documentId tidak ditemukan');
+      return;
+    }
+
+    console.log('DELETE ID:', selected.documentId);
+
     try {
       const res = await fetch(`${BASE_URL}/api/book/delete`, {
         method: 'POST',
@@ -308,7 +313,6 @@ const BukuPage = () => {
       closeModal();
     } catch (err) {
       console.error('Error delete:', err);
-      alert('Terjadi kesalahan saat menghapus buku');
     }
   };
 
@@ -317,7 +321,7 @@ const BukuPage = () => {
       const params = new URLSearchParams({
         page: String(page),
         page_size: String(PAGE_SIZE),
-        search: search
+        search: search || ''
       });
 
       const res = await fetch(
@@ -337,11 +341,19 @@ const BukuPage = () => {
 
       console.log('BOOK LIST RESPONSE:', json);
 
-      setBooks(json?.data || []);
-
-      if (json?.meta?.pagination?.page_count) {
-        setTotalPages(json?.meta?.pagination?.page_count || 1);
+      if (!res.ok) {
+        console.error('FETCH BOOK ERROR:', json);
+        return;
       }
+
+      if (!Array.isArray(json?.data)) {
+        console.warn('DATA BOOK BUKAN ARRAY');
+        return;
+      }
+
+      setBooks(json.data);
+
+      setTotalPages(json?.meta?.pagination?.page_count || 1);
     } catch (err) {
       console.error('Gagal ambil buku:', err);
     }
@@ -479,7 +491,11 @@ const BukuPage = () => {
               </button>
 
               <button
-                onClick={() => openDeleteModal(b)}
+                onClick={() => {
+                  if (confirm('Yakin ingin menghapus buku ini?')) {
+                    handleDeleteBook();
+                  }
+                }}
                 className="rounded-full bg-red-100 px-3 py-2 text-sm text-red-700"
               >
                 Hapus
