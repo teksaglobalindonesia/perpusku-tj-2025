@@ -11,7 +11,7 @@ const AnggotaPage = () => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [modal, setModal] = useState<
-    "add" | "edit" | "delete" | "borrow" | null
+    "add" | "edit" | "delete" | "loan" | null
   >(null);
   const [selected, setSelected] = useState<any>(null);
   const [form, setForm] = useState({
@@ -52,16 +52,13 @@ const AnggotaPage = () => {
         );
 
         const json = await res.json();
-
         allData = [...allData, ...(json?.data || [])];
         totalPage = json?.meta?.pagination?.page_count || 1;
         currentPage++;
       }
 
       setAllMembers(allData);
-    } catch (err) {
-      console.error("Gagal ambil anggota:", err);
-    }
+    } catch {}
   };
 
   const fetchLoans = async () => {
@@ -185,7 +182,7 @@ const AnggotaPage = () => {
           />
           <button
             onClick={() => setModal("add")}
-            className="rounded-full bg-purple-700 px-6 py-2 text-white"
+            className="rounded-full bg-purple-700 px-6 py-2 text-sm font-semibold text-white"
           >
             + Tambah
           </button>
@@ -211,7 +208,7 @@ const AnggotaPage = () => {
               <button
                 onClick={() => {
                   setSelected(m);
-                  setModal("borrow");
+                  setModal("loan");
                 }}
                 className="flex-1 rounded-lg bg-blue-500 py-1.5 text-sm text-white"
               >
@@ -305,7 +302,10 @@ const AnggotaPage = () => {
                   className="w-full border p-2 rounded"
                 />
                 <div className="flex justify-end gap-3">
-                  <button onClick={closeModal} className="border px-4 py-1 rounded">
+                  <button
+                    onClick={closeModal}
+                    className="border px-4 py-1 rounded"
+                  >
                     Batal
                   </button>
                   <button
@@ -350,7 +350,10 @@ const AnggotaPage = () => {
                   className="w-full border p-2 rounded"
                 />
                 <div className="flex justify-end gap-3">
-                  <button onClick={closeModal} className="border px-4 py-1 rounded">
+                  <button
+                    onClick={closeModal}
+                    className="border px-4 py-1 rounded"
+                  >
                     Batal
                   </button>
                   <button
@@ -385,7 +388,7 @@ const AnggotaPage = () => {
               </div>
             )}
 
-            {modal === "borrow" && (
+            {modal === "loan" && (
               <div className="space-y-4">
                 <h2 className="text-xl font-bold">
                   Peminjaman {selected?.name}
@@ -395,19 +398,60 @@ const AnggotaPage = () => {
                     Tidak ada peminjaman
                   </p>
                 ) : (
-                  filteredLoans.map((loan) => (
-                    <div
-                      key={loan.documentId}
-                      className="border rounded p-3"
-                    >
-                      <p className="font-semibold">
-                        {loan.book?.title}
-                      </p>
-                      <p className="text-sm">
-                        {loan.loan_date} - {loan.return_date}
-                      </p>
-                    </div>
-                  ))
+          filteredLoans.map((loan) => {
+              const today = new Date();
+              const returnDate = loan.return_date ? new Date(loan.return_date) : null;
+              const dueDate = loan.due_date ? new Date(loan.due_date) : null;
+
+              let statusText = "";
+              let statusStyle = "";
+
+              // Kalau sudah dikembalikan
+              if (returnDate) {
+                if (dueDate && returnDate > dueDate) {
+                  statusText = "Terlambat";
+                  statusStyle = "bg-red-100 text-red-700";
+                } else {
+                  statusText = "Dikembalikan";
+                  statusStyle = "bg-green-100 text-green-700";
+                }
+              } 
+              // Kalau belum dikembalikan
+              else {
+                if (dueDate && today > dueDate) {
+                  statusText = "Terlambat";
+                  statusStyle = "bg-red-100 text-red-700";
+                } else {
+                  statusText = "Dipinjam";
+                  statusStyle = "bg-yellow-100 text-yellow-700";
+                }
+              }
+
+              return (
+                <div
+                  key={loan.documentId}
+                  className="border rounded p-3 space-y-1"
+                >
+                  <p className="font-semibold">
+                    {loan.book?.title}
+                  </p>
+
+                  <p className="text-sm">
+                    Tanggal Pinjam: {loan.loan_date}
+                  </p>
+
+                  <p className="text-sm">
+                    Tanggal Kembali: {loan.return_date || "-"}
+                  </p>
+
+                  <span
+                    className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${statusStyle}`}
+                  >
+                    {statusText}
+                  </span>
+                </div>
+              );
+            })
                 )}
                 <div className="flex justify-end">
                   <button

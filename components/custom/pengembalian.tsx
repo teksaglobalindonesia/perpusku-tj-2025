@@ -3,43 +3,74 @@
 import { useEffect, useState } from "react";
 import { BASE_URL, TOKEN, MEMBER_NAME} from "../../lib/constant";
 
+const PAGE_SIZE = 6;
+
 export default function PengembalianPage() {
-  const [data, setData] = useState<any[]>([]);
+  const [returns, setReturns] = useState<any[]>([]);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
+  const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+      useEffect(() => {
+      fetchReturns();
+    }, [page, search]);
+  
+    useEffect(() => {
+      setPage(1);
+    }, [search]);
 
-  const fetchData = async () => {
-    try {
-      const res = await fetch(`${BASE_URL}/api/return/list`, {
-        method: "GET",
-        headers: {
-            Authorization: TOKEN,
-           "x-member-name": MEMBER_NAME,
-        },
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        console.log(text);
-        return;
-      }
-
-      const result = await res.json();
-      setData(result.data || []);
-    } catch (err) {
-      console.log(err);
-    } finally {
-      setLoading(false);
-    }
+  const renderPagination = () => {
+    return Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+      <button
+        key={p}
+        onClick={() => setPage(p)}
+        className={`rounded-lg px-4 py-2 text-sm ${
+          page === p
+            ? "bg-purple-700 text-white"
+            : "bg-gray-200 hover:bg-gray-300"
+        }`}
+      >
+        {p}
+      </button>
+    ));
   };
 
-  const filtered = data.filter((item) =>
-    item.book?.title.toLowerCase().includes(search.toLowerCase())
-  );
+  const fetchReturns = async () => {
+        try {
+          const params = new URLSearchParams({
+            page: String(page),
+            page_size: String(PAGE_SIZE),
+            search: search || "",
+          });
+    
+          const res = await fetch(
+            `${BASE_URL}/api/return/list?${params.toString()}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: TOKEN,
+                "x-member-name": MEMBER_NAME,
+              },
+              cache: "no-store",
+            }
+          );
+    
+          const json = await res.json();
+    
+          if (!res.ok) return;
+    
+          if (!Array.isArray(json?.data)) return;
+    
+          setReturns(json.data);
+          setTotalPages(json?.meta?.pagination?.page_count || 1);
+        } catch {}
+      };
+
+  const filtered = returns.filter((item) =>
+  item.book?.title?.toLowerCase().includes(search.toLowerCase())
+);
+
 
   return (
     <div className="min-h-screen bg-[#f6f5fb] text-[#2b2540]">
@@ -56,12 +87,6 @@ export default function PengembalianPage() {
             className="w-full rounded-full border px-5 py-2 text-sm sm:w-80"
           />
         </div>
-
-        {loading && (
-          <div className="text-center text-sm text-gray-500">
-            Loading...
-          </div>
-        )}
 
         <div className="space-y-6">
           {filtered.map((item) => (
@@ -100,6 +125,25 @@ export default function PengembalianPage() {
               </div>
             </div>
           ))}
+        </div>
+        <div className="mt-8 flex justify-center gap-2">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="rounded-lg bg-gray-200 px-3 py-2 text-sm disabled:opacity-50"
+          >
+            Prev
+          </button>
+
+          {renderPagination()}
+
+          <button
+            disabled={page === totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="rounded-lg bg-gray-200 px-3 py-2 text-sm disabled:opacity-50"
+          >
+            Next
+          </button>
         </div>
       </main>
     </div>
