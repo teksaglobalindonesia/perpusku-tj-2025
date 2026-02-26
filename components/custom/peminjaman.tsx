@@ -64,20 +64,32 @@ const [formData, setFormData] = useState({
     };
 
   const fetchBooks = async () => {
-    const res = await fetch(`${BASE_URL}/api/book/list`, {
-      headers: { Authorization: TOKEN, "x-member-name": MEMBER_NAME },
-    });
-    const json = await res.json();
-    setBooks(json?.data || []);
-  };
+  const params = new URLSearchParams({
+    page: "1",
+    page_size: "100", 
+  });
+
+  const res = await fetch(`${BASE_URL}/api/book/list?${params.toString()}`, {
+    headers: { Authorization: TOKEN, "x-member-name": MEMBER_NAME },
+  });
+
+  const json = await res.json();
+  setBooks(json?.data || []);
+};
 
   const fetchMembers = async () => {
-    const res = await fetch(`${BASE_URL}/api/member/list`, {
-      headers: { Authorization: TOKEN, "x-member-name": MEMBER_NAME },
-    });
-    const json = await res.json();
-    setMembers(json?.data || []);
-  };
+  const params = new URLSearchParams({
+    page: "1",
+    page_size: "100",
+  });
+
+  const res = await fetch(`${BASE_URL}/api/member/list?${params.toString()}`, {
+    headers: { Authorization: TOKEN, "x-member-name": MEMBER_NAME },
+  });
+
+  const json = await res.json();
+  setMembers(json?.data || []);
+};
 
   useEffect(() => {
     fetchLoans();
@@ -305,7 +317,7 @@ const [formData, setFormData] = useState({
             <div className="flex justify-end gap-3 pt-4">
           <button
             onClick={() => setShowAdd(false)}
-            className="rounded-lg border border-gray-300 px-6 py-2 text-sm font-semibold"
+            className="rounded-lg border px-4 py-2 text-sm"
           >
             Batal
           </button>
@@ -327,7 +339,6 @@ const [formData, setFormData] = useState({
       <div className="border-b px-5 py-3">
         <h3 className="text-lg font-bold text-purple-800">Pilih Buku</h3>
       </div>
-
       <div className="px-5 pt-4">
         <input
           type="text"

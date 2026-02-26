@@ -75,6 +75,46 @@ const AnggotaPage = () => {
     setLoans(json?.data || []);
   };
 
+const isLate = (returnDate?: string, actualReturnDate?: string) => {
+  if (!returnDate || !actualReturnDate) return false;
+
+  const due = new Date(returnDate);
+  const actual = new Date(actualReturnDate);
+
+  due.setHours(0, 0, 0, 0);
+  actual.setHours(0, 0, 0, 0);
+
+  return actual > due;
+};
+
+  const getLoanStatus = (loan: any) => {
+    const actualReturn =
+      loan.actual_return_date ??
+      loan.return?.actual_return_date ??
+      loan.actualReturnDate ??
+      null;
+
+    if (!actualReturn) {
+      return isPastDue(loan.return_date) ? 'TERLAMBAT' : 'DIPINJAM';
+    }
+
+    return isLate(loan.return_date, actualReturn)
+      ? 'TERLAMBAT'
+      : 'DIKEMBALIKAN';
+  };
+
+  const isPastDue = (returnDate?: string) => {
+    if (!returnDate) return false;
+
+    const today = new Date();
+    const due = new Date(returnDate);
+
+    today.setHours(0, 0, 0, 0);
+    due.setHours(0, 0, 0, 0);
+
+    return today > due;
+  };
+  
   useEffect(() => {
     fetchAllMembers();
     fetchLoans();
@@ -399,33 +439,7 @@ const AnggotaPage = () => {
                   </p>
                 ) : (
           filteredLoans.map((loan) => {
-              const today = new Date();
-              const returnDate = loan.return_date ? new Date(loan.return_date) : null;
-              const dueDate = loan.due_date ? new Date(loan.due_date) : null;
-
-              let statusText = "";
-              let statusStyle = "";
-
-              // Kalau sudah dikembalikan
-              if (returnDate) {
-                if (dueDate && returnDate > dueDate) {
-                  statusText = "Terlambat";
-                  statusStyle = "bg-red-100 text-red-700";
-                } else {
-                  statusText = "Dikembalikan";
-                  statusStyle = "bg-green-100 text-green-700";
-                }
-              } 
-              // Kalau belum dikembalikan
-              else {
-                if (dueDate && today > dueDate) {
-                  statusText = "Terlambat";
-                  statusStyle = "bg-red-100 text-red-700";
-                } else {
-                  statusText = "Dipinjam";
-                  statusStyle = "bg-yellow-100 text-yellow-700";
-                }
-              }
+              const status = getLoanStatus(loan);
 
               return (
                 <div
@@ -445,9 +459,15 @@ const AnggotaPage = () => {
                   </p>
 
                   <span
-                    className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${statusStyle}`}
+                    className={`mt-2 inline-block rounded px-3 py-1 text-xs font-semibold ${
+                      status === "DIKEMBALIKAN"  
+                        ? "bg-[#DFF3E3] text-[#1E6B3A]" 
+                        : status === "DIPINJAM"
+                        ? "bg-[#E0ECFF] text-[#1E4A7B]"
+                        : "bg-[#FFD6D6] text-[#7A1F1F]"
+                    }`}
                   >
-                    {statusText}
+                    {status}
                   </span>
                 </div>
               );
