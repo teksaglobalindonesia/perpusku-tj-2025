@@ -415,9 +415,9 @@ const [formData, setFormData] = useState({
         <button
           onClick={() => {
             setShowPilihBuku(false);
-            setSearchBook("");
+            setSearchBook(""); 
           }}
-          className="w-full rounded-lg bg-gray-200 py-2 text-sm font-semibold text-white"
+          className="w-full rounded-lg bg-purple-700 py-2 text-sm font-semibold text-white"
         >
           Tutup
         </button>
@@ -470,7 +470,19 @@ const [formData, setFormData] = useState({
               </h4>
               <p className="text-xs text-gray-600">{m.email}</p>
             </button>
+            
           ))}
+      </div>
+      <div className="w-full rounded-lg flex justify-end border-t px-5 py-2">
+        <button
+          onClick={() => {
+            setShowPilihAnggota(false);
+            setSearchMember(""); 
+          }}
+          className="w-full rounded-lg bg-purple-700 py-2 text-sm font-semibold text-white"
+        >
+          Tutup
+        </button>
       </div>
     </div>
   </div>
