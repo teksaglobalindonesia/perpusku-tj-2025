@@ -7,24 +7,34 @@ import Modal from "../custom/Modal";
 
 type ModalType = "add" | "edit" | "delete" | "preview" | "add-category" | null;
 
-const BukuPage = () => {
+  const BukuPage = () => {
   const [search, setSearch] = useState("");
 
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-const [activeModal, setActiveModal] = useState<ModalType>(null);
+  const [activeModal, setActiveModal] = useState<ModalType>(null);
 
   const [selectedBook, setSelectedBook] = useState<any>(null);
   const [categories, setCategories] = useState<any[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-const [page, setPage] = useState(1);
-const PAGE_SIZE = 8;
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 8;
 
-const [total, setTotal] = useState(0);
-const totalPages = Math.ceil(total / PAGE_SIZE);
-const [categoryName, setCategoryName] = useState("");
-const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [total, setTotal] = useState(0);
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const [categoryName, setCategoryName] = useState("");
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+
+  const [errors, setErrors] = useState({
+  title: "",
+  writer: "",
+  publisher: "",
+  published_year: "",
+  stock: "",
+  categories: "",
+});
 
   const openModal = (type: ModalType, book?: any) => {
     setSelectedBook(book || null);
@@ -36,7 +46,12 @@ const [isAddingCategory, setIsAddingCategory] = useState(false);
 
   const [totalBooks, setTotalBooks] = useState(0);
 
-
+  const showSuccess = (message: string) => {
+    setSuccessMessage(message);
+    setTimeout(() => {
+      setSuccessMessage(null);
+    }, 2500); // hilang 2.5 detik
+  };
 
   const fetchCategories = async () => {
     try {
@@ -103,6 +118,7 @@ const handleAddCategory = async () => {
 
     setCategoryName("");
     setActiveModal(null);
+    showSuccess("Category added successfully!");
   } catch (err) {
     console.error("Add category error:", err);
   } finally {
@@ -224,18 +240,48 @@ const openEditModal = (book: any) => {
 
   // CREATE
 const handleCreate = async () => {
-  if (
-    !form.title ||
-    !form.writer ||
-    !form.publisher ||
-    !form.published_year ||
-    !form.stock ||
-    !form.categories
-  ) {
-    alert("Semua field wajib diisi");
-    return;
+  const newErrors = {
+    title: "",
+    writer: "",
+    publisher: "",
+    published_year: "",
+    stock: "",
+    categories: "",
+  };
+
+  if (!form.title) {
+    newErrors.title = "Title is required";
   }
 
+  if (!form.writer) {
+    newErrors.writer = "Writer is required";
+  }
+
+  if (!form.publisher) {
+    newErrors.publisher = "Publisher is required";
+  }
+
+  if (!form.published_year) {
+    newErrors.published_year = "Published year is required";
+  } else if (isNaN(Number(form.published_year))) {
+    newErrors.published_year = "Published year must be a number";
+  }
+
+  if (!form.stock) {
+    newErrors.stock = "Stock is required";
+  } else if (Number(form.stock) <= 0) {
+    newErrors.stock = "Stock must be greater than 0";
+  }
+
+  if (!form.categories) {
+    newErrors.categories = "Category is required";
+  }
+
+  setErrors(newErrors);
+
+  if (Object.values(newErrors).some((err) => err !== "")) {
+    return;
+  }
   const payload = {
     title: form.title,
     writer: form.writer,
@@ -271,6 +317,8 @@ const handleCreate = async () => {
       return;
     }
 
+    showSuccess("Book added successfully!");
+
     setActiveModal(null);
     await fetchBooks();
 
@@ -297,39 +345,93 @@ const handleUpdate = async () => {
     return;
   }
 
-  const fd = new FormData();
-  fd.append("documentId", selectedBook.documentId);
-  fd.append("data", JSON.stringify({
-    title: form.title,
-    writer: form.writer,
-    publisher: form.publisher,
-    published_year: form.published_year,
-    stock: form.stock,
-     categories: form.categories
-        ? { set: [Number(form.categories)] }
-        : undefined,
-  }));
-    if (form.cover) {
-    fd.append("cover", form.cover); 
+  const newErrors = {
+    title: "",
+    writer: "",
+    publisher: "",
+    published_year: "",
+    stock: "",
+    categories: "",
+  };
+
+  if (!form.title) {
+    newErrors.title = "Title is required";
   }
 
+  if (!form.writer) {
+    newErrors.writer = "Writer is required";
+  }
 
-  const res = await fetch(`${BASE_URL}/api/book/edit`, {
-    method: "PATCH",
-    headers: {
-      Authorization: TOKEN,
-      "x-member-name": MEMBER_NAME,
-    },
-    body: fd,
-  });
+  if (!form.publisher) {
+    newErrors.publisher = "Publisher is required";
+  }
 
-  const text = await res.text();
-  console.log("RESPONSE:", text);
+  if (!form.published_year) {
+    newErrors.published_year = "Published year is required";
+  } else if (isNaN(Number(form.published_year))) {
+    newErrors.published_year = "Published year must be a number";
+  }
 
-  if (!res.ok) return;
+  if (!form.stock) {
+    newErrors.stock = "Stock is required";
+  } else if (Number(form.stock) <= 0) {
+    newErrors.stock = "Stock must be greater than 0";
+  }
 
-  setActiveModal(null);
-  await fetchBooks();
+  if (!form.categories) {
+    newErrors.categories = "Category is required";
+  }
+
+  setErrors(newErrors);
+
+  // Kalau masih ada error → stop submit
+  if (Object.values(newErrors).some((err) => err !== "")) {
+    return;
+  }
+
+  const fd = new FormData();
+
+  fd.append("documentId", selectedBook.documentId);
+
+  fd.append(
+    "data",
+    JSON.stringify({
+      title: form.title,
+      writer: form.writer,
+      publisher: form.publisher,
+      published_year: form.published_year,
+      stock: Number(form.stock),
+      categories: form.categories
+        ? { set: [Number(form.categories)] }
+        : undefined,
+    })
+  );
+
+  if (form.cover) {
+    fd.append("cover", form.cover);
+  }
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/book/edit`, {
+      method: "PATCH",
+      headers: {
+        Authorization: TOKEN,
+        "x-member-name": MEMBER_NAME,
+      },
+      body: fd,
+    });
+
+    const text = await res.text();
+    console.log("RESPONSE:", text);
+
+    if (!res.ok) return;
+
+    setActiveModal(null);
+    await fetchBooks();
+    showSuccess("Book updated successfully!");
+  } catch (err) {
+    console.error("UPDATE ERROR:", err);
+  }
 };
 
   // DELETE
@@ -360,6 +462,7 @@ const handleDestroy = async () => {
     setActiveModal(null);
     setSelectedBook(null);
     await fetchBooks();
+    showSuccess("Book deleted successfully!");
   } catch (err) {
     console.error("Delete error:", err);
   } finally {
@@ -426,40 +529,58 @@ const handleDestroy = async () => {
         </div>
       </div>
       {/* Loading */}
-      {loading && <p className="text-center text-sm text-gray-500">Loading...</p>}
       {/* Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {books.map((book) => (
-          <div key={book.id} className="bg-white rounded-xl shadow flex flex-col overflow-hidden">
-            <div className="h-40 bg-gray-100">
-              <img
-                src={getCoverUrl(book.cover)}
-                alt={book.title}
-                className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition"
-                onClick={() => {
-                setPreviewImage(getCoverUrl(book.cover));
-                setActiveModal("preview");
-               }}
-              />
-            </div>
-            <div className="p-4 flex flex-col justify-between flex-1">
-              <div>
-                <h2 className="font-semibold text-gray-800">{book.title}</h2>
-                <p className="text-xs text-gray-500">Writer: {book.writer || "-"}</p>
-                <p className="text-xs text-gray-500">{book.publisher} • {book.published_year ?? "-"}</p>
-                <p className="text-xs mt-2">Category: {book.categories?.map((cat: any) => cat.name).join(", ") || "-"}</p>
-                <p className="text-xs mt-1">Stock: {book.stock ?? "-"}</p>
+        {loading ? (
+          <p className="col-span-full text-center text-gray-500 py-10">
+            Loading books...
+          </p>
+        ) : books.length === 0 ? (
+          <p className="col-span-full text-center text-gray-500 py-10">
+            Books not found{search? ` for "${search}"` : ""}
+          </p>
+        ) : (
+          books.map((book) => (
+            <div key={book.id} className="bg-white rounded-xl shadow flex flex-col overflow-hidden">
+              <div className="h-40 bg-gray-100">
+                <img
+                  src={getCoverUrl(book.cover)}
+                  alt={book.title}
+                  className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition"
+                  onClick={() => {
+                    setPreviewImage(getCoverUrl(book.cover));
+                    setActiveModal("preview");
+                  }}
+                />
               </div>
 
-              <div className="flex justify-end gap-2 mt-4">
-                <button onClick={() => openEditModal(book)}>Edit</button>
-                <button onClick={() => openModal("delete", book)} type="button" className="text-xs px-3 py-1 bg-red-100 text-red-600 rounded">
-                  Delete
-                </button>
+              <div className="p-4 flex flex-col justify-between flex-1">
+                <div>
+                  <h2 className="font-semibold text-gray-800">{book.title}</h2>
+                  <p className="text-xs text-gray-500">Writer: {book.writer || "-"}</p>
+                  <p className="text-xs text-gray-500">
+                    {book.publisher} • {book.published_year ?? "-"}
+                  </p>
+                  <p className="text-xs mt-2">
+                    Category: {book.categories?.map((cat: any) => cat.name).join(", ") || "-"}
+                  </p>
+                  <p className="text-xs mt-1">Stock: {book.stock ?? "-"}</p>
+                </div>
+
+                <div className="flex justify-end gap-2 mt-4">
+                  <button onClick={() => openEditModal(book)}>Edit</button>
+                  <button
+                    onClick={() => openModal("delete", book)}
+                    type="button"
+                    className="text-xs px-3 py-1 bg-red-100 text-red-600 rounded"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Modal Add */}
@@ -478,24 +599,45 @@ const handleDestroy = async () => {
                 placeholder="Title"
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="w-full border p-2 rounded"
+                className={`w-full border rounded-lg px-4 py-2 text-sm ${
+                  errors.title ? "border-red-500" : ""
+                }`}
               />
+              {errors.title && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.title}
+                </p>
+              )}
 
               <input
                 type="text"
                 placeholder="Writer"
                 value={form.writer}
                 onChange={(e) => setForm({ ...form, writer: e.target.value })}
-                className="w-full border p-2 rounded"
+                className={`w-full border rounded-lg px-4 py-2 text-sm ${
+                  errors.writer ? "border-red-500" : ""
+                }`}
               />
+              {errors.writer && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.writer}
+                </p>
+              )}
 
               <input
                 type="text"
                 placeholder="Publisher"
                 value={form.publisher}
                 onChange={(e) => setForm({ ...form, publisher: e.target.value })}
-                className="w-full border p-2 rounded"
+                className={`w-full border rounded-lg px-4 py-2 text-sm ${
+                  errors.publisher ? "border-red-500" : ""
+                }`}
               />
+              {errors.publisher && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.publisher}
+                </p>
+              )}
 
               <input
                 type="number"
@@ -504,13 +646,22 @@ const handleDestroy = async () => {
                 onChange={(e) =>
                   setForm({ ...form, published_year: e.target.value })
                 }
-                className="w-full border p-2 rounded"
+                className={`w-full border rounded-lg px-4 py-2 text-sm ${
+                  errors.published_year ? "border-red-500" : ""
+                }`}
               />
+              {errors.published_year && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.published_year}
+                </p>
+              )}
 
               <select
                 value={form.categories}
                 onChange={(e) => setForm({ ...form, categories: e.target.value })}
-                className="w-full border p-2 rounded"
+                className={`w-full border rounded-lg px-4 py-2 text-sm ${
+                  errors.categories ? "border-red-500" : ""
+                }`}
               >
                 <option value="">Select Category</option>
                 {categories.map((cat) => (
@@ -519,14 +670,26 @@ const handleDestroy = async () => {
                   </option>
                 ))}
               </select>
+              {errors.categories && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.categories}
+                </p>
+              )}
 
               <input
                 type="number"
                 placeholder="Stock"
                 value={form.stock}
                 onChange={(e) => setForm({ ...form, stock: e.target.value })}
-                className="w-full border p-2 rounded"
+                className={`w-full border rounded-lg px-4 py-2 text-sm ${
+                  errors.stock ? "border-red-500" : ""
+                }`}
               />
+              {errors.stock && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.stock}
+                </p>
+              )}
 
               <input
                 type="file"
@@ -537,8 +700,9 @@ const handleDestroy = async () => {
                     cover: e.target.files ? e.target.files[0] : null,
                   })
                 }
-                className="w-full border p-2 rounded"
+                className="w-full border rounded-lg px-4 py-2 text-sm"
               />
+              
             </div>
 
             <div className="flex justify-end gap-2 mt-4">
@@ -607,39 +771,72 @@ const handleDestroy = async () => {
                   type="text"
                   placeholder="Title"
                   value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  onChange={(e) => {
+                    setForm({ ...form, title: e.target.value });
+                    setErrors({ ...errors, title: "" });
+                  }}
                   className="w-full border p-2 rounded"
                 />
+                {errors.title && (
+                  <p className="text-red-500 text-xs mt-1 min-h-[16px]">
+                    {errors.title}
+                  </p>
+                )}
 
                 <input
                   type="text"
                   placeholder="Writer"
                   value={form.writer}
-                  onChange={(e) => setForm({ ...form, writer: e.target.value })}
+                  onChange={(e) => {
+                    setForm({ ...form, writer: e.target.value });
+                    setErrors({ ...errors, writer: "" });
+                  }}
                   className="w-full border p-2 rounded"
                 />
+                {errors.writer && (
+                  <p className="text-red-500 text-xs mt-1 min-h-[16px]">
+                    {errors.writer}
+                  </p>
+                )}
 
                 <input
                   type="text"
                   placeholder="Publisher"
                   value={form.publisher}
-                  onChange={(e) => setForm({ ...form, publisher: e.target.value })}
+                  onChange={(e) => {
+                    setForm({ ...form, publisher: e.target.value });
+                    setErrors({ ...errors, publisher: "" });
+                  }}
                   className="w-full border p-2 rounded"
                 />
+                {errors.publisher && (
+                  <p className="text-red-500 text-xs mt-1 min-h-[16px]">
+                    {errors.publisher}
+                  </p>
+                )}
 
                 <input
                   type="number"
                   placeholder="Published year"
                   value={form.published_year}
-                  onChange={(e) =>
-                    setForm({ ...form, published_year: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setForm({ ...form, published_year: e.target.value });
+                    setErrors({ ...errors, published_year: "" });
+                  }}
                   className="w-full border p-2 rounded"
                 />
+                {errors.published_year && (
+                  <p className="text-red-500 text-xs mt-1 min-h-[16px]">
+                    {errors.published_year}
+                  </p>
+                )}                
 
                 <select
                   value={form.categories}
-                  onChange={(e) => setForm({ ...form, categories: e.target.value })}
+                  onChange={(e) => {
+                    setForm({ ...form, categories: e.target.value });
+                    setErrors({ ...errors, categories: "" });
+                  }}
                   className="w-full border p-2 rounded"
                 >
                   <option value="">Select Category</option>
@@ -649,15 +846,37 @@ const handleDestroy = async () => {
                     </option>
                   ))}
                 </select>
+                {errors.categories && (
+                  <p className="text-red-500 text-xs mt-1 min-h-[16px]">
+                    {errors.categories}
+                  </p>
+                )}
 
                 <input
                   type="number"
                   placeholder="Stock"
                   value={form.stock}
-                  onChange={(e) => setForm({ ...form, stock: e.target.value })}
+                  onChange={(e) => {
+                    setForm({ ...form, stock: e.target.value });
+                    setErrors({ ...errors, stock: "" });
+                  }}
                   className="w-full border p-2 rounded"
                 />
+                {errors.stock && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.stock}
+                  </p>
+                )}
 
+                  {selectedBook.cover && (
+                    <div className="flex flex-col gap-1">
+                      <p className="text-xs text-gray-500">Current Cover</p>
+                      <img
+                        src={`${BASE_URL}${selectedBook.cover.url}`}
+                        className="w-20 h-28 object-cover rounded border"
+                      />
+                    </div>
+                  )}
                 <input
                   type="file"
                   accept="image/*"
@@ -812,6 +1031,13 @@ const handleDestroy = async () => {
             </div>
           </div>
         </Modal>
+      )}
+
+      {/* OTHER */}
+      {successMessage && (
+        <div className="fixed top-5 right-5 z-[99999] bg-green-600 text-white px-4 py-3 rounded-xl shadow-lg animate-scale-in">
+          <p className="text-sm font-medium">{successMessage}</p>
+        </div>
       )}
     </div>
   );

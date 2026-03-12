@@ -22,6 +22,7 @@ const [newReturnDate, setNewReturnDate] = useState("");
 const [loans, setLoans] = useState<any[]>([]);
 const [books, setBooks] = useState<any[]>([]);
 const [members, setMembers] = useState<any[]>([]);
+const [successMessage, setSuccessMessage] = useState <string | null>(null);
 
 const [bookSearch, setBookSearch] = useState("");
 const filteredBooks = books.filter((b) =>
@@ -34,6 +35,13 @@ const filteredMembers = members.filter((m) =>
   m.id_member?.toLowerCase().includes(memberSearch.toLowerCase())
  );
 
+const [loanErrors, setLoanErrors] = useState({
+  book: "",
+  member: "",
+  loan_date: "",
+  return_date: "",
+});
+
 const ITEMS_PER_PAGE = 4;
 const [currentPage, setCurrentPage] = useState(1);
 
@@ -42,10 +50,15 @@ const getCoverUrl = (cover?: any) => {
   return `${BASE_URL}${cover.url}`;
 };
 
+  const showSuccess = (message: string) => {
+    setSuccessMessage(message);
+    setTimeout(() => {
+      setSuccessMessage(null);
+    }, 2500); // hilang 2.5 detik
+  };
 
 useEffect(() => {
   if (!showAddModal) return;
-
   (async () => {
     try {
       const PAGE_SIZE = 1000;
@@ -106,50 +119,74 @@ const isLate = (returnDate: string) => {
     setShowReturnModal(true);
   };
 
+
+  //HANDLE CREATE
   const handleCreateLoan = async () => {
-  if (
-    !selectedBook ||
-    !selectedMember ||
-    !newLoanDate ||
-    !newReturnDate
-  ) {
-    alert("Semua field wajib diisi");
-    return;
-  }
+      const newErrors = {
+        book: "",
+        member: "",
+        loan_date: "",
+        return_date: "",
+      };
 
-  try {
-    const res = await fetch(`${BASE_URL}/api/loan/add`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: TOKEN,
-        "x-member-name": MEMBER_NAME,
-      },
-      body: JSON.stringify({
-        data: {
-          book: selectedBook.documentId,
-          member: selectedMember.documentId,
-          loan_date: newLoanDate,
-          return_date: newReturnDate,
-        },
-      }),
-    });
+      if (!selectedBook) {
+        newErrors.book = "Book must be selected";
+      }
 
+      if (!selectedMember) {
+        newErrors.member = "Member must be selected";
+      }
+
+      if (!newLoanDate) {
+        newErrors.loan_date = "Loan date is required";
+      }
+
+      if (!newReturnDate) {
+        newErrors.return_date = "Return date is required";
+      }
+
+      if (newLoanDate && newReturnDate) {
+        if (newReturnDate < newLoanDate) {
+          newErrors.return_date = "Return date cannot be before loan date";
+        }
+      }
+
+      setLoanErrors(newErrors);
+
+      if (Object.values(newErrors).some((err) => err !== "")) {
+        return;
+      }
+      
+      try {
+        const res = await fetch(`${BASE_URL}/api/loan/add`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: TOKEN,
+            "x-member-name": MEMBER_NAME,
+          },
+          body: JSON.stringify({
+            data: {
+              book: selectedBook.documentId,
+              member: selectedMember.documentId,
+              loan_date: newLoanDate,
+              return_date: newReturnDate,
+            },
+          }),
+        });
     const text = await res.text();
     console.log("ADD LOAN RESPONSE:", text);
-
     if (!res.ok) {
       alert("Stok buku habis!");
       return;
     }
-
     // reset state
     setShowAddModal(false);
     setSelectedBook(null);
     setSelectedMember(null);
     setNewLoanDate("");
     setNewReturnDate("");
-
+    showSuccess("Loan added successfully!");
     // refresh loan list
     const refreshed = await fetch(`${BASE_URL}/api/loan/list`, {
       headers: {
@@ -158,13 +195,14 @@ const isLate = (returnDate: string) => {
       },
       cache: "no-store",
     });
-
     const json = await refreshed.json();
     setLoans(json?.data ?? []);
   } catch (err) {
     console.error("ADD LOAN ERROR:", err);
   }
 };
+
+//FETCH + PAGINATION
 useEffect(() => {
   (async () => {
     try {
@@ -253,6 +291,7 @@ const handleConfirmReturn = async () => {
 
     setShowReturnModal(false);
     setSelectedLoan(null);
+    showSuccess("Book returned successfully!")
 
   } catch (err) {
     console.error("RETURN FAILED:", err);
@@ -455,47 +494,76 @@ const getLoanStatus = (loan: any) => {
               {/* Pilih Buku */}
               <div>
                 <label className="text-xs text-gray-500">Book</label>
-                <button
-                  type="button"
-                  onClick={() => setShowBookModal(true)}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-lg border text-left hover:bg-gray-50"
-                >
-                  {selectedBook ? selectedBook.title : "Select Book"}
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowBookModal(true)}
+                    className={`w-full mt-1 px-3 py-2 text-sm rounded-lg border text-left hover:bg-gray-50 ${
+                      loanErrors.book ? "border-red-500" : ""
+                    }`}
+                  >
+                    {selectedBook ? selectedBook.title : "Select Book"}
+                  </button>
+
+                  <p className="text-red-500 text-xs mt-1 min-h-[16px]">
+                    {loanErrors.book}
+                  </p>
               </div>
 
               {/* Pilih Anggota */}
               <div>
                 <label className="text-xs text-gray-500">Member</label>
-                <button
-                  type="button"
-                  onClick={() => setShowMemberModal(true)}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-lg border text-left hover:bg-gray-50"
-                >
-                  {selectedMember ? selectedMember.name : "Select Member"}
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowMemberModal(true)}
+                    className={`w-full mt-1 px-3 py-2 text-sm rounded-lg border text-left hover:bg-gray-50 ${
+                      loanErrors.member ? "border-red-500" : ""
+                    }`}
+                  >
+                    {selectedMember ? selectedMember.name : "Select Member"}
+                  </button>
+
+                  <p className="text-red-500 text-xs mt-1 min-h-[16px]">
+                    {loanErrors.member}
+                  </p>
               </div>
 
               {/* Tanggal Pinjam */}
               <div>
                 <label className="text-xs text-gray-500">Borrowing Date</label>
-                <input
-                  type="date"
-                  value={newLoanDate}
-                  onChange={(e) => setNewLoanDate(e.target.value)}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-lg border outline-none"
-                />
+                  <input
+                    type="date"
+                    value={newLoanDate}
+                    onChange={(e) => {
+                      setNewLoanDate(e.target.value);
+                      setLoanErrors({ ...loanErrors, loan_date: "" });
+                    }}
+                    className={`w-full mt-1 px-3 py-2 text-sm rounded-lg border outline-none ${
+                      loanErrors.loan_date ? "border-red-500" : ""
+                    }`}
+                  />
+
+                  <p className="text-red-500 text-xs mt-1 min-h-[16px]">
+                    {loanErrors.loan_date}
+                  </p>
               </div>
 
               {/* Tanggal Kembali */}
               <div>
                 <label className="text-xs text-gray-500">Return Date</label>
-                <input
-                  type="date"
-                  value={newReturnDate}
-                  onChange={(e) => setNewReturnDate(e.target.value)}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-lg border outline-none"
-                />
+                  <input
+                    type="date"
+                    value={newReturnDate}
+                    onChange={(e) => {
+                      setNewReturnDate(e.target.value);
+                      setLoanErrors({ ...loanErrors, return_date: "" });
+                    }}
+                    className={`w-full mt-1 px-3 py-2 text-sm rounded-lg border outline-none ${
+                      loanErrors.return_date ? "border-red-500" : ""
+                    }`}
+                  />
+                  <p className="text-red-500 text-xs mt-1 min-h-[16px]">
+                    {loanErrors.return_date}
+                  </p>
               </div>
             </div>
 
@@ -541,6 +609,7 @@ const getLoanStatus = (loan: any) => {
                   key={book.id}
                   onClick={() => {
                     setSelectedBook(book);
+                    setLoanErrors({ ...loanErrors, book: ""});
                     setShowBookModal(false);
                   }}
                   className="w-full text-left p-3 rounded-xl border hover:bg-blue-50 transition flex gap-4"
@@ -616,6 +685,7 @@ const getLoanStatus = (loan: any) => {
                   key={member.id}
                   onClick={() => {
                     setSelectedMember(member);
+                    setLoanErrors({ ...loanErrors, member: ""});
                     setShowMemberModal(false);
                   }}
                   className="w-full text-left p-3 rounded-xl border hover:bg-blue-50 transition"
@@ -681,6 +751,11 @@ const getLoanStatus = (loan: any) => {
           >
             Next
           </button>
+        </div>
+      )}
+      {successMessage && (
+        <div className="fixed top-5 right-5 z-[99999] bg-green-600 text-white px-4 py-3 rounded-xl shadow-lg animate-scale-in">
+          <p className="text-sm font-medium">{successMessage}</p>
         </div>
       )}
     </div>

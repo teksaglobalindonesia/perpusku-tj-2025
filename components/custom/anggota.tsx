@@ -18,14 +18,43 @@ const AnggotaPage = () => {
   const [showBookDetailModal, setShowBookDetailModal] = useState(false);
   const ITEMS_PER_PAGE = 4;
   const [currentPage, setCurrentPage] = useState(1);
-const [selectedBook, setSelectedBook] = useState<any>(null);
-const [editForm, setEditForm] = useState({
+  const [selectedBook, setSelectedBook] = useState<any>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errors, setErrors] = useState({
   name: "",
   email: "",
   address: "",
   id_member: "",
 });
+const [editErrors, setEditErrors] = useState({
+  name: "",
+  email: "",
+  address: "",
+  id_member: "",
+});
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    address: "",
+    id_member: "",
+  });
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
 
+    const showSuccess = (message: string) => {
+    setSuccessMessage(message);
+    setTimeout(() => {
+      setSuccessMessage(null);
+    }, 2500); // hilang 2.5 detik
+  };
+    const showError = (message: string) => {
+      setErrorMessage(message);
+      setTimeout(() => {
+        setErrorMessage(null);
+      }, 2500);
+    };
 const totalMembers = members.length;
 
  //Label Status Loan
@@ -150,16 +179,41 @@ const [addForm, setAddForm] = useState({
 });
 
 const handleCreateMember = async () => {
-  if (
-    !addForm.name ||
-    !addForm.email ||
-    !addForm.address ||
-    !addForm.id_member
-  ) {
-    alert("Semua field wajib diisi");
-    return;
-  }
+const newErrors = {
+  name: "",
+  email: "",
+  address: "",
+  id_member: "",
+};
 
+if (!addForm.name) {
+  newErrors.name = "Name is required";
+}
+
+if (!addForm.email) {
+  newErrors.email = "Email is required";
+} else if (!isValidEmail(addForm.email)) {
+  newErrors.email = "Format email tidak valid";
+}
+
+if (!addForm.address) {
+  newErrors.address = "Address is required";
+}
+
+if (!addForm.id_member) {
+  newErrors.id_member = "ID Number is required";
+}
+
+setErrors(newErrors);
+
+// kalau ada error, stop submit
+if (Object.values(newErrors).some((err) => err !== "")) {
+  return;
+}
+  if (!isValidEmail(addForm.email)) {
+  showError("Format email tidak valid!");
+  return;
+}
   try {
     const res = await fetch(`${BASE_URL}/api/member/add`, {
       method: "POST",
@@ -188,6 +242,7 @@ const handleCreateMember = async () => {
       address: "",
       id_member: "",
     });
+    showSuccess("Member added succesfully!");
 
     // refresh list
     const refreshed = await fetch(`${BASE_URL}/api/member/list`, {
@@ -207,7 +262,6 @@ const handleCreateMember = async () => {
 
 const handleEdit = (member: any) => {
   setSelectedMember(member);
-
   setEditForm({
     name: member.name ?? "",
     email: member.email ?? "",
@@ -220,6 +274,37 @@ const handleEdit = (member: any) => {
 
 const handleUpdateMember = async () => {
   if (!selectedMember?.documentId) return;
+
+  const newErrors = {
+    name: "",
+    email: "",
+    address: "",
+    id_member: "",
+  };
+
+  if (!editForm.name) {
+    newErrors.name = "Name is required";
+  }
+
+  if (!editForm.email) {
+    newErrors.email = "Email is required";
+  } else if (!isValidEmail(editForm.email)) {
+    newErrors.email = "Format email tidak valid";
+  }
+
+  if (!editForm.address) {
+    newErrors.address = "Address is required";
+  }
+
+  if (!editForm.id_member) {
+    newErrors.id_member = "ID Number is required";
+  }
+
+  setEditErrors(newErrors);
+
+  if (Object.values(newErrors).some((err) => err !== "")) {
+    return;
+  }
 
   try {
     const res = await fetch(`${BASE_URL}/api/member/edit`, {
@@ -242,8 +327,8 @@ const handleUpdateMember = async () => {
 
     setShowEditModal(false);
     setSelectedMember(null);
-
-    // refresh list
+    showSuccess("Member edited successfully!");
+    
     const refreshed = await fetch(`${BASE_URL}/api/member/list`, {
       headers: {
         Authorization: TOKEN,
@@ -257,7 +342,6 @@ const handleUpdateMember = async () => {
     console.error("Gagal update anggota:", err);
   }
 };
-
 
   const handleDelete = (member: any) => {
     setSelectedMember(member);
@@ -288,6 +372,7 @@ const handleUpdateMember = async () => {
 
     setShowDeleteModal(false);
     setSelectedMember(null);
+    showSuccess("Member deleted successfully!");
 
     // refresh list
     const refreshed = await fetch(`${BASE_URL}/api/member/list`, {
@@ -491,8 +576,15 @@ useEffect(() => {
                     setEditForm({ ...editForm, name: e.target.value })
                   }
                   placeholder="Member name"
-                  className="w-full border rounded-lg px-4 py-2 text-sm"
+                  className={`w-full border rounded-lg px-4 py-2 text-sm ${
+                    editErrors.name ? "border-red-500" : ""
+                  }`}
                 />
+                {editErrors.name && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {editErrors.name}
+                  </p>
+                )}
 
                 <input
                   type="email"
@@ -501,8 +593,15 @@ useEffect(() => {
                     setEditForm({ ...editForm, email: e.target.value })
                   }
                   placeholder="Email"
-                  className="w-full border rounded-lg px-4 py-2 text-sm"
+                  className={`w-full border rounded-lg px-4 py-2 text-sm ${
+                    editErrors.email ? "border-red-500" : ""
+                  }`}
                 />
+                {editErrors.email && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {editErrors.email}
+                  </p>
+                )}
 
                 <input
                   type="text"
@@ -511,18 +610,35 @@ useEffect(() => {
                     setEditForm({ ...editForm, address: e.target.value })
                   }
                   placeholder="Address"
-                  className="w-full border rounded-lg px-4 py-2 text-sm"
+                  className={`w-full border rounded-lg px-4 py-2 text-sm ${
+                    editErrors.address ? "border-red-500" : ""
+                  }`}
                 />
+                {editErrors.address && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {editErrors.address}
+                  </p>
+                )}                
 
                 <input
                   type="text"
-                  value={editForm.id_member}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, id_member: e.target.value })
-                  }
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   placeholder="ID Number"
-                  className="w-full border rounded-lg px-4 py-2 text-sm"
+                  value={editForm.id_member}
+                  onChange={(e) => {
+                    const onlyNumbers = e.target.value.replace(/\D/g, "");
+                    setEditForm({ ...editForm, id_member: onlyNumbers });
+                  }}
+                  className={`w-full border rounded-lg px-4 py-2 text-sm ${
+                    editErrors.id_member ? "border-red-500" : ""
+                  }`}
                 />
+                {editErrors.id_member && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {editErrors.id_member}
+                  </p>
+                )}                
               </div>
 
               <div className="flex justify-end gap-3 mt-6">
@@ -585,18 +701,33 @@ useEffect(() => {
                 onChange={(e) =>
                   setAddForm({ ...addForm, name: e.target.value })
                 }
-                className="w-full border rounded-lg px-4 py-2 text-sm"
+                className={`w-full border rounded-lg px-4 py-2 text-sm ${
+                errors.name ? "border-red-500" : "" }`}
               />
+              {errors.name && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.name}
+                </p>
+              )}
 
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="ID Number"
                 value={addForm.id_member}
-                onChange={(e) =>
-                  setAddForm({ ...addForm, id_member: e.target.value })
-                }
-                className="w-full border rounded-lg px-4 py-2 text-sm"
+                onChange={(e) => {
+                  const onlyNumbers = e.target.value.replace(/\D/g, "");
+                  setAddForm({ ...addForm, id_member: onlyNumbers });
+                }}
+                className={`w-full border rounded-lg px-4 py-2 text-sm ${
+                errors.id_member ? "border-red-500" : "" }`}
               />
+              {errors.id_member && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.id_member}
+                </p>
+              )}
 
               <input
                 type="text"
@@ -605,8 +736,14 @@ useEffect(() => {
                 onChange={(e) =>
                   setAddForm({ ...addForm, address: e.target.value })
                 }
-                className="w-full border rounded-lg px-4 py-2 text-sm"
+                className={`w-full border rounded-lg px-4 py-2 text-sm ${
+                errors.address ? "border-red-500" : "" }`}
               />
+              {errors.address && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.address}
+                </p>
+              )}
 
               <input
                 type="email"
@@ -615,8 +752,15 @@ useEffect(() => {
                 onChange={(e) =>
                   setAddForm({ ...addForm, email: e.target.value })
                 }
-                className="w-full border rounded-lg px-4 py-2 text-sm"
+                className={`w-full border rounded-lg px-4 py-2 text-sm ${
+                  errors.email ? "border-red-500" : ""
+                }`}
               />
+              {errors.email && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.email}
+                </p>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
@@ -636,6 +780,7 @@ useEffect(() => {
             </div>
           </div>
         </div>
+        
       )}
 
         {/* Pagination */}
@@ -674,6 +819,16 @@ useEffect(() => {
             </button>
           </div>
         )}
+      {successMessage && (
+        <div className="fixed top-5 right-5 z-[99999] bg-green-600 text-white px-4 py-3 rounded-xl shadow-lg animate-scale-in">
+          <p className="text-sm font-medium">{successMessage}</p>
+        </div>
+      )}
+      {errorMessage && (
+        <div className="fixed top-5 right-5 z-[99999] bg-red-600 text-white px-4 py-3 rounded-xl shadow-lg animate-scale-in">
+          <p className="text-sm font-medium">{errorMessage}</p>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,58 +1,49 @@
-import { Toaster } from '@/components/ui/sonner';
-import type { Metadata } from 'next';
-import {
-  Roboto,
-  Bebas_Neue,
-  Urbanist,
-} from 'next/font/google';
-import NextTopLoader from 'nextjs-toploader';
-import './globals.css';
-import "animate.css/animate.compat.css";
-import { ReactQueryClientProvider } from '@/providers/ReactQueryClientProvider';
-import Navbar from "../components/custom/navbar";
+import type { Metadata } from "next";
+import { Roboto, Urbanist } from "next/font/google";
+import NextTopLoader from "nextjs-toploader";
+import "./globals.css";
+
+import Navbar from "@/components/custom/navbar";
 
 export const metadata: Metadata = {
-  title: 'PerpusKu | Atha',
-  description: 'Teksa Web Starter Description'
+  title: "PerpusKU",
+  description: "Web Administration",
 };
 
-const bebasNeueFont = Bebas_Neue({
-  subsets: ['latin'],
-  weight: ['400'],
-  variable: '--font-bebas-neue'
-});
-
 const robotoFont = Roboto({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '700'],
-  variable: '--font-roboto'
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "700"],
+  variable: "--font-roboto",
 });
 
 const urbanistFont = Urbanist({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '700'],
-  variable: '--font-urbanist'
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "700"],
+  variable: "--font-urbanist",
 });
 
-export default async function RootLayout({
-  children
+export default function RootLayout({
+  children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <ReactQueryClientProvider>
-      <html
-        lang="en"
-        className={`${bebasNeueFont.variable} ${urbanistFont.variable} ${robotoFont.variable}`}
-        suppressHydrationWarning={true}
-      >
-        <body>
-          <NextTopLoader showSpinner={false} height={4} />
-          <Toaster />
-          <Navbar />
+    <html
+      lang="id"
+      className={`${robotoFont.variable} ${urbanistFont.variable}`}
+      suppressHydrationWarning
+    >
+      <body className="bg-gray-50 text-gray-900">
+
+        <NextTopLoader showSpinner={false} height={3} />
+
+        <Navbar />
+
+        <main className="min-h-screen">
           {children}
-        </body>
-      </html>
-    </ReactQueryClientProvider>
+        </main>
+
+      </body>
+    </html>
   );
 }
