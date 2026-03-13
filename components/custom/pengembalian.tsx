@@ -33,7 +33,16 @@ const PengembalianPage = () => {
 
       const json = await res.json();
 
-      setReturns(json?.data || []);
+      const data = json?.data || [];
+
+      const filtered = search
+        ? data.filter(
+            (r: any) =>
+              r.book?.title?.toLowerCase().includes(search.toLowerCase())
+          )
+        : data;
+
+      setReturns(filtered);
 
       if (json?.meta?.pagination?.page_count) {
         setTotalPages(json.meta.pagination.page_count);
@@ -130,25 +139,27 @@ const PengembalianPage = () => {
       </div>
 
       {/*PAGINATION*/}
-      <div className="mt-8 flex justify-center gap-2">
-        <button
-          disabled={page === 1}
-          onClick={() => setPage((p) => p - 1)}
-          className="rounded-lg bg-gray-200 px-3 py-2 text-sm disabled:opacity-50"
-        >
-          Prev
-        </button>
+      {returns.length > 0 && (
+        <div className="mt-8 flex justify-center gap-2">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="rounded-lg bg-gray-200 px-3 py-2 text-sm disabled:opacity-50"
+          >
+            Prev
+          </button>
 
-        {renderPagination()}
+          {renderPagination()}
 
-        <button
-          disabled={page === totalPages}
-          onClick={() => setPage((p) => p + 1)}
-          className="rounded-lg bg-gray-200 px-3 py-2 text-sm disabled:opacity-50"
-        >
-          Next
-        </button>
-      </div>
+          <button
+            disabled={page === totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="rounded-lg bg-gray-200 px-3 py-2 text-sm disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
 
       {returns.length === 0 && (
         <p className="mt-10 text-center text-gray-600">

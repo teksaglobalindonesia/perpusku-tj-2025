@@ -8,7 +8,7 @@ import { ReactQueryClientProvider } from '@/providers/ReactQueryClientProvider';
 import Navbar from '../components/custom/navbar';
 
 export const metadata: Metadata = {
-  title: 'Teksa Web Starter',
+  title: 'PerpusKu | Natasya',
   description: 'Teksa Web Starter Description'
 };
 

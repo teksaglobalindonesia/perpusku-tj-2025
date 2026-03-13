@@ -85,3 +85,21 @@ body {
 html {
   scroll-behavior: smooth;
 }
+
+@keyframes alertPop {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-alertPop {
+  animation: alertPop 0.35s ease;
+}
