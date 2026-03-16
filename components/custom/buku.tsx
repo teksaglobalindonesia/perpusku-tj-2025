@@ -322,10 +322,6 @@ const BukuPage = () => {
       newErrors.stock = 'Stok wajib diisi';
     }
 
-    if (!coverFile) {
-      newErrors.cover = 'Cover buku wajib diupload';
-    }
-
     setErrors(newErrors);
 
     return Object.keys(newErrors).length === 0;
@@ -377,8 +373,6 @@ const BukuPage = () => {
       showNotification('Buku berhasil diperbarui', 'success');
 
       await fetchBooks();
-      closeEditModal();
-
       closeEditModal();
     } catch (err) {
       console.error('UPDATE BOOK ERROR:', err);
