@@ -105,6 +105,17 @@ const Dashboard = () => {
     (r: any) => r.return?.actual_return_date === today
   );
 
+if (loading) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#f6f5fb]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-purple-600 border-t-transparent"></div>
+        <p className="text-sm text-gray-600">Memuat data perpustakaan...</p>
+      </div>
+    </div>
+  );
+}
+
   return (
     <main className="min-h-screen w-full bg-[#f3efff] px-8 py-10">
       <div className="w-full space-y-14">

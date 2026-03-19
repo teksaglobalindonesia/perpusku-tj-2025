@@ -13,16 +13,31 @@ export default function PeminjamanPage() {
   const [page, setPage] = useState(1);
   const [members, setMembers] = useState<any[]>([]);
   const [searchBook, setSearchBook] = useState("");
-const [searchMember, setSearchMember] = useState("");
-const [selectedBuku, setSelectedBuku] = useState<any>(null);
-const [selectedAnggota, setSelectedAnggota] = useState<any>(null);
+  const [searchMember, setSearchMember] = useState("");
+  const [selectedBuku, setSelectedBuku] = useState<any>(null);
+  const [selectedAnggota, setSelectedAnggota] = useState<any>(null);
+  const [showEdit, setShowEdit] = useState(false);
+  const [errors, setErrors] = useState<any>({});
 
   const [showAdd, setShowAdd] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showPilihBuku, setShowPilihBuku] = useState(false);
   const [showPilihAnggota, setShowPilihAnggota] = useState(false);
-
   const [selectedLoan, setSelectedLoan] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  
+  const [toast, setToast] = useState<{
+  message: string;
+  type: "success" | "error";
+} | null>(null);
+
+const showToast = (message: string, type: "success" | "error") => {
+  setToast({ message, type });
+
+  setTimeout(() => {
+    setToast(null);
+  }, 1000);
+};
 
 const [formData, setFormData] = useState({
   bookId: "",
@@ -31,37 +46,43 @@ const [formData, setFormData] = useState({
   returnDate: "",
 });
 
-  const fetchLoans = async () => {
-      try {
-        const params = new URLSearchParams({
-          page: String(page),
-          page_size: String(PAGE_SIZE),
-          search: search || "",
-        });
-  
-        const res = await fetch(
-          `${BASE_URL}/api/loan/list?${params.toString()}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: TOKEN,
-              "x-member-name": MEMBER_NAME,
-            },
-            cache: "no-store",
-          }
-        );
-  
-        const json = await res.json();
-  
-        if (!res.ok) return;
-  
-        if (!Array.isArray(json?.data)) return;
-  
-        setLoans(json.data);
-        setTotalPages(json?.meta?.pagination?.page_count || 1);
-      } catch {}
-    };
+const fetchLoans = async () => {
+  try {
+    setLoading(true);
+
+    const params = new URLSearchParams({
+      page: String(page),
+      page_size: String(PAGE_SIZE),
+      search: search || "",
+    });
+
+    const res = await fetch(
+      `${BASE_URL}/api/loan/list?${params.toString()}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: TOKEN,
+          "x-member-name": MEMBER_NAME,
+        },
+        cache: "no-store",
+      }
+    );
+
+    const json = await res.json();
+
+    if (!res.ok) return;
+
+    if (!Array.isArray(json?.data)) return;
+
+    setLoans(json.data);
+    setTotalPages(json?.meta?.pagination?.page_count || 1);
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const fetchBooks = async () => {
   const params = new URLSearchParams({
@@ -125,8 +146,19 @@ const [formData, setFormData] = useState({
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
- const handleSubmit = async () => {
-  await fetch(`${BASE_URL}/api/loan/add`, {
+const handleSubmit = async () => {
+  const newErrors: any = {};
+
+  if (!formData.bookId) newErrors.bookId = "Buku wajib dipilih";
+  if (!formData.memberId) newErrors.memberId = "Anggota wajib dipilih";
+  if (!formData.loanDate) newErrors.loanDate = "Tanggal pinjam wajib diisi";
+  if (!formData.returnDate) newErrors.returnDate = "Tanggal kembali wajib diisi";
+
+  setErrors(newErrors);
+
+  if (Object.keys(newErrors).length > 0) return;
+
+  const res = await fetch(`${BASE_URL}/api/loan/add`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -143,35 +175,52 @@ const [formData, setFormData] = useState({
     }),
   });
 
+  if (!res.ok) {
+    showToast("Gagal menambahkan peminjaman", "error");
+    return;
+  }
+
+  showToast("Peminjaman berhasil ditambahkan", "success");
+
   setShowAdd(false);
+  setErrors({});
+
   setFormData({
     bookId: "",
     memberId: "",
     loanDate: "",
     returnDate: "",
   });
+
   fetchLoans();
 };
 
   const handleReturn = async () => {
-    await fetch(`${BASE_URL}/api/return/add`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: TOKEN,
-        "x-member-name": MEMBER_NAME,
+  const res = await fetch(`${BASE_URL}/api/return/add`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: TOKEN,
+      "x-member-name": MEMBER_NAME,
+    },
+    body: JSON.stringify({
+      data: {
+        loan: selectedLoan.documentId,
+        actual_return_date: new Date().toISOString().split("T")[0],
       },
-      body: JSON.stringify({
-        data: {
-          loan: selectedLoan.documentId,
-          actual_return_date: new Date().toISOString().split("T")[0],
-        },
-      }),
-    });
+    }),
+  });
 
-    setShowConfirm(false);
-    fetchLoans();
-  };
+if (!res.ok) {
+  showToast("Gagal mengembalikan buku", "error");
+  return;
+}
+
+showToast("Buku berhasil dikembalikan", "success");
+
+  setShowConfirm(false);
+  fetchLoans();
+};
 
   const getStatus = (loan: any) => {
     if (!loan.return) return "DIPINJAM";
@@ -194,6 +243,17 @@ const [formData, setFormData] = useState({
 
   const selectedBook = books.find((b) => b.documentId === formData.bookId);
   const selectedMember = members.find((m) => m.documentId === formData.memberId);
+
+if (loading) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#f6f5fb]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-purple-600 border-t-transparent"></div>
+        <p className="text-sm text-gray-600">Memuat data peminjaman...</p>
+      </div>
+    </div>
+  );
+}
 
   return (
     <div className="min-h-screen bg-[#f6f5fb] text-[#2b2540]">
@@ -244,18 +304,38 @@ const [formData, setFormData] = useState({
                 </div>
 
                 {!loan.return && (
-                  <div className="mt-5">
-                    <button
-                      onClick={() => {
-                        setSelectedLoan(loan);
-                        setShowConfirm(true);
-                      }}
-                      className="rounded-lg bg-green-600 px-7 py-2 text-sm font-semibold text-white"
-                    >
-                      Kembalikan
-                    </button>
-                  </div>
-                )}
+  <div className="mt-5 flex gap-3">
+
+    <button
+      onClick={() => {
+        setSelectedLoan(loan);
+
+        setFormData({
+          bookId: loan.book?.documentId,
+          memberId: loan.member?.documentId,
+          loanDate: loan.loan_date,
+          returnDate: loan.return_date,
+        });
+
+        setShowEdit(true);
+      }}
+      className="rounded-lg bg-yellow-500 px-7 py-2 text-sm font-semibold text-white"
+    >
+      Edit
+    </button>
+
+    <button
+      onClick={() => {
+        setSelectedLoan(loan);
+        setShowConfirm(true);
+      }}
+      className="rounded-lg bg-green-600 px-7 py-2 text-sm font-semibold text-white"
+    >
+      Kembalikan
+    </button>
+
+  </div>
+)}
               </div>
             );
           })}
@@ -286,37 +366,60 @@ const [formData, setFormData] = useState({
           <div className="space-y-4">
             <button
               onClick={() => setShowPilihBuku(true)}
-              className="w-full rounded-lg border px-3 py-2 text-left text-sm"
+              className={`w-full rounded-lg border px-3 py-2 text-left text-sm ${
+                errors.bookId ? "border-red-500" : ""
+              }`}
             >
               {selectedBook ? selectedBook.title : "Pilih Buku"}
             </button>
+            {errors.bookId && (
+              <p className="text-xs text-red-500">{errors.bookId}</p>
+            )}
 
             <button
               onClick={() => setShowPilihAnggota(true)}
-              className="w-full rounded-lg border px-3 py-2 text-left text-sm"
+              className={`w-full rounded-lg border px-3 py-2 text-left text-sm ${
+                errors.memberId ? "border-red-500" : ""
+              }`}
             >
               {selectedMember ? selectedMember.name : "Pilih Anggota"}
             </button>
-
-            <input
-              type="date"
-              name="loanDate"
-              value={formData.loanDate}
-              onChange={handleChange}
-              className="w-full rounded-lg border px-3 py-2 text-sm"
-            />
+            {errors.memberId && (
+              <p className="text-xs text-red-500">{errors.memberId}</p>
+            )}
 
             <input
             type="date"
-            name="returnDate"
-            value={formData.returnDate}
+            name="loanDate"
+            value={formData.loanDate}
             onChange={handleChange}
-            className="w-full rounded-lg border px-3 py-2 text-sm"
+            className={`w-full rounded-lg border px-3 py-2 text-sm ${
+              errors.loanDate ? "border-red-500" : ""
+            }`}
           />
+          {errors.loanDate && (
+            <p className="text-xs text-red-500">{errors.loanDate}</p>
+          )}
 
-            <div className="flex justify-end gap-3 pt-4">
+            <input
+          type="date"
+          name="returnDate"
+          value={formData.returnDate}
+          onChange={handleChange}
+          className={`w-full rounded-lg border px-3 py-2 text-sm ${
+            errors.returnDate ? "border-red-500" : ""
+          }`}
+        />
+        {errors.returnDate && (
+          <p className="text-xs text-red-500">{errors.returnDate}</p>
+        )}
+
+          <div className="flex justify-end gap-3 pt-2">
           <button
-            onClick={() => setShowAdd(false)}
+            onClick={() => {
+              setShowAdd(false);
+              setErrors({});
+            }}
             className="rounded-lg border px-4 py-2 text-sm"
           >
             Batal
@@ -489,6 +592,35 @@ const [formData, setFormData] = useState({
 )}
 
       {showConfirm && selectedLoan && (
+  <Modal title="Konfirmasi Pengembalian" onClose={() => setShowConfirm(false)}>
+    <div className="text-center space-y-4">
+      <p>
+        Yakin mengembalikan <br />
+        <span className="font-semibold text-purple-700">
+          {selectedLoan.book?.title}
+        </span>
+        ?
+      </p>
+
+      <div className="flex justify-center gap-3 pt-2">
+        <button
+          onClick={() => setShowConfirm(false)}
+          className="rounded-lg border px-6 py-2 text-sm"
+        >
+          Batal
+        </button>
+
+        <button
+          onClick={handleReturn}
+          className="rounded-lg bg-green-600 px-6 py-2 text-sm text-white"
+        >
+          Kembalikan
+        </button>
+      </div>
+    </div>
+  </Modal>
+)}
+      {showConfirm && selectedLoan && (
         <Modal title="Konfirmasi Pengembalian" onClose={() => setShowConfirm(false)}>
           <div className="text-center space-y-4">
             <p>
@@ -498,17 +630,51 @@ const [formData, setFormData] = useState({
               </span>
               ?
             </p>
-            <button
-              onClick={handleReturn}
-              className="rounded-lg bg-green-600 px-8 py-2 text-sm text-white"
-            >
-              Kembalikan
-            </button>
+
+            <div className="flex justify-center gap-3 pt-2">
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="rounded-lg border px-6 py-2 text-sm"
+              >
+                Batal
+              </button>
+
+              <button
+                onClick={handleReturn}
+                className="rounded-lg bg-green-600 px-6 py-2 text-sm text-white"
+              >
+                Kembalikan
+              </button>
+            </div>
           </div>
         </Modal>
       )}
-    </div>
-  );
+
+      {/* TOAST */}
+      {toast && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center backdrop-blur-md">
+          <div
+            className={`w-[320px] rounded-2xl p-6 text-center shadow-xl border
+            ${
+              toast.type === "success"
+                ? "bg-purple-500/90 border-purple-400 text-white"
+                : "bg-red-500/90 border-red-400 text-white"
+            }`}
+          >
+            <div className="mb-2 text-lg">
+              {toast.type === "success" ? "✔" : "⚠"}
+            </div>
+
+            <p className="text-sm font-medium">{toast.message}</p>
+
+            <div className="mt-4 flex justify-center">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+            </div>
+          </div>
+        </div>
+      )}
+</div>
+);
 }
 
 function Modal({ title, children, onClose }: any) {
@@ -521,5 +687,7 @@ function Modal({ title, children, onClose }: any) {
         {children}
       </div>
     </div>
+
   );
 }
+

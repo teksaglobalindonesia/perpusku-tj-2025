@@ -14,6 +14,31 @@ const AnggotaPage = () => {
     "add" | "edit" | "delete" | "loan" | null
   >(null);
   const [selected, setSelected] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitted, setSubmitted] = useState(false);
+  const [toast, setToast] = useState<{
+        message: string;
+        type: "success" | "error";
+      } | null>(null);
+        
+        const showToast = (
+        message: string,
+        type: "success" | "error"
+      ) => {
+        setToast({ message, type });
+  
+        setTimeout(() => {
+          setToast(null);
+        }, 1000);
+      };
+
+const [errors, setErrors] = useState({
+  id_member: "",
+  name: "",
+  email: "",
+  address: "",
+});
+
   const [form, setForm] = useState({
     id_member: "",
     name: "",
@@ -22,46 +47,62 @@ const AnggotaPage = () => {
   });
 
   const closeModal = () => {
-    setModal(null);
-    setSelected(null);
-    setForm({
-      id_member: "",
-      name: "",
-      email: "",
-      address: "",
-    });
-  };
+  setModal(null);
+  setSelected(null);
+  setSubmitted(false);
+
+  setErrors({
+    id_member: "",
+    name: "",
+    email: "",
+    address: "",
+  });
+
+  setForm({
+    id_member: "",
+    name: "",
+    email: "",
+    address: "",
+  });
+};
 
   const fetchAllMembers = async () => {
-    try {
-      let currentPage = 1;
-      let totalPage = 1;
-      let allData: any[] = [];
+  setLoading(true);
 
-      while (currentPage <= totalPage) {
-        const res = await fetch(
-          `${BASE_URL}/api/member/list?page=${currentPage}&page_size=${PAGE_SIZE}`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: TOKEN,
-              "x-member-name": MEMBER_NAME,
-            },
-            cache: "no-store",
-          }
-        );
+  try {
+    let currentPage = 1;
+    let totalPage = 1;
+    let allData: any[] = [];
 
-        const json = await res.json();
-        allData = [...allData, ...(json?.data || [])];
-        totalPage = json?.meta?.pagination?.page_count || 1;
-        currentPage++;
-      }
+    while (currentPage <= totalPage) {
+      const res = await fetch(
+        `${BASE_URL}/api/member/list?page=${currentPage}&page_size=${PAGE_SIZE}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: TOKEN,
+            "x-member-name": MEMBER_NAME,
+          },
+          cache: "no-store",
+        }
+      );
 
-      setAllMembers(allData);
-    } catch {}
-  };
+      const json = await res.json();
 
-  const fetchLoans = async () => {
+      allData = [...allData, ...(json?.data || [])];
+      totalPage = json?.meta?.pagination?.page_count || 1;
+      currentPage++;
+    }
+
+    setAllMembers(allData);
+    setLoading(false);
+  } catch {
+    setLoading(false);
+  }
+};
+
+ const fetchLoans = async () => {
+  try {
     const res = await fetch(`${BASE_URL}/api/loan/list`, {
       headers: {
         "Content-Type": "application/json",
@@ -73,7 +114,8 @@ const AnggotaPage = () => {
 
     const json = await res.json();
     setLoans(json?.data || []);
-  };
+  } catch {}
+};
 
 const isLate = (returnDate?: string, actualReturnDate?: string) => {
   if (!returnDate || !actualReturnDate) return false;
@@ -151,63 +193,121 @@ const isLate = (returnDate?: string, actualReturnDate?: string) => {
     ));
   };
 
-  const handleCreateMember = async () => {
-    const res = await fetch(`${BASE_URL}/api/member/add`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: TOKEN,
-        "x-member-name": MEMBER_NAME,
-      },
-      body: JSON.stringify({ data: form }),
-    });
-
-    if (res.ok) {
-      await fetchAllMembers();
-      closeModal();
-    }
+const validateForm = () => {
+  const newErrors = {
+    id_member: "",
+    name: "",
+    email: "",
+    address: "",
   };
 
-  const handleUpdateMember = async () => {
-    const res = await fetch(`${BASE_URL}/api/member/edit`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: TOKEN,
-        "x-member-name": MEMBER_NAME,
+  if (!form.id_member) newErrors.id_member = "ID anggota wajib diisi";
+  if (!form.name) newErrors.name = "Nama wajib diisi";
+  if (!form.email) {
+  newErrors.email = "Email wajib diisi";
+} else if (!/\S+@\S+\.\S+/.test(form.email)) {
+  newErrors.email = "Format email tidak valid";
+}
+  if (!form.address) newErrors.address = "Alamat wajib diisi";
+
+  setErrors(newErrors);
+
+  return !Object.values(newErrors).some((e) => e !== "");
+};
+
+ const handleCreateMember = async () => {
+  setSubmitted(true);
+
+  if (!validateForm()) return;
+
+  const res = await fetch(`${BASE_URL}/api/member/add`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: TOKEN,
+      "x-member-name": MEMBER_NAME,
+    },
+    body: JSON.stringify({
+      data: {
+        ...form,
+        id_member: `librava-member-${form.id_member}`,
       },
-      body: JSON.stringify({
-        documentId: selected.documentId,
-        data: form,
-      }),
-    });
+    }),
+  });
 
-    if (res.ok) {
-      await fetchAllMembers();
-      closeModal();
-    }
-  };
+  if (res.ok) {
+    showToast("Anggota berhasil ditambahkan", "success");
+    await fetchAllMembers();
+    closeModal();
+  } else {
+    showToast("Gagal menambahkan anggota", "error");
+  }
+};
 
-  const handleDeleteMember = async () => {
-    const res = await fetch(`${BASE_URL}/api/member/delete`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: TOKEN,
-        "x-member-name": MEMBER_NAME,
+const handleUpdateMember = async () => {
+  setSubmitted(true);
+
+  if (!validateForm()) return;
+
+  const res = await fetch(`${BASE_URL}/api/member/edit`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: TOKEN,
+      "x-member-name": MEMBER_NAME,
+    },
+    body: JSON.stringify({
+      documentId: selected.documentId,
+      data: {
+        ...form,
+        id_member: `librava-member-${form.id_member}`,
       },
-      body: JSON.stringify({ documentId: selected.documentId }),
-    });
+    }),
+  });
 
-    if (res.ok) {
-      await fetchAllMembers();
-      closeModal();
-    }
-  };
+  if (res.ok) {
+    showToast("Data anggota berhasil diperbarui", "success");
+    await fetchAllMembers();
+    closeModal();
+  } else {
+    showToast("Gagal memperbarui data", "error");
+  }
+};
+
+ const handleDeleteMember = async () => {
+  const res = await fetch(`${BASE_URL}/api/member/delete`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: TOKEN,
+      "x-member-name": MEMBER_NAME,
+    },
+    body: JSON.stringify({ documentId: selected.documentId }),
+  });
+
+  if (res.ok) {
+    showToast("Anggota berhasil dihapus", "success");
+    await fetchAllMembers();
+    closeModal();
+  } else {
+    showToast("Gagal menghapus anggota", "error");
+  }
+};
 
   const filteredLoans = loans.filter(
     (loan) => loan.member?.documentId === selected?.documentId
   );
+
+  if (loading) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#f6f5fb]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-purple-600 border-t-transparent"></div>
+        <p className="text-sm text-gray-600">Memuat data anggota...</p>
+      </div>
+    </div>
+  );
+}
 
   return (
     <div className="min-h-screen bg-[#f6f5fb] px-8 py-6">
@@ -229,78 +329,105 @@ const isLate = (returnDate?: string, actualReturnDate?: string) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
-        {members.map((m) => (
-          <div
-            key={m.documentId}
-            className="flex justify-between rounded-xl border bg-white px-8 py-4"
+      {members.length === 0 ? (
+  <div className="flex flex-col items-center justify-center py-20 text-center">
+    <img
+      src="https://cdn-icons-png.flaticon.com/512/4076/4076549.png"
+      className="mb-6 w-40 opacity-80"
+      alt="Anggota tidak ditemukan"
+    />
+
+    <h3 className="text-lg font-semibold text-gray-700">
+      Anggota tidak ditemukan
+    </h3>
+
+    <p className="text-sm text-gray-500">
+      Coba gunakan kata kunci lain
+    </p>
+  </div>
+) : (
+  <div className="grid grid-cols-1 gap-4">
+    {members.map((m) => (
+      <div
+        key={m.documentId}
+        className="flex justify-between rounded-xl border bg-white px-8 py-4"
+      >
+        <div>
+          <p className="text-xs text-gray-500">ID: {m.id_member}</p>
+
+          <h3 className="text-base font-semibold text-purple-700">
+            {m.name}
+          </h3>
+
+          <p className="text-sm">{m.email}</p>
+
+          <p className="text-sm">{m.address}</p>
+        </div>
+
+        <div className="flex w-[360px] gap-3">
+          <button
+            onClick={() => {
+              setSelected(m);
+              setModal("loan");
+            }}
+            className="flex-1 rounded-lg bg-blue-500 py-1.5 text-sm text-white"
           >
-            <div>
-              <p className="text-xs text-gray-500">ID: {m.id_member}</p>
-              <h3 className="text-base font-semibold text-purple-700">
-                {m.name}
-              </h3>
-              <p className="text-sm">{m.email}</p>
-              <p className="text-sm">{m.address}</p>
-            </div>
+            Lihat
+          </button>
 
-            <div className="flex w-[360px] gap-3">
-              <button
-                onClick={() => {
-                  setSelected(m);
-                  setModal("loan");
-                }}
-                className="flex-1 rounded-lg bg-blue-500 py-1.5 text-sm text-white"
-              >
-                Lihat
-              </button>
-              <button
-                onClick={() => {
-                  setSelected(m);
-                  setForm({
-                    id_member: m.id_member,
-                    name: m.name,
-                    email: m.email,
-                    address: m.address,
-                  });
-                  setModal("edit");
-                }}
-                className="flex-1 rounded-lg bg-yellow-400 py-1.5 text-sm font-semibold text-black"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => {
-                  setSelected(m);
-                  setModal("delete");
-                }}
-                className="flex-1 rounded-lg bg-red-500 py-1.5 text-sm text-white"
-              >
-                Hapus
-              </button>
-            </div>
-          </div>
-        ))}
+          <button
+            onClick={() => {
+              setSelected(m);
+              setForm({
+                id_member: m.id_member.replace("librava-member-", ""),
+                name: m.name,
+                email: m.email,
+                address: m.address,
+              });
+              setModal("edit");
+            }}
+            className="flex-1 rounded-lg bg-yellow-400 py-1.5 text-sm font-semibold text-black"
+          >
+            Edit
+          </button>
+
+          <button
+            onClick={() => {
+              setSelected(m);
+              setModal("delete");
+            }}
+            className="flex-1 rounded-lg bg-red-500 py-1.5 text-sm text-white"
+          >
+            Hapus
+          </button>
+        </div>
       </div>
-      
+    ))}
+  </div>
+)}
+
       <div className="mt-8 flex flex-wrap justify-center gap-2">
-        <button
-          disabled={page === 1}
-          onClick={() => setPage((p) => p - 1)}
-          className="rounded-lg bg-gray-200 px-3 py-2 text-sm disabled:opacity-50"
-        >
-          Prev
-        </button>
+        {members.length > 0 && search === "" && (
+  <div className="mt-8 flex flex-wrap justify-center gap-2">
+    <button
+      disabled={page === 1}
+      onClick={() => setPage((p) => p - 1)}
+      className="rounded-lg bg-gray-200 px-3 py-2 text-sm disabled:opacity-50"
+    >
+      Prev
+    </button>
 
-        {renderPagination()}
+    {renderPagination()}
 
-        <button
-          disabled={page === totalPages}
-          onClick={() => setPage((p) => p + 1)}
-          className="rounded-lg bg-gray-200 px-3 py-2 text-sm disabled:opacity-50"
-        >
-          Next
-        </button>
+    <button
+      disabled={page === totalPages}
+      onClick={() => setPage((p) => p + 1)}
+      className="rounded-lg bg-gray-200 px-3 py-2 text-sm disabled:opacity-50"
+    >
+      Next
+    </button>
+  </div>
+)}
       </div>
 
       {modal && (
@@ -309,38 +436,64 @@ const isLate = (returnDate?: string, actualReturnDate?: string) => {
             {modal === "add" && (
               <div className="space-y-4">
                 <h2 className="text-xl font-bold">Tambah Anggota</h2>
+                <div className="flex items-center border rounded overflow-hidden">
+              <span className="bg-gray-100 px-3 text-sm text-gray-600">
+                librava-member-
+              </span>
+
+              <input
+                type="text"
+                value={form.id_member.replace("librava-member-", "")}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9]/g, "");
+                  setForm({
+                    ...form,
+                    id_member: value,
+                  });
+                }}
+                className="flex-1 p-2 text-sm outline-none"
+              />
+            </div>
+
+            {submitted && errors.id_member && (
+  <p className="text-xs text-red-500">{errors.id_member}</p>
+)}
                 <input
-                  value={form.id_member}
-                  onChange={(e) =>
-                    setForm({ ...form, id_member: e.target.value })
-                  }
-                  placeholder="ID Member"
-                  className="w-full border p-2 rounded"
-                />
+                value={form.name}
+                onChange={(e) =>
+                  setForm({ ...form, name: e.target.value })
+                }
+                placeholder="Nama"
+                className="w-full border p-2 rounded"
+              />
+
+              {submitted && errors.name && (
+                <p className="text-xs text-red-500">{errors.name}</p>
+              )}
                 <input
-                  value={form.name}
-                  onChange={(e) =>
-                    setForm({ ...form, name: e.target.value })
-                  }
-                  placeholder="Nama"
-                  className="w-full border p-2 rounded"
-                />
-                <input
-                  value={form.email}
-                  onChange={(e) =>
-                    setForm({ ...form, email: e.target.value })
-                  }
-                  placeholder="Email"
-                  className="w-full border p-2 rounded"
-                />
-                <input
-                  value={form.address}
-                  onChange={(e) =>
-                    setForm({ ...form, address: e.target.value })
-                  }
-                  placeholder="Alamat"
-                  className="w-full border p-2 rounded"
-                />
+              value={form.email}
+              onChange={(e) =>
+                setForm({ ...form, email: e.target.value })
+              }
+              placeholder="Email"
+              className="w-full border p-2 rounded"
+            />
+
+            {submitted && errors.email && (
+              <p className="text-xs text-red-500">{errors.email}</p>
+            )}
+               <input
+            value={form.address}
+            onChange={(e) =>
+              setForm({ ...form, address: e.target.value })
+            }
+            placeholder="Alamat"
+            className="w-full border p-2 rounded"
+          />
+
+         {submitted && errors.address && (
+  <p className="text-xs text-red-500">{errors.address}</p>
+)}
                 <div className="flex justify-end gap-3">
                   <button
                     onClick={closeModal}
@@ -358,75 +511,93 @@ const isLate = (returnDate?: string, actualReturnDate?: string) => {
               </div>
             )}
 
-            {modal === "edit" && (
-              <div className="space-y-4">
-                <h2 className="text-xl font-bold">Edit Anggota</h2>
-                <input
-                  value={form.id_member}
-                  onChange={(e) =>
-                    setForm({ ...form, id_member: e.target.value })
-                  }
-                  className="w-full border p-2 rounded"
-                />
-                <input
-                  value={form.name}
-                  onChange={(e) =>
-                    setForm({ ...form, name: e.target.value })
-                  }
-                  className="w-full border p-2 rounded"
-                />
-                <input
-                  value={form.email}
-                  onChange={(e) =>
-                    setForm({ ...form, email: e.target.value })
-                  }
-                  className="w-full border p-2 rounded"
-                />
-                <input
-                  value={form.address}
-                  onChange={(e) =>
-                    setForm({ ...form, address: e.target.value })
-                  }
-                  className="w-full border p-2 rounded"
-                />
-                <div className="flex justify-end gap-3">
-                  <button
-                    onClick={closeModal}
-                    className="border px-4 py-1 rounded"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    onClick={handleUpdateMember}
-                    className="bg-purple-700 text-white px-4 py-1 rounded"
-                  >
-                    Update
-                  </button>
-                </div>
-              </div>
-            )}
+          {modal === "edit" && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-bold">Edit Anggota</h2>
 
-            {modal === "delete" && (
-              <div className="space-y-6 text-center">
-                <h2 className="text-xl font-bold">
-                  Yakin hapus {selected?.name}?
-                </h2>
-                <div className="flex justify-center gap-4">
-                  <button
-                    onClick={closeModal}
-                    className="border px-4 py-1 rounded"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    onClick={handleDeleteMember}
-                    className="bg-red-500 text-white px-4 py-1 rounded"
-                  >
-                    Hapus
-                  </button>
-                </div>
+              <div className="flex items-center border rounded overflow-hidden">
+                <span className="bg-gray-100 px-3 text-sm text-gray-600">
+                  librava-member-
+                </span>
+
+                <input
+                  type="text"
+                  value={form.id_member.replace("librava-member-", "")}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9]/g, "");
+                    setForm({
+                      ...form,
+                      id_member: value,
+                    });
+                  }}
+                  className={`flex-1 p-2 text-sm outline-none ${
+                    submitted && errors.id_member ? "border-red-500" : ""
+                  }`}
+                />
               </div>
-            )}
+
+              {submitted && errors.id_member && (
+                <p className="text-xs text-red-500">{errors.id_member}</p>
+              )}
+
+              <input
+                value={form.name}
+                onChange={(e) =>
+                  setForm({ ...form, name: e.target.value })
+                }
+                className={`w-full border p-2 rounded ${
+                  submitted && errors.name ? "border-red-500" : ""
+                }`}
+              />
+
+              {submitted && errors.name && (
+                <p className="text-xs text-red-500">{errors.name}</p>
+              )}
+
+              <input
+                value={form.email}
+                onChange={(e) =>
+                  setForm({ ...form, email: e.target.value })
+                }
+                className={`w-full border p-2 rounded ${
+                  submitted && errors.email ? "border-red-500" : ""
+                }`}
+              />
+
+              {submitted && errors.email && (
+                <p className="text-xs text-red-500">{errors.email}</p>
+              )}
+
+              <input
+                value={form.address}
+                onChange={(e) =>
+                  setForm({ ...form, address: e.target.value })
+                }
+                className={`w-full border p-2 rounded ${
+                  submitted && errors.address ? "border-red-500" : ""
+                }`}
+              />
+
+              {submitted && errors.address && (
+                <p className="text-xs text-red-500">{errors.address}</p>
+              )}
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={closeModal}
+                  className="border px-4 py-1 rounded"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleUpdateMember}
+                  className="bg-purple-700 text-white px-4 py-1 rounded"
+                >
+                  Update
+                </button>
+              </div>
+            </div>
+          )}
 
             {modal === "loan" && (
               <div className="space-y-4">
@@ -486,8 +657,31 @@ const isLate = (returnDate?: string, actualReturnDate?: string) => {
           </div>
         </div>
       )}
+      {toast && (
+  <div className="fixed inset-0 z-[999] flex items-center justify-center backdrop-blur-md">
+    <div
+      className={`w-[320px] rounded-2xl p-6 text-center shadow-xl border
+      ${
+        toast.type === "success"
+          ? "bg-purple-500/90 border-purple-400 text-white"
+          : "bg-red-500/90 border-red-400 text-white"
+      }`}
+    >
+      <div className="mb-2 text-lg">
+        {toast.type === "success" ? "✔" : "⚠"}
+      </div>
+
+      <p className="text-sm font-medium">{toast.message}</p>
+
+      {/* LOADING SPINNER */}
+      <div className="mt-4 flex justify-center">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
     </div>
+        </div>
+  </div>
+)}
+</div>
   );
 };
 
-export default AnggotaPage;
+export default AnggotaPage;                                                               

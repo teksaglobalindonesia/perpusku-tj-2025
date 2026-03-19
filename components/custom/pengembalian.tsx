@@ -10,6 +10,7 @@ export default function PengembalianPage() {
   const [search, setSearch] = useState("");
   const [totalPages, setTotalPages] = useState(1);
   const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
 
       useEffect(() => {
       fetchReturns();
@@ -35,42 +36,58 @@ export default function PengembalianPage() {
     ));
   };
 
-  const fetchReturns = async () => {
-        try {
-          const params = new URLSearchParams({
-            page: String(page),
-            page_size: String(PAGE_SIZE),
-            search: search || "",
-          });
-    
-          const res = await fetch(
-            `${BASE_URL}/api/return/list?${params.toString()}`,
-            {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: TOKEN,
-                "x-member-name": MEMBER_NAME,
-              },
-              cache: "no-store",
-            }
-          );
-    
-          const json = await res.json();
-    
-          if (!res.ok) return;
-    
-          if (!Array.isArray(json?.data)) return;
-    
-          setReturns(json.data);
-          setTotalPages(json?.meta?.pagination?.page_count || 1);
-        } catch {}
-      };
+const fetchReturns = async () => {
+  try {
+    setLoading(true);
 
-  const filtered = returns.filter((item) =>
+    const params = new URLSearchParams({
+      page: String(page),
+      page_size: String(PAGE_SIZE),
+      search: search || "",
+    });
+
+    const res = await fetch(
+      `${BASE_URL}/api/return/list?${params.toString()}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: TOKEN,
+          "x-member-name": MEMBER_NAME,
+        },
+        cache: "no-store",
+      }
+    );
+
+    const json = await res.json();
+
+    if (!res.ok) return;
+
+    if (!Array.isArray(json?.data)) return;
+
+    setReturns(json.data);
+    setTotalPages(json?.meta?.pagination?.page_count || 1);
+  } catch (err) {
+    console.error(err);
+  } finally {
+  setLoading(false);
+}
+};
+
+const filtered = returns.filter((item) =>
   item.book?.title?.toLowerCase().includes(search.toLowerCase())
 );
 
+if (loading) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#f6f5fb]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-purple-600 border-t-transparent"></div>
+        <p className="text-sm text-gray-600">Memuat data pengembalian...</p>
+      </div>
+    </div>
+  );
+}
 
   return (
     <div className="min-h-screen bg-[#f6f5fb] text-[#2b2540]">
