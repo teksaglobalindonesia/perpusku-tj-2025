@@ -104,9 +104,6 @@ const getLoanStatus = (loan: any) => {
   };
 };
 
-
-
-
  // GET DATA
 useEffect(() => {
   (async () => {
@@ -432,7 +429,7 @@ useEffect(() => {
           {paginatedMembers.map((member) => (
             <div
               key={member.id}
-              className="bg-white rounded-xl shadow hover:shadow-md transition p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+              className="bg-white rounded-xl shadow shadow-lg transition p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
             >
               {/* Bagian kiri - info */}
               <div className="flex flex-col gap-1">

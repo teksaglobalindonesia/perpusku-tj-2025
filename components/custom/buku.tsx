@@ -267,10 +267,11 @@ const handleCreate = async () => {
     newErrors.published_year = "Published year must be a number";
   }
 
-  if (!form.stock) {
+  // Stock: boleh 0, tapi tetap wajib diisi
+  if (form.stock === "" || form.stock === null || form.stock === undefined) {
     newErrors.stock = "Stock is required";
-  } else if (Number(form.stock) <= 0) {
-    newErrors.stock = "Stock must be greater than 0";
+  } else if (isNaN(Number(form.stock))) {
+    newErrors.stock = "Stock must be a number";
   }
 
   if (!form.categories) {
@@ -279,20 +280,21 @@ const handleCreate = async () => {
 
   setErrors(newErrors);
 
+  // kalau ada error, stop
   if (Object.values(newErrors).some((err) => err !== "")) {
     return;
   }
+
   const payload = {
     title: form.title,
     writer: form.writer,
     publisher: form.publisher,
     published_year: form.published_year,
-    stock: Number(form.stock),
-    categories: [form.categories], // SESUAI POSTMAN
+    stock: Number(form.stock), // 0 tetap valid
+    categories: [form.categories],
   };
 
   const fd = new FormData();
-
   fd.append("data", JSON.stringify(payload));
 
   if (form.cover) {
@@ -318,10 +320,10 @@ const handleCreate = async () => {
     }
 
     showSuccess("Book added successfully!");
-
     setActiveModal(null);
     await fetchBooks();
 
+    // reset form
     setForm({
       title: "",
       writer: "",
@@ -336,7 +338,6 @@ const handleCreate = async () => {
     console.error("CREATE ERROR:", err);
   }
 };
-
 
   // UPDATE
 const handleUpdate = async () => {
@@ -372,10 +373,11 @@ const handleUpdate = async () => {
     newErrors.published_year = "Published year must be a number";
   }
 
-  if (!form.stock) {
+  // Stock: boleh 0, tapi tetap wajib diisi
+  if (form.stock === "" || form.stock === null || form.stock === undefined) {
     newErrors.stock = "Stock is required";
-  } else if (Number(form.stock) <= 0) {
-    newErrors.stock = "Stock must be greater than 0";
+  } else if (isNaN(Number(form.stock))) {
+    newErrors.stock = "Stock must be a number";
   }
 
   if (!form.categories) {
@@ -507,7 +509,7 @@ const handleDestroy = async () => {
           </div>
         </div>
       {/* Search */}
-      <div className="bg-white p-3 rounded-xl shadow mb-6 flex items-center gap-3">
+      <div className="bg-white p-3 rounded-xl shadow-lg mb-6 flex items-center gap-3">
         <FiSearch className="text-gray-400" />
           <input
             type="text"
