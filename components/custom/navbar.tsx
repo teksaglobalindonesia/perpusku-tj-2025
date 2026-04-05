@@ -10,6 +10,7 @@ const NAV_ITEMS: { name: string; href: string }[] = [
   { name: "Member", href: "/anggota" },
   { name: "Loan", href: "/peminjaman" },
   { name: "Return", href: "/pengembalian" },
+  { name: "Logout", href: "/login" },
 ];
 
 const Navbar: React.FC = () => {

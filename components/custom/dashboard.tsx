@@ -136,7 +136,7 @@ return (
               href="/buku"
               className="text-xs sm:text-sm text-blue-600 hover:underline"
             >
-              See more
+              Show More
             </Link>
           </div>
 

@@ -24,9 +24,15 @@ type ModalType = "add" | "edit" | "delete" | "preview" | "add-category" | null;
 
   const [total, setTotal] = useState(0);
   const totalPages = Math.ceil(total / PAGE_SIZE);
+
   const [categoryName, setCategoryName] = useState("");
   const [isAddingCategory, setIsAddingCategory] = useState(false);
-
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [categoryInput, setCategoryInput] = useState("");
+  const [categoryErrors, setCategoryErrors] = useState("");
+  const [loadingCategory, setLoadingCategory] = useState(false);
+  const [deleteCategoryTarget, setDeleteCategoryTarget] = useState<any>(null);
   const [errors, setErrors] = useState({
   title: "",
   writer: "",
@@ -76,16 +82,69 @@ type ModalType = "add" | "edit" | "delete" | "preview" | "add-category" | null;
   };
   
 
-const handleAddCategory = async () => {
-  if (!categoryName.trim()) {
-    alert("Nama category wajib diisi");
+const handleSaveCategory = async () => {
+  if (!categoryInput.trim()) {
+    setCategoryErrors("Category name is required");
     return;
   }
 
-  setIsAddingCategory(true);
+  setLoadingCategory(true);
 
   try {
-    const res = await fetch(`${BASE_URL}/api/book-category/add`, {
+    const url = editingCategory
+      ? `${BASE_URL}/api/book-category/edit`
+      : `${BASE_URL}/api/book-category/add`;
+
+    const method = editingCategory ? "PATCH" : "POST";
+
+    const body = editingCategory
+      ? {
+          documentId: editingCategory.documentId,
+          data: { name: categoryInput },
+        }
+      : {
+          data: { name: categoryInput },
+        };
+
+    const res = await fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: TOKEN,
+        "x-member-name": MEMBER_NAME,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      console.error(await res.text());
+      return;
+    }
+
+    await fetchCategories();
+    setCategoryInput("");
+    setEditingCategory(null);
+    setCategoryErrors("");
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setLoadingCategory(false);
+  }
+};
+
+const handleEditCategory = (cat: any) => {
+  setEditingCategory(cat);
+  setCategoryInput(cat.name);
+};
+
+const handleDeleteCategory = (cat: any) => {
+  setDeleteCategoryTarget(cat);
+};
+const confirmDeleteCategory = async () => {
+  if (!deleteCategoryTarget) return;
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/book-category/delete`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -93,39 +152,21 @@ const handleAddCategory = async () => {
         "x-member-name": MEMBER_NAME,
       },
       body: JSON.stringify({
-        data: { name: categoryName },
+        documentId: deleteCategoryTarget.documentId,
       }),
-      cache: "no-store",
     });
 
     if (!res.ok) {
-      const text = await res.text();
-      console.error(text);
-      alert("Gagal menambah category");
+      console.error(await res.text());
       return;
     }
 
-    const updatedCategories = await fetchCategories();
-
-    const lastCategory = updatedCategories[updatedCategories.length - 1];
-
-    if (lastCategory?.id) {
-      setForm((prev) => ({
-        ...prev,
-        categories: lastCategory.id.toString(),
-      }));
-    }
-
-    setCategoryName("");
-    setActiveModal(null);
-    showSuccess("Category added successfully!");
+    await fetchCategories();
+    setDeleteCategoryTarget(null);
   } catch (err) {
-    console.error("Add category error:", err);
-  } finally {
-    setIsAddingCategory(false);
+    console.error(err);
   }
 };
-
 
   // form: semua value disimpan sebagai string agar controlled input aman
   const [form, setForm] = useState({
@@ -480,12 +521,11 @@ const handleDestroy = async () => {
         <h1 className="text-xl font-bold text-gray-800">Book List</h1>
         <div className="flex gap-2">
               <button
-                type="button"
-                onClick={() => setActiveModal("add-category")}
+                onClick={() => setCategoryModalOpen(true)}
                 className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-xl text-sm"
-                >
-                <FiPlus /> Add Category
-               </button>
+              >
+                 Manage Category
+              </button>
               <button
               type= "button"
                 onClick={() => {
@@ -721,7 +761,7 @@ const handleDestroy = async () => {
                 onClick={handleCreate}
                 className="bg-blue-600 text-white px-4 py-2 rounded"
               >
-                Save
+                Submit
               </button>
             </div>
           </div>
@@ -997,44 +1037,110 @@ const handleDestroy = async () => {
           </button>
         </div>
       )}
-      {/* Modal Add Category*/}
-      {activeModal === "add-category" && (
-        <Modal onClose={() => setActiveModal(null)}>
-          <div className="w-full max-w-sm">
-            <h2 className="text-lg font-semibold mb-4 text-gray-800">
-              Add Book Category
-            </h2>
+      {/* Modal Manage Category*/}
+      {categoryModalOpen && (
+      <Modal onClose={() => setCategoryModalOpen(false)}>
+        <div className="w-full max-w-lg">
+          <h2 className="text-lg font-semibold mb-4">Manage Category</h2>
 
+          {/* INPUT */}
+          <div className="flex gap-2 mb-3">
             <input
               type="text"
+              value={categoryInput}
+              onChange={(e) => {
+                setCategoryInput(e.target.value);
+                setCategoryErrors("");
+              }}
               placeholder="Category name"
-              value={categoryName}
-              onChange={(e) => setCategoryName(e.target.value)}
-              className="w-full border rounded-lg p-2 text-sm"
+              className="flex-1 border p-2 rounded text-sm"
             />
+            <button
+              onClick={handleSaveCategory}
+              className="px-3 py-2 bg-blue-600 text-white rounded text-sm"
+            >
+              {editingCategory ? "Update" : "Add"}
+            </button>
+          </div>
 
-            <div className="flex justify-end gap-3 mt-6">
+          {categoryErrors && (
+            <p className="text-red-500 text-xs mb-2">{categoryErrors}</p>
+          )}
+
+          {/* LIST */}
+          <div className="max-h-[300px] overflow-y-auto space-y-2">
+            {categories.map((cat) => (
+              <div
+                key={cat.id}
+                className="flex justify-between items-center border p-2 rounded"
+              >
+                <span className="text-sm">{cat.name}</span>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEditCategory(cat)}
+                    className="text-xs px-2 py-1 bg-yellow-100 rounded"
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    onClick={() => handleDeleteCategory(cat)}
+                    className="text-xs px-2 py-1 bg-red-100 text-red-600 rounded"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Modal>
+    )}
+      {deleteCategoryTarget && (
+        <Modal onClose={() => setDeleteCategoryTarget(null)}>
+          <div className="w-full max-w-sm animate-scale-in">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <span className="text-red-600 text-xl font-bold">!</span>
+              </div>
+              <h2 className="text-lg font-semibold text-gray-800">
+                Delete Category
+              </h2>
+            </div>
+
+            {/* Content */}
+            <p className="text-sm text-gray-600 mb-6">
+              Yakin mau hapus category
+              <span className="font-semibold text-gray-800">
+                {" "}
+                “{deleteCategoryTarget.name}”
+              </span>
+              ?
+              <br />
+              Ini ga bisa di-undo.
+            </p>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3">
               <button
-                type="button"
-                onClick={() => setActiveModal(null)}
+                onClick={() => setDeleteCategoryTarget(null)}
                 className="px-4 py-2 text-sm rounded-lg border"
               >
                 Cancel
               </button>
 
               <button
-                type="button"
-                onClick={handleAddCategory}
-                disabled={isAddingCategory}
-                className="px-4 py-2 text-sm rounded-lg bg-green-600 text-white disabled:opacity-50"
+                onClick={confirmDeleteCategory}
+                className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white"
               >
-                {isAddingCategory ? "Saving..." : "Save"}
+                Delete
               </button>
             </div>
           </div>
         </Modal>
       )}
-
       {/* OTHER */}
       {successMessage && (
         <div className="fixed top-5 right-5 z-[99999] bg-green-600 text-white px-4 py-3 rounded-xl shadow-lg animate-scale-in">
