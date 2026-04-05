@@ -999,7 +999,7 @@ const handleDestroy = async () => {
                   transition
                 "
               >
-                {isDeleting ? "Menghapus..." : "Delete"}
+                {isDeleting ? "Menghapus..." : "Yes"}
               </button>
             </div>
           </div>
@@ -1112,14 +1112,15 @@ const handleDestroy = async () => {
 
             {/* Content */}
             <p className="text-sm text-gray-600 mb-6">
-              Yakin mau hapus category
+              Are you sure you want to delete
               <span className="font-semibold text-gray-800">
                 {" "}
                 “{deleteCategoryTarget.name}”
+                {" "}
               </span>
-              ?
+              category?
               <br />
-              Ini ga bisa di-undo.
+              This action can&apos;t be undone.
             </p>
 
             {/* Actions */}
@@ -1135,7 +1136,7 @@ const handleDestroy = async () => {
                 onClick={confirmDeleteCategory}
                 className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white"
               >
-                Delete
+                Yes
               </button>
             </div>
           </div>
