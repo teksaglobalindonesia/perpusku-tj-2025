@@ -34,11 +34,8 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="bg-gray-50 text-gray-900">
-
         <NextTopLoader showSpinner={false} height={3} />
-
         <Navbar />
-
         <main className="min-h-screen">
           {children}
         </main>
