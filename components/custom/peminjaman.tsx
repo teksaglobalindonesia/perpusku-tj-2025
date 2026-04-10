@@ -268,7 +268,7 @@ const PeminjamanPage = () => {
         body: JSON.stringify({
           data: {
             loan: selectedPeminjaman.documentId,
-            actual_return_date: new Date().toISOString().split('T')[0]
+            actual_return_date: new Date().toLocaleDateString('en-CA')
           }
         })
       });

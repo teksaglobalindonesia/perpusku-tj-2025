@@ -2,12 +2,37 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiMenu, FiX } from 'react-icons/fi';
+import { logoutUser } from '@/lib/auth';
 
 export default function Navbar() {
   const path = usePathname();
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [isLogin, setIsLogin] = useState(false);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [path]);
+
+  useEffect(() => {
+    setMounted(true);
+
+    const hasCookie = document.cookie.includes('token');
+    setIsLogin(hasCookie);
+  }, []);
+
+  if (!mounted) return null;
+
+  if (path === '/login') return null;
+
+  if (path === '/register') return null;
+
+  const handleLogout = () => {
+    logoutUser();
+    window.location.href = '/login';
+  };
 
   const menu = [
     { name: 'Dashboard', href: '/' },
@@ -46,10 +71,22 @@ export default function Navbar() {
               </Link>
             </li>
           ))}
+
+          {/* 🔥 TAMBAHAN BUTTON LOGIN / LOGOUT */}
+          {isLogin ? (
+            <div className="ml-4 flex items-center gap-2">
+              <Link href="/register">Register</Link>
+              <button onClick={handleLogout}>Logout</button>
+            </div>
+          ) : (
+            <Link href="/login" className="ml-4">
+              Login
+            </Link>
+          )}
         </ul>
       </div>
 
-      {/* MENU MOBILE DROPDOWN */}
+      {/* MENU MOBILE */}
       {open && (
         <div className="border-t border-green-300 bg-[#DFF5E3] shadow-inner md:hidden">
           <ul className="flex flex-col gap-4 px-4 py-4 font-medium text-green-700">
@@ -68,6 +105,18 @@ export default function Navbar() {
                 </Link>
               </li>
             ))}
+
+            {/* MOBILE LOGIN / LOGOUT */}
+            {isLogin ? (
+              <>
+                <Link href="/register" onClick={() => setOpen(false)}>
+                  Register
+                </Link>
+                <button onClick={handleLogout}>Logout</button>
+              </>
+            ) : (
+              <Link href="/login">Login</Link>
+            )}
           </ul>
         </div>
       )}

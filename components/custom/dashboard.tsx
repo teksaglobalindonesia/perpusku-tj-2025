@@ -52,7 +52,7 @@ const DashboardContent = () => {
     })();
   }, []);
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toLocaleDateString('en-CA');
 
   const availableBooks = books.reduce(
     (total, b) => total + (b.stock > 0 ? b.stock : 0),

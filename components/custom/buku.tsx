@@ -16,6 +16,8 @@ const BukuPage = () => {
   const PAGE_SIZE = 6;
   const [totalPages, setTotalPages] = useState(1);
   const [errors, setErrors] = useState<any>({});
+  const [showDelete, setShowDelete] = useState(false);
+  const [bookToDelete, setBookToDelete] = useState<any>(null);
 
   const handleWriterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/[^A-Za-z\s]/g, '');
@@ -107,9 +109,16 @@ const BukuPage = () => {
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [categoryName, setCategoryName] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
+    null
+  );
+  const [isEditCategory, setIsEditCategory] = useState(false);
+  const [showDeleteCategory, setShowDeleteCategory] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<any>(null);
 
   const handleCreateCategory = async () => {
-    if (!validateForm()) {
+    if (!categoryName.trim()) {
+      showNotification('Nama kategori wajib diisi', 'error');
       return;
     }
 
@@ -132,11 +141,14 @@ const BukuPage = () => {
 
       if (!res.ok) {
         console.error(json);
-        alert(json?.error?.message || 'Gagal tambah kategori');
+        showNotification(
+          json?.error?.message || 'Gagal tambah kategori',
+          'error'
+        );
         return;
       }
 
-      showNotification('Category berhasil ditambahkan', 'success');
+      showNotification('Kategori berhasil ditambahkan', 'success');
 
       setCategoryName('');
       setShowCategoryModal(false);
@@ -144,8 +156,61 @@ const BukuPage = () => {
       await fetchCategories();
     } catch (err) {
       console.error('CREATE CATEGORY ERROR:', err);
-      alert('Terjadi kesalahan');
+      showNotification('Terjadi kesalahan', 'error');
     }
+  };
+
+  const handleUpdateCategory = async () => {
+    const res = await fetch(`${BASE_URL}/api/book-category/edit`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: TOKEN,
+        'x-member-name': MEMBER_NAME,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        documentId: selectedCategoryId,
+        data: { name: categoryName }
+      })
+    });
+
+    if (!res.ok) {
+      showNotification('Gagal update kategori', 'error');
+      return;
+    }
+
+    showNotification('Kategori berhasil diupdate', 'success');
+
+    await fetchCategories();
+    setCategoryName('');
+    setIsEditCategory(false);
+  };
+
+  const handleDeleteCategory = async () => {
+    if (!categoryToDelete?.documentId) return;
+
+    const res = await fetch(`${BASE_URL}/api/book-category/delete`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: TOKEN,
+        'x-member-name': MEMBER_NAME
+      },
+      body: JSON.stringify({
+        documentId: categoryToDelete.documentId
+      })
+    });
+
+    if (!res.ok) {
+      showNotification('Gagal hapus kategori', 'error');
+      return;
+    }
+
+    showNotification('Kategori berhasil dihapus', 'success');
+
+    await fetchCategories();
+    setShowDeleteCategory(false);
+    setCategoryToDelete(null);
   };
 
   const validateForm = () => {
@@ -387,11 +452,8 @@ const BukuPage = () => {
     setErrors({});
   };
 
-  const handleDeleteBook = async (book: any) => {
-    if (!book?.documentId) {
-      alert('documentId tidak ditemukan');
-      return;
-    }
+  const handleDeleteBook = async () => {
+    if (!bookToDelete?.documentId) return;
 
     try {
       const res = await fetch(`${BASE_URL}/api/book/delete`, {
@@ -402,14 +464,13 @@ const BukuPage = () => {
           'x-member-name': MEMBER_NAME
         },
         body: JSON.stringify({
-          documentId: book.documentId
+          documentId: bookToDelete.documentId
         })
       });
 
       const json = await res.json();
 
       if (!res.ok) {
-        console.error('Gagal hapus buku:', json);
         alert(json?.error?.message || 'Gagal menghapus buku');
         return;
       }
@@ -417,6 +478,8 @@ const BukuPage = () => {
       showNotification('Buku berhasil dihapus', 'success');
 
       await fetchBooks();
+      setShowDelete(false);
+      setBookToDelete(null);
     } catch (err) {
       console.error('Error delete:', err);
     }
@@ -629,9 +692,8 @@ const BukuPage = () => {
 
                 <button
                   onClick={() => {
-                    if (confirm('Yakin ingin menghapus buku ini?')) {
-                      handleDeleteBook(b);
-                    }
+                    setBookToDelete(b);
+                    setShowDelete(true);
                   }}
                   className="rounded-full bg-red-100 px-3 py-2 text-sm text-red-700"
                 >
@@ -955,8 +1017,7 @@ const BukuPage = () => {
           </div>
         )}
 
-        {/* MODAL HAPUS */}
-        {modal === 'delete' && (
+        {showDelete && bookToDelete && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
             <div className="w-full max-w-[380px] rounded-xl bg-white p-5 shadow-lg">
               <h3 className="text-lg font-semibold text-gray-800">
@@ -964,19 +1025,20 @@ const BukuPage = () => {
               </h3>
 
               <p className="mt-2 text-sm text-gray-600">
-                {' '}
                 Apakah Anda yakin ingin menghapus buku{' '}
-                <span className="font-semibold">{selected?.title}</span>?
+                <span className="font-semibold">{bookToDelete.title}</span>?
               </p>
+
               <div className="mt-5 flex justify-end gap-3">
                 <button
-                  onClick={closeDeleteModal}
+                  onClick={() => setShowDelete(false)}
                   className="rounded-lg bg-gray-200 px-4 py-1.5 text-sm"
                 >
                   Batal
                 </button>
+
                 <button
-                  onClick={() => handleDeleteBook(selected)}
+                  onClick={handleDeleteBook}
                   className="rounded-lg bg-red-600 px-4 py-1.5 text-sm text-white"
                 >
                   Hapus
@@ -987,42 +1049,111 @@ const BukuPage = () => {
         )}
 
         {showCategoryModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="w-full max-w-[380px] rounded-xl bg-white shadow-lg">
-              <div className="border-b px-5 py-3">
-                <h2 className="text-base font-semibold text-gray-800">
-                  Tambah Kategori
-                </h2>
-              </div>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="w-full max-w-sm rounded-2xl bg-white p-6">
+              <h2 className="mb-4 text-lg font-bold text-green-700">
+                Kelola Kategori
+              </h2>
 
-              <div className="px-5 py-4">
+              <div className="space-y-3">
                 <input
-                  type="text"
-                  placeholder="Masukan Category"
                   value={categoryName}
                   onChange={(e) => setCategoryName(e.target.value)}
-                  className="w-full rounded-lg border p-2"
+                  className="w-full rounded-lg border p-3 text-sm"
+                  placeholder="Nama kategori"
                 />
-                {errors.categories && (
-                  <p className="text-xs text-red-500">{errors.categories}</p>
-                )}
-              </div>
 
-              <div className="flex justify-end gap-3 border-t px-5 py-3">
+                <div className="max-h-40 space-y-2 overflow-y-auto">
+                  {categories.map((c) => (
+                    <div
+                      key={c.documentId}
+                      className="flex items-center justify-between rounded-lg border px-3 py-2"
+                    >
+                      <span className="text-sm">{c.name}</span>
+
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCategoryName(c.name);
+                            setSelectedCategoryId(c.documentId);
+                            setIsEditCategory(true);
+                          }}
+                          className="text-xs text-green-600"
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCategoryToDelete(c);
+                            setShowDeleteCategory(true);
+                          }}
+                          className="text-xs text-red-600"
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 flex justify-end gap-3">
+                  <button
+                    onClick={() => {
+                      setShowCategoryModal(false);
+                      setIsEditCategory(false);
+                      setCategoryName('');
+                    }}
+                    className="rounded-lg border px-4 py-2 text-sm"
+                  >
+                    Batal
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      if (isEditCategory) {
+                        handleUpdateCategory();
+                      } else {
+                        handleCreateCategory();
+                      }
+                    }}
+                    className="rounded-lg bg-green-600 px-4 py-2 text-sm text-white"
+                  >
+                    {isEditCategory ? 'Update' : 'Simpan'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showDeleteCategory && categoryToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-[380px] rounded-xl bg-white p-5 shadow-lg">
+              <h3 className="text-lg font-semibold text-gray-800">
+                Konfirmasi Hapus
+              </h3>
+
+              <p className="mt-2 text-sm text-gray-600">
+                Apakah Anda yakin ingin menghapus kategori{' '}
+                <span className="font-semibold">{categoryToDelete.name}</span>?
+              </p>
+
+              <div className="mt-5 flex justify-end gap-3">
                 <button
-                  onClick={() => {
-                    setErrors({});
-                    setShowCategoryModal(false);
-                  }}
+                  onClick={() => setShowDeleteCategory(false)}
                   className="rounded-lg bg-gray-200 px-4 py-1.5 text-sm"
                 >
                   Batal
                 </button>
+
                 <button
-                  onClick={handleCreateCategory}
-                  className="rounded-lg bg-green-600 px-4 py-1.5 text-sm text-white"
+                  onClick={handleDeleteCategory}
+                  className="rounded-lg bg-red-600 px-4 py-1.5 text-sm text-white"
                 >
-                  Simpan
+                  Hapus
                 </button>
               </div>
             </div>
